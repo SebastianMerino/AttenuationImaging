@@ -1,0 +1,78 @@
+RUN AttEst_RSLD_simple
+press a key of the keyboard when required........
+
+
+Variables information
+
+Change sam1.mat, ref1.mat, ref1.mat, ref1.mat, ref1.mat or parameteres.mat appropiately.
+
+
+sam1.mat: The file of the sample data is sam1.mat. 
+Includes:
+rf: rf matrix
+x: lateral position vector in [m]. Ranging from a (-xi) to (+xi)
+z: axial positions vector in [m]. Ranging from (0) to (zi)
+fs: sampling frecuency in [Hz]
+c0: sound spped in [m/s]
+transducer: contains f# (fn), focal length (fl), and central frequency (f0)
+
+ref1.mat: The file of the first reference data. The content
+are similar as the sam1.mat. 
+ref2.mat: The file of the first reference data. The content
+are similar as the sam1.mat.
+ref3.mat: The file of the first reference data. The content
+are similar as the sam1.mat. 
+ref4.mat: The file of the first reference data. The content
+are similar as the sam1.mat. 
+Obs: If only ref1.mat is available then ref2, ref3 and ref4 can be
+a copy of ref1.mat in order to the script runs without error.
+
+
+parameters.mat: Several parameters that will be needed for
+showing the images and running the algortihm. Includes:
+
+ACS_range_maps: Range of the colorbar of the ACS maps in [dB/cm/MHz]
+attenuation_reference_dB: Value of the attenuation of the reference in [dB/cm/MHz] as
+attenuation_reference_dB(1)*FREQ^2+attenuation_reference_dB(2)*FREQ+attenuation_reference_dB(2)
+e.g. attenuation_reference_dB = [0 0.3 0], means attenuation of the reference will be linear.
+axial_limits: the inferior and superior axial limits of the analysis region
+ for attenuation estimation in [cm].
+lateral_limits: the inferior and superior lateral limits of the analysis region
+ for attenuation estimation in [cm]. 
+center_inclusion: the coordinates of the center in [cm] of the inclusion region
+ which statistics will be measured.
+center_background: the coordinates of the center in [cm] of the background region
+ which statistics will be measured.
+data_block_sizes: vector of the inclusion region y 10x10 wavelengths or so. 
+ No more than 5 data blocks sizes.
+dynamic_range_bmode: typically 60dB.
+frequency_limits: the useful frequency range in [MHz]. It can start with some range
+ and keep adjusting manually and run the code again.
+ground_truth_values: ground truth values for the inclusion and background in [dB/cm/MHz].
+overlap_percentage: 0.8 which is 80%. Arbitrary value.
+square_L: The length od the side of the square of the inclusion region selected
+ to estimates the metrics.
+
+
+
+RESULTS:
+The figures will be shown, but should be save manually.
+
+ACS estimated values will be shown in the screen as the code runs. For example:
+
+SLD. Inclusion and background ACS for data block size approximately 18.
+Screen text:
+Blocksize in wavelengths: 18.0
+Standard SLD. R1: 0.73 +/- 0.88 dB.cm^{-1}.MHz^{-1}. R2: 0.62 +/- 0.81 dB.cm^{-1}.MHz^{-1}.
+
+or RSLD containing the mu value used with mu = 3.16*10^2. R1: Inclusion, R2: background
+Screen text:
+Regularized SLD. 3.162e+02. R1: 0.91 +/- 0.10 dB.cm^{-1}.MHz^{-1}. R2: 0.49 +/- 0.15 dB.cm^{-1}.MHz^{-1}.
+
+
+FIGURES that can be useful:
+FIG100: SLD ACS map
+FIG11n: RSLD ACS map for the n-th mu value used.
+FIG3: To watch the spectra and choose a more useful frequency range
+FIG1: The B-mode image.
+FIG2: The B-mode image og the analysis region used for the ACS map construction.

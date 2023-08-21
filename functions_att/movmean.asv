@@ -1,0 +1,22 @@
+function result=movingmean(data,window,dim,option)
+
+wx = window(1);
+wy = window(2);
+
+%data_conv = conv2(data,1/(wx*wy)*ones(wx,wy));
+
+%data_conv_same = conv2(data,1/(wx*wy)*ones(wx,wy),'same');
+
+
+data2 = padarray(data,[(wx-1)/2 (wy-1)/2],NaN,'both');
+
+for ii = 1+(wx-1)/2:size(data2,1)-(wx-1)/2
+   for jj = 1+(wy-1)/2:size(data2,2)-(wy-1)/2
+       M = data2(ii-(wx-1)/2:ii+(wx-1)/2,jj-(wy-1)/2:jj+(wy-1)/2);       
+       D = wx*wy - sum(sum(isnan(M)));
+       M(isnan(M))=0;
+       N = sum(sum(M));
+       result(ii-(wx-1),jj-(wy-1)) = 
+   end
+end
+end
