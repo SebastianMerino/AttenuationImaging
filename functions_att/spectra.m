@@ -21,6 +21,7 @@ block = block.*windowing;
 spect = abs(fft(block,NFFT,1));   % Fourier transform proximal window
 spect = spect.^2;        % Sp is Intensity Now 
 spect = mean(spect,2);   % Sp is the average of the parallel echoes in the ROI
+%spect = spect./sum(spect); % NORMALIZATION
 
 % Swaran-wrap correction factor for phantoms
 if saran_layer == '1'

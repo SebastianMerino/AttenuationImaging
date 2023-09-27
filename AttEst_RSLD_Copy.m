@@ -60,8 +60,8 @@ mu = mu_values;
 % x_sup = lateral_limits(2);
 % z_inf = axial_limits(1);
 % z_sup = axial_limits(2);
-x_inf = 2.5; x_sup = 6;
-z_inf = 4.7; z_sup = 11;
+x_inf = 2.3; x_sup = 6.2;
+z_inf = 4.7; z_sup = 10;
 
 % Homogeneous regions for stats
 c1x = center_inclusion(1);
@@ -195,13 +195,13 @@ for jj=1:n
         sub_block_p = sam1(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
         sub_block_d = sam1(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
 
-        % [tempSp,~] = spectra(sub_block_p,windowing,saran_layer,nw,NFFT);
-        % [tempSd,~] = spectra(sub_block_d,windowing,saran_layer,nw,NFFT);
-        % Sp(ii,jj,:) = (tempSp(rang));
-        % Sd(ii,jj,:) = (tempSd(rang));
+        [tempSp,~] = spectra(sub_block_p,windowing,saran_layer,nw,NFFT);
+        [tempSd,~] = spectra(sub_block_d,windowing,saran_layer,nw,NFFT);
+        Sp(ii,jj,:) = (tempSp(rang));
+        Sd(ii,jj,:) = (tempSd(rang));
         
-        Sp(ii,jj,:) = spectra2(sub_block_p,Nw,Noverlap,f*1e6,fs);
-        Sd(ii,jj,:) = spectra2(sub_block_d,Nw,Noverlap,f*1e6,fs);
+        % Sp(ii,jj,:) = spectra2(sub_block_p,Nw,Noverlap,f*1e6,fs);
+        % Sd(ii,jj,:) = spectra2(sub_block_d,Nw,Noverlap,f*1e6,fs);
     end
 end
 
@@ -232,8 +232,6 @@ for ii=1:n
 end
 
 diffraction_compensation = log(D_p) - log(D_d);
-output_dir = './spectra';
-save([output_dir,'\spectra_data.mat']);
 
 %% Au = b
 b = (log(Sp) - log(Sd)) - (diffraction_compensation);
@@ -255,7 +253,7 @@ BS = reshape(BS,m,n);
 ROI = square_center(x_ACS,z_ACS,c1x,c1y,square_L) | ...
     square_center(x_ACS,z_ACS,c2x,c2y,square_L);
 ROI = ones(size(BS));
-[~,~,hAtt] = imoverlay2(Im_db,BS,[-50 -10],[0 1],0.5,x_ACS,z_ACS,ROI,x,z);
+[~,~,hAtt] = imoverlay2(Im_db,BS,[-50 -10],[0 1],1,x_ACS,z_ACS,ROI,x,z);
 ylabel(hAtt,'Attenuation')
 
 disp(['Frequency range: ',num2str(freq_L*1e-6,'%3.1f'),' - ',num2str(freq_H*1e-6,'%3.1f'),' MHz. c: ',...
@@ -264,6 +262,57 @@ disp(['Blocksize. x: ',num2str(nx*dx*1e3,'%4.2f'),'mm, z: ',num2str(nz*dz*1e3,'%
 disp(['Blocksize in wavelengths: ',num2str(new_blocksize,'%3.1f')]);
 disp(['Blocksize in pixels. nf: ',num2str(p,'%i'),' nx: ',num2str(nx,'%i'),', nz: ',num2str(nz,'%i'),', nw: ',num2str(nw,'%i')]);
 disp(['Region of interest. columns: ',num2str(ncol,'%i'),', rows: ',num2str(nrow,'%i')]);
+
+%% Multi-frequency. Julien denoising
+% bj = b. For Julien
+jr.tol = 1e-3;
+mask = ones(m,n,p);
+jr.minimask = ones(m,n);
+
+jr.factor = [0.1 0.3 1];
+for qq = 1:length(jr.factor)
+
+    for kk = 1:p
+        jr.bNoise = b(:,:,kk);   % a single frequency
+        jr.mean(kk,1) = abs(nanmean(jr.bNoise(:)));
+        jr.sd(kk,1) = nanstd(jr.bNoise(:));
+        jr.mu(kk,qq) = jr.factor(qq)*jr.sd(kk,1)/jr.mean(kk,1);
+        jr.bDenoise = IRLS_ANIS_TV(jr.bNoise(:),speye(length(jr.bNoise(:))),jr.mu(kk,qq),m,n,jr.tol,mask,jr.minimask(:));
+        jr.b(:,:,kk) = reshape(jr.bDenoise,m,n);
+
+    end
+
+    [jr.u{qq},~] = cgs2(A'*A,A'*jr.b(:),1e-6,20);
+
+    % Standard SLD
+    % BS: Beta. Attenuation coefficient slopes of blocks.
+    % CS: Constants of blocks.
+    BJtemp = jr.u{qq}(1:end/2); 
+    CStemp = jr.u{qq}(end/2+1:end);
+    BJtemp = 8.686*BJtemp;   % [dB.cm^{-1}.MHz^{-1}]
+    BJ(:,:,qq) = reshape(BJtemp,m,n);
+    CJ(:,:,qq) = reshape(CStemp,m,n);
+
+    figure('Position',[100 100 600 300]), 
+    tiledlayout(1,2)
+    t1 = nexttile; 
+    imagesc(x_ACS,z_ACS,BJ(:,:,qq), [0 1])
+    colormap(t1,turbo)
+    axis equal tight
+    c = colorbar;
+    c.Label.String = 'Attenuation';
+    title(['Julien denoising, Factor=',num2str(jr.factor(qq),2)])
+
+
+    t2 = nexttile;
+    imagesc(x_ACS,z_ACS,CJ(:,:,qq))
+    colormap(t2,parula)
+    axis equal tight
+    c = colorbar;
+    c.Label.String = 'Backscatter';
+    title(['Julien denoising, Factor=',num2str(jr.factor(qq),2)])
+end
+
 
 %% Regularization: Au = b
 tol = 1e-3;
@@ -279,20 +328,29 @@ for mm = 1:length(mu)
     [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),mu1,mu2,m,n,tol,mask(:));
 
     BR(:,:,mm) = (reshape(Bn*8.686,m,n));
+    CR(:,:,mm) = reshape(Cn*8.686,m,n);
 end
 
 
 %% Plotting
 for ii = 1:size(BR,3)
-    % figure,
-    % imagesc(x_ACS,z_ACS,BR_interp(:,:,ii)),
-    % colormap turbo
-    ROI = square_center(x_ACS,z_ACS,c1x,c1y,square_L) | ...
-        square_center(x_ACS,z_ACS,c2x,c2y,square_L);
-    ROI = ones(size(BR(:,:,ii)));
-    figure,
-    [~,~,hAtt] = imoverlay2(Im_db,BR(:,:,ii),[-50 -10],[0 1],1,x_ACS,z_ACS,ROI,x,z);
-    ylabel(hAtt,'Attenuation')
+    figure('Position',[100 100 600 300]), 
+    tiledlayout(1,2)
+    t1 = nexttile; 
+    imagesc(x_ACS,z_ACS,BR(:,:,ii), [0 1])
+    colormap(t1,turbo)
+    axis equal tight
+    c = colorbar;
+    c.Label.String = 'Attenuation';
+    title(['RSLD, \mu=',num2str(mu(ii),2)])
+
+
+    t2 = nexttile;
+    imagesc(x_ACS,z_ACS,CR(:,:,ii))
+    colormap(t2,parula)
+    axis equal tight
+    c = colorbar;
+    c.Label.String = 'Backscatter';
     title(['RSLD, \mu=',num2str(mu(ii),2)])
 end
 
