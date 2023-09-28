@@ -1,11 +1,21 @@
 %%
 clear,clc
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\', ...
-    'Attenuation\DataQUS_4_Merino'];
-refDir = [baseDir,'\References\P4-CUELLO-3'];
-refFiles = dir([refDir,'\*.mat']);
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\', ...
+%     'Attenuation\DataQUS_4_Merino'];
+% refDir = [baseDir,'\References\P4-CUELLO-3'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\ID544V2\06-08-2023-Generic'];
+rawFiles = dir([refDir,'\*.rf']);
+
+%% Generating .mat data
+for iRef = 1:length(rawFiles)
+    [out]=lectura_OK([refDir,'\',rawFiles(iRef).name]);
+    save([refDir,'\ref',num2str(iRef),'.mat'],'-struct','out');
+end
+
 
 %% LOADING PARAMETERS
+refFiles = dir([refDir,'\*.mat']);
 for iRef = 1:length(refFiles)
     load([refDir,'\',refFiles(iRef).name])
     dx = x(2)-x(1);
