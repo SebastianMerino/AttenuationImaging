@@ -1,10 +1,10 @@
 %%
 clear,clc
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\', ...
-%     'Attenuation\DataQUS_4_Merino'];
-% refDir = [baseDir,'\References\P4-CUELLO-3'];
-refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\ID544V2\06-08-2023-Generic'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\', ...
+    'Attenuation\DataQUS_4_Merino'];
+refDir = [baseDir,'\References\P4-CUELLO-3'];
+% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\ID544V2\06-08-2023-Generic'];
 rawFiles = dir([refDir,'\*.rf']);
 
 %% Generating .mat data

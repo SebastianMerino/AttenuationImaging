@@ -31,8 +31,6 @@ c0 = 1540;
 freq_L = 3; freq_H = 9;
 overlap_pc      = 0.8;
 winsize         = 0.5;
-window_type     = 5;
-saran_layer     = 0;
 
 % Region for attenuation imaging
 x_inf = 0.5; x_sup = 3;
@@ -110,8 +108,8 @@ z0d = z0 + (nz-1) - (nw-1)/2;
 
 % Plot region of interest B-mode image
 Im=abs(hilbert(sam1));   % envelope calculation
-Im_db=20*log10(Im/max(Im(:)));   % log scale
-figure, imagesc(x,z,Im_db); axis image; colormap gray; clim(dynRange);
+Bmode=20*log10(Im/max(Im(:)));   % log scale
+figure, imagesc(x,z,Bmode); axis image; colormap gray; clim(dynRange);
 hb2=colorbar; ylabel(hb2,'dB')
 xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 
@@ -140,8 +138,8 @@ for jj=1:n
         sub_block_p = sam1(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
         sub_block_d = sam1(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
 
-        [tempSp,~] = spectra(sub_block_p,windowing,saran_layer,nw,NFFT);
-        [tempSd,~] = spectra(sub_block_d,windowing,saran_layer,nw,NFFT);
+        [tempSp,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
+        [tempSd,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
         Sp(ii,jj,:) = (tempSp(rang));
         Sd(ii,jj,:) = (tempSd(rang));
     end
