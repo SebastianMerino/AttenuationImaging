@@ -26,14 +26,14 @@ disp('Background 0.55, T1: 0.52, T4: 0.81, T8: 0.95')
 % end
 
 %% Selecting ROI limits and freq limits
-iAcq = 1;
+iAcq = 4;
 disp(['Target: ', rawFiles(iAcq).name]);
 load([rfDir,'\ref',num2str(iAcq),'.mat'])
 attRange = [0.3,1.2];
 
 % Inclusion
-cx = 1.95; cz = 2; r = 1; % T1
-% cx = 1.90; cz = 1.87; r = 0.96; % T4
+% cx = 1.92; cz = 1.98; r = 0.98; % T1
+cx = 1.90; cz = 1.87; r = 0.96; % T4
 % cx = 1.85; cz = 1.93; r = 0.93; % T8
 
 dx = x(2)-x(1);
@@ -311,15 +311,15 @@ for ii = 1:size(BR,3)
 end
 
 %% Compensating
-figure('Units','centimeters', 'Position',[5 5 20 8]), 
-tiledlayout(1,2)
-nexttile,
-imagesc(x,z,Bmode,dynRange)
-axis image
-colormap(gray)
-colorbar
-title('B-mode')
 
+figure('Units','centimeters', 'Position',[5 5 30 8]), 
+tiledlayout(1,3)
+t1 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+colormap(t1,gray)
+colorbar
+axis image
+title('B-mode')
 hold on
 rectangle('Position',[cx-r,cz-r,r+r,r+r], 'Curvature',[1 1], ...
     'LineStyle','--', 'LineWidth',2)
@@ -329,15 +329,25 @@ hold off
 [X,Z] = meshgrid(x,z);
 mask = ( (X-cx).^2 + (Z-cz).^2 ) < r*r;
 samEnhanced = sam1;
-samEnhanced(mask) = samEnhanced(mask)/std(samEnhanced(mask))*std(samEnhanced(~mask));
+factor = ones(size(mask));
+factor(mask) = std(samEnhanced(~mask))/std(samEnhanced(mask));
+h = fspecial("average",[50 5]);
+factor = imfilter(factor,h,"symmetric");
+t2 = nexttile;
+imagesc(x,z,factor)
+colormap(t2,parula)
+colorbar
+axis image
+title('Mask')
+
+samEnhanced = sam1.*factor;
 Bmode2 = db(hilbert(samEnhanced));
 Bmode2 = Bmode2 - max(Bmode2(:));
-
-nexttile,
+t3 = nexttile;
 imagesc(x,z,Bmode2,dynRange)
-axis image
-colormap(gray)
+colormap(t3,gray)
 colorbar
+axis image
 title('Equalized B-mode')
 
 %% Calculating spectra
@@ -428,8 +438,38 @@ for ii = 1:size(BR,3)
     title(['RSLD, \mu=',num2str(mu(ii),2)])
 end
 
+%% Getting local SNR
+envelope = abs(hilbert(sam1));
 
+Nwz = floor(nw/3);
+Nwx = floor(nx/6);
+iz = 1:Nwz:size(sam1,1);
+ix = 1:Nwx:size(sam1,2);
+SNR = zeros(length(iz)-2,length(ix)-2);
+for jj=1:length(ix)-2
+    for ii=1:length(iz)-2
+        xw = ix(jj) ;   % x window
+        zw = iz(ii);    % z window
+        subBlock = envelope(zw:zw+2*Nwz-1,xw:xw+2*Nwx-1);        
+        SNR(ii,jj) = mean(subBlock(:))./std(subBlock(:));
+    end
+end
+figure,
+imagesc(x,z,db(SNR))
+c = colorbar;
+ylabel(c,'dB')
+axis image
+title('SNR')
 
+%%
+SNRopt = 1.91;
+desvSNR = (SNRopt./SNR);
+figure,
+imagesc(x,z,medfilt2(desvSNR,[3 3],"symmetric"))
+c = colorbar;
+%xlabel(c,'db')
+axis image
+title('SNRopt/SNR')
 
 %% ------------------------ UTILITY FUNCTIONS ------------------------
 % Total Variation: 0.5*||A*u(:)-b||_2^2 + lambda*TV(u)
