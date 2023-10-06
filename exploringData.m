@@ -5,7 +5,7 @@ rfFiles = dir([rfDir,'\*.mat']);
 %%
 for iFile = 1:length(rfFiles)
     %%
-    iFile = 10;
+    iFile = 8;
     load([rfDir,'\',rfFiles(iFile).name]);
     
     % Frequency response rf - 3 to 9 MHz
@@ -120,6 +120,72 @@ disp(['Blocksize in wavelengths: ',num2str(new_blocksize,'%3.1f')]);
 disp(['Blocksize in pixels. nf: ',num2str(p,'%i'),' nx: ',num2str(nx,'%i'),', nz: ',num2str(nz,'%i'),', nw: ',num2str(nw,'%i')]);
 disp(['Region of interest. columns: ',num2str(ncol,'%i'),', rows: ',num2str(nrow,'%i')]);
 
+
+%% CLUSTERING
+figure('Units','centimeters', 'Position',[5 5 30 8]), 
+tiledlayout(1,3)
+nexttile,
+imagesc(x,z,Bmode, dynRange)
+colormap gray
+axis image
+xlabel('x [cm]'), ylabel('z [cm]')
+title('Bmode')
+
+h = fspecial("average",[50 5]);
+blurred = imfilter(Bmode,h,"symmetric"); 
+nexttile, imagesc(x,z,blurred,dynRange);
+axis image
+xlabel('x [cm]'), ylabel('z [cm]')
+title('Blurred image')
+
+[X,Z] = meshgrid(x,z);
+Data = normalize([X(:) Z(:) blurred(:)]);
+Data = Data.*[1 1 1];
+[mBm,nBm] = size(Bmode);
+nClusters = 7; % number of clusters
+idx = kmeans(Data,nClusters);
+ID = reshape(idx,[mBm,nBm]);
+
+nexttile;
+segmented = labeloverlay(reshape(normalize(Bmode(:),'range'),[mBm,nBm]),ID);
+imagesc(x,z,segmented)
+axis image
+xlabel('x [cm]'), ylabel('z [cm]')
+title('Segmented image')
+
+%% Equalizing
+mask = ID==1;
+energy1 = std(sam1(mask));
+factor = ones(size(sam1));
+
+for iCluster = 1:nClusters
+    mask = ID==iCluster;
+    factor(mask) = energy1/std(sam1(mask));
+end
+h = fspecial("average",[50 5]);
+factor = imfilter(factor,h,"symmetric");
+
+%
+figure('Units','centimeters', 'Position',[5 5 30 8]), 
+tiledlayout(1,2)
+t2 = nexttile;
+imagesc(x,z,factor)
+colormap(t2,parula)
+colorbar
+axis image
+title('Factor')
+
+samEnhanced = sam1.*factor;
+%samEnhanced = sam1;
+Bmode2 = db(hilbert(samEnhanced));
+Bmode2 = Bmode2 - max(Bmode2(:));
+t3 = nexttile;
+imagesc(x,z,Bmode2,dynRange)
+colormap(t3,gray)
+colorbar
+axis image
+title('Equalized B-mode')
+
 %% Calculating spectra
 windowing = tukeywin(nw,0.25);   % Tukey Window. Parameter 0.25
 
@@ -135,8 +201,8 @@ for jj=1:n
         zp = z0p(ii);
         zd = z0d(ii);
 
-        sub_block_p = sam1(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
-        sub_block_d = sam1(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
+        sub_block_p = samEnhanced(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
+        sub_block_d = samEnhanced(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
 
         [tempSp,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
         [tempSd,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
@@ -154,7 +220,6 @@ plot(f,10*log10(squeeze(Sd(ii,jj,:)/max(Sd(ii,jj,:)))),'r');
 hold off
 title('Spectrum'); xlabel('\bfFrequency (MHz)'); ylabel('\bfIntensity Norm. (dB)');
 axis([f(1) f(end) -30 10]);
-
 
 %% Au = b
 load([baseDir,'\References\P4_CUELLO_3.mat']);
@@ -181,65 +246,6 @@ c = colorbar;
 c.Label.String = 'Attenuation [db/cm/MHz]';
 title('SLD')
 
-%% Multi-frequency. Julien denoising
-% bj = b. For Julien
-jr.tol = 1e-3;
-mask = ones(m,n,p);
-jr.minimask = ones(m,n);
-
-jr.factor = 1*[0.33 1 3];
-for qq = 1:length(jr.factor)
-
-    for kk = 1:p
-        jr.bNoise = b(:,:,kk);   % a single frequency
-        jr.mean(kk,1) = abs(nanmean(jr.bNoise(:)));
-        jr.sd(kk,1) = nanstd(jr.bNoise(:));
-        jr.mu(kk,qq) = jr.factor(qq)*jr.sd(kk,1)/jr.mean(kk,1);
-        jr.bDenoise = IRLS_ANIS_TV(jr.bNoise(:),speye(length(jr.bNoise(:))),jr.mu(kk,qq),m,n,jr.tol,mask,jr.minimask(:));
-        jr.b(:,:,kk) = reshape(jr.bDenoise,m,n);
-
-    end
-
-    [jr.u{qq},~] = cgs2(A'*A,A'*jr.b(:),1e-6,20);
-
-    % Standard SLD
-    % BS: Beta. Attenuation coefficient slopes of blocks.
-    % CS: Constants of blocks.
-    BJtemp = jr.u{qq}(1:end/2); 
-    CStemp = jr.u{qq}(end/2+1:end);
-    BJtemp = 8.686*BJtemp;   % [dB.cm^{-1}.MHz^{-1}]
-    BJ(:,:,qq) = reshape(BJtemp,m,n);
-    CJ(:,:,qq) = reshape(CStemp,m,n);
-
-    figure('Position',[100 100 1200 300]), 
-    tiledlayout(1,3)
-    t3 = nexttile;
-    imagesc(x,z,Bmode,dynRange)
-    axis equal
-    xlim([x_ACS(1) x_ACS(end)])
-    ylim([z_ACS(1) z_ACS(end)])
-    colormap(t3,gray)
-    colorbar
-
-    t1 = nexttile; 
-    imagesc(x_ACS,z_ACS,BJ(:,:,qq), [0 2])
-    colormap(t1,turbo)
-    axis equal tight
-    c = colorbar;
-    c.Label.String = 'Attenuation';
-    title(['Julien denoising, Factor=',num2str(jr.factor(qq),2)])
-
-
-    t2 = nexttile;
-    imagesc(x_ACS,z_ACS,CJ(:,:,qq))
-    colormap(t2,parula)
-    axis equal tight
-    c = colorbar;
-    c.Label.String = 'Backscatter';
-    title(['Julien denoising, Factor=',num2str(jr.factor(qq),2)])
-end
-
-
 %% Regularization: Au = b
 tol = 1e-3;
 
@@ -257,7 +263,7 @@ for mm = 1:length(mu)
 end
 
 
-%% Plotting
+% Plotting
 for ii = 1:size(BR,3)
     figure('Position',[100 100 900 300]), 
     tiledlayout(1,3)
@@ -270,7 +276,7 @@ for ii = 1:size(BR,3)
     colorbar
 
     t1 = nexttile; 
-    imagesc(x_ACS,z_ACS,BR(:,:,ii), [0 2])
+    imagesc(x_ACS,z_ACS,BR(:,:,ii), [0 1.5])
     colormap(t1,turbo)
     axis equal tight
     c = colorbar;
