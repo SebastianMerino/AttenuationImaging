@@ -1,18 +1,18 @@
 clear,clc
 addpath('./functions_att');
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
-% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\ID544V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\ID316V2\06-08-2023-Generic'];
 rawFiles = dir([targetDir,'\*.rf']);
 croppedDir = [targetDir,'\cropped'];
 if (~exist(croppedDir,"dir")), mkdir(croppedDir); end
 
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\ID544V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\ID544V2\06-08-2023-Generic'];
 refFiles = dir([refDir,'\*.rf']);
 
 disp('Background 0.55, T1: 0.52, T4: 0.81, T8: 0.95')
@@ -54,7 +54,8 @@ for iAcq = 1:length(rawFiles)
     %% SETTING PARAMETERS
     blocksize = 20;     % Block size in wavelengths
     c0 = 1540;
-    freq_L = 2; freq_H = 9;
+    %freq_L = 2; freq_H = 9;
+    freq_L = 3; freq_H = 8;
     overlap_pc      = 0.8;
     winsize         = 0.5;
     % Region for attenuation imaging
