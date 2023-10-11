@@ -1,6 +1,6 @@
 clear,clc
 close all
-addpath('./functions_att');
+addpath('./functions_v7');
 
 targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID316V2\06-08-2023-Generic'];

@@ -1,5 +1,5 @@
 clear,clc
-addpath('./functions_att');
+addpath('./functions_v7');
 
 targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID316V2\06-08-2023-Generic'];
@@ -15,13 +15,12 @@ refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
 %     'Attenuation\ID544V2\06-08-2023-Generic'];
 refFiles = dir([refDir,'\*.rf']);
 
-disp('Background 0.55, T1: 0.52, T4: 0.81, T8: 0.95')
 
 %% Generating .mat data
-for iAcq = 1:length(rawFiles)
-    [out]=lectura_OK([targetDir,'\',rawFiles(iAcq).name]);
-    save([targetDir,'\T',num2str(iAcq),'.mat'],'-struct','out');
-end
+% for iAcq = 1:length(rawFiles)
+%     [out]=lectura_OK([targetDir,'\',rawFiles(iAcq).name]);
+%     save([targetDir,'\T',num2str(iAcq),'.mat'],'-struct','out');
+% end
 
 %% Cropping data
 for iAcq = 1:length(rawFiles)
