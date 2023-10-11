@@ -25,6 +25,7 @@ end
 
 %% Cropping data
 for iAcq = 1:length(rawFiles)
+    iAcq = 1;
     load([targetDir,'\T',num2str(iAcq),'.mat']);
     disp(['Target: ', rawFiles(iAcq).name]);
     attRange = [0.3,1.2];
@@ -44,11 +45,11 @@ for iAcq = 1:length(rawFiles)
     % xlim([0 fs/2])
     % title('Mean power spectrum')
     %
-    % Bmode = db(hilbert(sam1));
-    % Bmode = Bmode - max(Bmode(:));
-    % figure, imagesc(x,z,Bmode); axis image; colormap gray; clim(dynRange);
-    % hb2=colorbar; ylabel(hb2,'dB')
-    % xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
+    Bmode = db(hilbert(sam1));
+    Bmode = Bmode - max(Bmode(:));
+    figure, imagesc(x,z,Bmode); axis image; colormap gray; clim(dynRange);
+    hb2=colorbar; ylabel(hb2,'dB')
+    xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 
 
     %% SETTING PARAMETERS
