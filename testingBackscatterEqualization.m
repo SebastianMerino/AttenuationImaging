@@ -2,15 +2,15 @@ clear,clc
 close all
 addpath('./functions_v7');
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
-% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\ID544V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\ID316V2\06-08-2023-Generic'];
 
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\ID544V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\ID544V2\06-08-2023-Generic'];
 
 croppedDir = [targetDir,'\cropped'];
 figDir = [targetDir,'\fig'];
@@ -413,14 +413,14 @@ c.Label.String = 'Att. [db/cm/MHz]';
 [Xq,Zq] = meshgrid(x,z);
 AttInterp = interp2(X,Z,BR(:,:,1),Xq,Zq);
 
-r.meanInc = mean(AttInterp(inc),"omitmissing");
-r.stdInc = std(AttInterp(inc),"omitmissing");
-r.meanBack = mean(AttInterp(back),"omitmissing");
-r.stdBack = std(AttInterp(back),"omitmissing");
+r.meanInc = mean(AttInterp(inc),"omitnan");
+r.stdInc = std(AttInterp(inc),"omitnan");
+r.meanBack = mean(AttInterp(back),"omitnan");
+r.stdBack = std(AttInterp(back),"omitnan");
 r.MPEInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)) /...
-    groundTruthTargets(iAcq),"omitmissing") * 100;
+    groundTruthTargets(iAcq),"omitnan") * 100;
 r.MPEBack = mean( (AttInterp(inc) - groundTruthTargets(9)) /...
-    groundTruthTargets(9),"omitmissing") * 100;
+    groundTruthTargets(9),"omitnan") * 100;
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 RSLD(iAcq) = r;
 
@@ -428,14 +428,14 @@ RSLD(iAcq) = r;
 [Xq,Zq] = meshgrid(x,z);
 AttInterp = interp2(X,Z,BRE(:,:,1),Xq,Zq);
 
-r.meanInc = mean(AttInterp(inc),"omitmissing");
-r.stdInc = std(AttInterp(inc),"omitmissing");
-r.meanBack = mean(AttInterp(back),"omitmissing");
-r.stdBack = std(AttInterp(back),"omitmissing");
+r.meanInc = mean(AttInterp(inc),"omitnan");
+r.stdInc = std(AttInterp(inc),"omitnan");
+r.meanBack = mean(AttInterp(back),"omitnan");
+r.stdBack = std(AttInterp(back),"omitnan");
 r.MPEInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)) /...
-    groundTruthTargets(iAcq),"omitmissing") * 100;
+    groundTruthTargets(iAcq),"omitnan") * 100;
 r.MPEBack = mean( (AttInterp(inc) - groundTruthTargets(9)) /...
-    groundTruthTargets(9),"omitmissing") * 100;
+    groundTruthTargets(9),"omitnan") * 100;
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 ERSLD(iAcq) = r;
 
@@ -443,16 +443,24 @@ ERSLD(iAcq) = r;
 [Xq,Zq] = meshgrid(x,z);
 AttInterp = interp2(X,Z,BREW(:,:,1),Xq,Zq);
 
-r.meanInc = mean(AttInterp(inc),"omitmissing");
-r.stdInc = std(AttInterp(inc),"omitmissing");
-r.meanBack = mean(AttInterp(back),"omitmissing");
-r.stdBack = std(AttInterp(back),"omitmissing");
+r.meanInc = mean(AttInterp(inc),"omitnan");
+r.stdInc = std(AttInterp(inc),"omitnan");
+r.meanBack = mean(AttInterp(back),"omitnan");
+r.stdBack = std(AttInterp(back),"omitnan");
 r.MPEInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)) /...
-    groundTruthTargets(iAcq),"omitmissing") * 100;
+    groundTruthTargets(iAcq),"omitnan") * 100;
 r.MPEBack = mean( (AttInterp(inc) - groundTruthTargets(9)) /...
-    groundTruthTargets(9),"omitmissing") * 100;
+    groundTruthTargets(9),"omitnan") * 100;
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 WERSLD(iAcq) = r;
+
+%% ROI
+fig = figure(13);
+fig.Units = 'centimeters'; fig.Position = [5 5 12 8]; 
+[~,~,hC] = imoverlay2(Bmode,AttInterp,dynRange,attRange,0.5,x,z,back|inc,x,z);
+xlabel('x [cm]')
+ylabel('y [cm]')
+hC.Label.String = 'Attenuation [db/cm/MHz]';
 
 %%
 targetDir = fullfile(figDir,['T',num2str(iAcq)]);
@@ -469,7 +477,8 @@ resultsRSLD = struct2table(RSLD);
 results1 = struct2table(ERSLD);
 results2 = struct2table(WERSLD);
 
-figure('Units','centimeters', 'Position',[5 5 12 8])
+fig = figure(15);
+fig.Units = 'centimeters'; fig.Position = [5 5 12 8]; 
 errorbar(resultsRSLD.meanInc, resultsRSLD.stdInc,'o', 'LineWidth',2)
 hold on,
 errorbar(results1.meanInc, results1.stdInc, 'x', 'LineWidth',2)
@@ -479,12 +488,13 @@ hold off
 xlim([0.5 8.5])
 ylim([0 1.5])
 grid on
-legend({'RSLD','WRSLD v1','WRSLD v2'})
+legend({'RSLD','ERSLD','WERSLD'})
 title('Results inclusion')
 xlabel('Target')
 ylabel('Attenuation [db/cm/MHz]')
 
-figure('Units','centimeters', 'Position',[5 5 12 8])
+fig = figure(16);
+fig.Units = 'centimeters'; fig.Position = [5 5 12 8]; 
 errorbar(resultsRSLD.meanBack, resultsRSLD.stdBack,'o', 'LineWidth',2)
 hold on,
 errorbar(results1.meanBack, results1.stdBack, 'x', 'LineWidth',2)
@@ -494,13 +504,14 @@ hold off
 xlim([0.5 8.5])
 ylim([0 1.5])
 grid on
-legend({'RSLD','WRSLD v1','WRSLD v2'})
+legend({'RSLD','ERSLD','WERSLD'})
 title('Results background')
 xlabel('Target')
 ylabel('Attenuation [db/cm/MHz]')
 
 %% CV
-figure('Units','centimeters', 'Position',[5 5 12 8])
+fig = figure(17);
+fig.Units = 'centimeters'; fig.Position = [5 5 12 8]; 
 plot(resultsRSLD.stdInc./resultsRSLD.meanInc*100,'o', 'LineWidth',2)
 hold on,
 plot(results1.stdInc./results1.meanInc*100, 'x', 'LineWidth',2)
@@ -510,12 +521,13 @@ hold off
 xlim([0.5 8.5])
 ylim([0 60])
 grid on
-legend({'RSLD','WRSLD v1','WRSLD v2'})
+legend({'RSLD','ERSLD','WERSLD'})
 title('Results inclusion')
 xlabel('Target')
 ylabel('Coefficient of Variation [%]')
 
-figure('Units','centimeters', 'Position',[5 5 12 8])
+fig = figure(18);
+fig.Units = 'centimeters'; fig.Position = [5 5 12 8]; 
 plot(resultsRSLD.stdBack./resultsRSLD.meanBack*100,'o', 'LineWidth',2)
 hold on,
 plot(results1.stdBack./results1.meanBack*100, 'x', 'LineWidth',2)
@@ -525,13 +537,14 @@ hold off
 xlim([0.5 8.5])
 ylim([0 60])
 grid on
-legend({'RSLD','WRSLD v1','WRSLD v2'})
+legend({'RSLD','ERSLD','WERSLD'})
 title('Results background')
 xlabel('Target')
 ylabel('Coefficient of Variation [%]')
 
 %% Mean Percentage error
-figure('Units','centimeters', 'Position',[5 5 12 8])
+fig = figure(19);
+fig.Units = 'centimeters'; fig.Position = [5 5 12 8]; 
 plot(resultsRSLD.MPEInc, 'o', 'LineWidth',2)
 hold on,
 plot(results1.MPEInc, 'x', 'LineWidth',2)
@@ -541,12 +554,13 @@ hold off
 xlim([0.5 8.5])
 ylim([-30 100])
 grid on
-legend({'RSLD','WRSLD v1','WRSLD v2'}, 'Location','northwest')
+legend({'RSLD','ERSLD','WERSLD'}, 'Location','northwest')
 title('Results inclusion')
 xlabel('Target')
 ylabel('MPE %')
 
-figure('Units','centimeters', 'Position',[5 5 12 8])
+fig = figure(20);
+fig.Units = 'centimeters'; fig.Position = [5 5 12 8]; 
 plot(resultsRSLD.MPEBack, 'o', 'LineWidth',2)
 hold on,
 plot(results1.MPEBack, 'x', 'LineWidth',2)
@@ -556,18 +570,12 @@ hold off
 xlim([0.5 8.5])
 ylim([-30 100])
 grid on
-legend({'RSLD','WRSLD v1','WRSLD v2'}, 'Location','northwest')
+legend({'RSLD','ERSLD','WERSLD'}, 'Location','northwest')
 title('Results background')
 xlabel('Target')
 ylabel('MPE %')
 
-%% ROI
-figure('Units','centimeters', 'Position',[5 5 12 8])
-[~,~,hC] = imoverlay2(Bmode,AttInterp,dynRange,attRange,0.5,x,z,back|inc,x,z);
-xlabel('x [cm]')
-ylabel('y [cm]')
-hC.Label.String = 'Attenuation [db/cm/MHz]';
-
+%%
 targetDir = fullfile(figDir,'Overall');
 if(~exist(targetDir,"dir")), mkdir(targetDir); end
 save_all_figures_to_directory(targetDir);

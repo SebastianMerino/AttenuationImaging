@@ -2,10 +2,10 @@
 % Total Variation: 0.5*||A*u(:)-b||_2^2 + lambda*TV(u)
 function u = IRLS_ANIS_TV(b,A,mu,M,N,tol,mask,minimask)
 
-[u,~] = cgs2(A'*A,A'*b,1e-6,20);
+[u,~] = cgs(A'*A,A'*b,1e-6,20);
 %figure(109); imagesc(8.686*reshape(u,M,N)); colormap pink; caxis([0 1.2])
 
-G(1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc2(u,M,N,minimask);
+G(1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_anisotropic(u,M,N,minimask);
 
 D = spdiags([-ones(M,1) ones(M,1)], [0 1], M,M+1);
 D(:,end) = [];
@@ -60,9 +60,9 @@ while error > tol && ite_irls < 20
     AtA = A'*A;
     %mu=5000;
     %[u] = cgs(AtA + mu*D'*W*D, A'*b,1e-6,200);
-    [u] = cgs2( AtA + mu*Dx'*Wx*Dx + mu*Dy'*Wy*Dy , A'*b, 1e-6 , 20, u );
+    [u,~] = cgs( AtA + mu*Dx'*Wx*Dx + mu*Dy'*Wy*Dy , A'*b, 1e-6 , 20);
     
-    G(ite_irls+1,1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc2(u,M,N,minimask);
+    G(ite_irls+1,1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_anisotropic(u,M,N,minimask);
     error = abs(G(ite_irls+1) - G(ite_irls));
     
 end

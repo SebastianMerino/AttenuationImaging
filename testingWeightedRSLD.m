@@ -2,15 +2,15 @@ clear,clc
 close all
 addpath('./functions_v7');
 %%
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
-% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\ID316V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\ID316V2\06-08-2023-Generic'];
 
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\ID544V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\ID544V2\06-08-2023-Generic'];
 
 croppedDir = [targetDir,'\cropped'];
 figDir = [targetDir,'\fig'];
@@ -110,14 +110,14 @@ end
 [Xq,Zq] = meshgrid(x,z);
 AttInterp = interp2(X,Z,BR(:,:,1),Xq,Zq);
 
-r.meanInc = mean(AttInterp(inc),"omitmissing");
-r.stdInc = std(AttInterp(inc),"omitmissing");
-r.meanBack = mean(AttInterp(back),"omitmissing");
-r.stdBack = std(AttInterp(back),"omitmissing");
+r.meanInc = mean(AttInterp(inc),"omitnan");
+r.stdInc = std(AttInterp(inc),"omitnan");
+r.meanBack = mean(AttInterp(back),"omitnan");
+r.stdBack = std(AttInterp(back),"omitnan");
 r.MPEInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)) /...
-    groundTruthTargets(iAcq),"omitmissing") * 100;
+    groundTruthTargets(iAcq),"omitnan") * 100;
 r.MPEBack = mean( (AttInterp(inc) - groundTruthTargets(9)) /...
-    groundTruthTargets(9),"omitmissing") * 100;
+    groundTruthTargets(9),"omitnan") * 100;
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 RSLD(iAcq) = r;
 
@@ -257,14 +257,14 @@ end
 [Xq,Zq] = meshgrid(x,z);
 AttInterp = interp2(X,Z,BRW(:,:,1),Xq,Zq);
 
-r.meanInc = mean(AttInterp(inc),"omitmissing");
-r.stdInc = std(AttInterp(inc),"omitmissing");
-r.meanBack = mean(AttInterp(back),"omitmissing");
-r.stdBack = std(AttInterp(back),"omitmissing");
+r.meanInc = mean(AttInterp(inc),"omitnan");
+r.stdInc = std(AttInterp(inc),"omitnan");
+r.meanBack = mean(AttInterp(back),"omitnan");
+r.stdBack = std(AttInterp(back),"omitnan");
 r.MPEInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)) /...
-    groundTruthTargets(iAcq),"omitmissing") * 100;
+    groundTruthTargets(iAcq),"omitnan") * 100;
 r.MPEBack = mean( (AttInterp(inc) - groundTruthTargets(9)) /...
-    groundTruthTargets(9),"omitmissing") * 100;
+    groundTruthTargets(9),"omitnan") * 100;
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 WRSLD1(iAcq) = r;
 
@@ -374,14 +374,14 @@ end
 [Xq,Zq] = meshgrid(x,z);
 AttInterp = interp2(X,Z,BRW2(:,:,1),Xq,Zq);
 
-r.meanInc = mean(AttInterp(inc),"omitmissing");
-r.stdInc = std(AttInterp(inc),"omitmissing");
-r.meanBack = mean(AttInterp(back),"omitmissing");
-r.stdBack = std(AttInterp(back),"omitmissing");
+r.meanInc = mean(AttInterp(inc),"omitnan");
+r.stdInc = std(AttInterp(inc),"omitnan");
+r.meanBack = mean(AttInterp(back),"omitnan");
+r.stdBack = std(AttInterp(back),"omitnan");
 r.MPEInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)) /...
-    groundTruthTargets(iAcq),"omitmissing") * 100;
+    groundTruthTargets(iAcq),"omitnan") * 100;
 r.MPEBack = mean( (AttInterp(inc) - groundTruthTargets(9)) /...
-    groundTruthTargets(9),"omitmissing") * 100;
+    groundTruthTargets(9),"omitnan") * 100;
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 WRSLD2(iAcq) = r;
 

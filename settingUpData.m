@@ -1,18 +1,18 @@
 clear,clc
 addpath('./functions_v7');
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
-% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\ID544V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\ID316V2\06-08-2023-Generic'];
 rawFiles = dir([targetDir,'\*.rf']);
 croppedDir = [targetDir,'\cropped'];
 if (~exist(croppedDir,"dir")), mkdir(croppedDir); end
 
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\ID544V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\ID544V2\06-08-2023-Generic'];
 refFiles = dir([refDir,'\*.rf']);
 
 
