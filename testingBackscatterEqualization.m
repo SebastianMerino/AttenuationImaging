@@ -22,7 +22,7 @@ groundTruthTargets = [0.52,0.55,0.74,0.81,0.75,0.97,0.95,0.95,0.55];
 c1x = 1.9; c1z = 1.93; roiL = 0.9; roiD = 0.6;
 %%
 for iAcq = 1:8
-% iAcq = 8;
+iAcq = 8;
 load([croppedDir,'\T',num2str(iAcq),'.mat'])
 load([refDir,'\compensation.mat']);
 
@@ -137,8 +137,8 @@ end
 % title('Equalized B-mode')
 % 
 % %BW = ones(size(Bmode));
-% h = fspecial("average",[50 5]);
-% blurred = imfilter(Bmode,h,"symmetric");
+h = fspecial("average",[50 5]);
+blurred = imfilter(Bmode,h,"symmetric");
 
 %% Refining mask 
 % Launch the SEGMENTATION TOOL

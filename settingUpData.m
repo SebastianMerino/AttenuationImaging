@@ -51,7 +51,7 @@ for iAcq = 1:length(rawFiles)
 
 
     %% SETTING PARAMETERS
-    blocksize = 20;     % Block size in wavelengths
+    blocksize = 15;     % Block size in wavelengths
     c0 = 1540;
     %freq_L = 2; freq_H = 9;
     freq_L = 3; freq_H = 8;
