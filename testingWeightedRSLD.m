@@ -2,15 +2,15 @@ clear,clc
 close all
 addpath('./functions_v7');
 %%
-% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-%     '\ID316V2\06-08-2023-Generic'];
-targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\ID316V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+    '\ID316V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\ID316V2\06-08-2023-Generic'];
 
-% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-%     '\ID544V2\06-08-2023-Generic'];
-refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\ID544V2\06-08-2023-Generic'];
+refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+    '\ID544V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\ID544V2\06-08-2023-Generic'];
 
 croppedDir = [targetDir,'\cropped'];
 figDir = [targetDir,'\fig'];
@@ -20,9 +20,9 @@ if (~exist(figDir,"dir")), mkdir(figDir); end
 % Attenuation values from T1 to T8 and background, in that order
 groundTruthTargets = [0.52,0.55,0.74,0.81,0.75,0.97,0.95,0.95,0.55];
 c1x = 1.9; c1z = 1.93; roiL = 0.9; roiD = 0.6;
-
+%%
 for iAcq = 1:8
-%iAcq = 8;
+%iAcq = 7;
 load([croppedDir,'\T',num2str(iAcq),'.mat'])
 load([refDir,'\compensation.mat']);
 
@@ -90,13 +90,15 @@ tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
 % mu = 1e4*[0.4,1.2,3.6];
-mu = 1.2e4;
+%mu = logspace(2,4,5);
+%mu = 1.2e4;
+mu = 3.2e3;
 
 BR = zeros(m,n,length(mu));
 CR = zeros(m,n,length(mu));
 for mm = 1:length(mu)
     mu1 = mu(mm);
-    mu2 = mu1;
+    mu2 = mu1/10;
     [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),mu1,mu2,m,n,tol,mask(:));
 
     BR(:,:,mm) = (reshape(Bn*8.686,m,n));
@@ -122,9 +124,9 @@ r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 RSLD(iAcq) = r;
 
 
-% % Plotting
+% Plotting
 % figure('Units','centimeters', 'Position',[5 5 30 8]);
-% tiledlayout(1,4);
+% tiledlayout(1,size(BR,3)+1);
 % t1 = nexttile;
 % imagesc(x,z,Bmode,dynRange)
 % axis image
@@ -221,7 +223,7 @@ BRW = zeros(m,n,length(mu));
 CR = zeros(m,n,length(mu));
 for mm = 1:length(mu)
     mu1 = mu(mm);
-    mu2 = mu1;
+    mu2 = mu1/10;
     [Bn,Cn] = AlterOpti_ADMM(A1w,A2w,bw,mu1,mu2,m,n,tol,mask(:));
 
     BRW(:,:,mm) = (reshape(Bn*8.686,m,n));
@@ -338,7 +340,7 @@ BRW2 = zeros(m,n,length(mu));
 CR = zeros(m,n,length(mu));
 for mm = 1:length(mu)
     mu1 = mu(mm);
-    mu2 = mu1;
+    mu2 = mu1/10;
     [Bn,Cn] = AlterOpti_ADMM(A1w,A2w,bw,mu1,mu2,m,n,tol,mask(:));
 
     BRW2(:,:,mm) = (reshape(Bn*8.686,m,n));
@@ -346,7 +348,7 @@ for mm = 1:length(mu)
 end
 
 
-% Plotting
+% % Plotting
 % figure('Units','centimeters', 'Position',[5 5 30 8]);
 % tiledlayout(1,4);
 % t1 = nexttile;

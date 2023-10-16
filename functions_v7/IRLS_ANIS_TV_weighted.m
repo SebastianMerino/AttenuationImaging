@@ -6,37 +6,32 @@ function [u,G] = IRLS_ANIS_TV_weighted(b,A,mu,M,N,tol,mask,minimask,W)
 %figure(109); imagesc(8.686*reshape(u,M,N)); colormap pink; caxis([0 1.2])
 
 G(1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_anisotropic(u,M,N,W);
+Wdiag = spdiags(W(:),0,M*N,M*N);
 
 D = spdiags([-ones(M,1) ones(M,1)], [0 1], M,M+1);
 D(:,end) = [];
 D(M,M) = 0;
-Dx = kron(speye(N),D);
+Dy = kron(speye(N),D);
+Dy = Wdiag*Dy;
 
 D = spdiags([-ones(N,1) ones(N,1)], [0 1], N,N+1);
 D(:,end) = [];
 D(N,N) = 0;
-Dy = kron(D,speye(M));
-
-D = [Dx' Dy']';
+Dx = kron(D,speye(M));
+Dx = Wdiag*Dx;
 
 ite_irls = 0;
 error = 1;
 
 while error > tol && ite_irls < 20
     
-    X = reshape(u,M,N);
     ite_irls = ite_irls + 1;
-    Dh = [diff(X,[],1);zeros(1,N)];
-    Dv = [diff(X,[],2),zeros(M,1)];
-
-    % WEIGHTING DIFFERENCES
-%     figure,imagesc(Dh)
-%     figure,imagesc(Dv)
-    Dh = Dh.*W;
-    Dv = Dv.*W;
-%     figure,imagesc(Dh)
-%     figure,imagesc(Dv)
-
+    
+    Dh = Dx*u;
+    Dv = Dy*u;
+    
+    eps = 0.1;
+    
     Px = abs(Dh + eps);
     Px = 1./Px;
     Px = Px(:).*minimask;
@@ -52,18 +47,12 @@ while error > tol && ite_irls < 20
     Wy = kron(speye(1),omega);
     
     AtA = A'*A;
-    %mu=5000;
-    %[u] = cgs(AtA + mu*D'*W*D, A'*b,1e-6,200);
-    [u,~] = cgs( AtA + mu*Dx'*Wx*Dx + mu*Dy'*Wy*Dy , A'*b, 1e-6 , 20);
+    [u,~] = pcg( AtA + mu*Dx'*Wx*Dx + mu*Dy'*Wy*Dy , A'*b, 1e-6 , 20, [], [], u);
     
     G(ite_irls+1,1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_anisotropic(u,M,N,W);
     error = abs(G(ite_irls+1) - G(ite_irls));
-
-%     figure,imagesc(reshape(u*8.686,M,N),[0.5 1.2])
-
+    % figure, imagesc(reshape(u,M,N)); % NUNCA DESCOMENTAR O CRASHEARA
 end
-
-%figure(909); plot(1:length(G),G);
 
 end
 
