@@ -18,6 +18,7 @@ if (~exist(figDir,"dir")), mkdir(figDir); end
 
 %% Loading data
 for iAcq = 1:8
+%iAcq = 8;
 load([croppedDir,'\T',num2str(iAcq),'.mat'])
 load([refDir,'\compensation.mat']);
 attRange = [0.4,1.1];
@@ -92,58 +93,60 @@ tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
 mu = logspace(2.5,3.5,3);
-mu2 = mu/100;
-BR = zeros(m,n,length(mu));
-CR = zeros(m,n,length(mu));
+mu2 = logspace(0.5,1.5,3);
+BR = zeros(m,n,length(mu2));
+CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
-    tic
-    [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),mu(mm),mu2(mm),m,n,tol,mask(:));
-    toc
-    BR(:,:,mm) = (reshape(Bn*8.686,m,n));
-    CR(:,:,mm) = (reshape(Cn,m,n));
+    for mm2 = 1:length(mu2)
+        tic
+        [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),mu(mm),mu2(mm2),m,n,tol,mask(:));
+        toc
+        BR(:,:,mm2) = (reshape(Bn*8.686,m,n));
+        CR(:,:,mm2) = (reshape(Cn,m,n));
+    end
+    
+    % Plotting
+    figure('Units','centimeters', 'Position',[5 5 30 12]);
+    tl = tiledlayout(2,size(BR,3)+1);
+    title(tl,'Isotropic RSLD')
+    t1 = nexttile;
+    imagesc(x,z,Bmode,dynRange)
+    axis equal
+    xlim([x_ACS(1) x_ACS(end)]),
+    ylim([z_ACS(1) z_ACS(end)]),
+    colormap(t1,gray)
+    colorbar(t1,'westoutside')
+    title('Bmode')
+    
+    for ii = 1:size(BR,3)
+        t2 = nexttile; 
+        imagesc(x_ACS,z_ACS,BR(:,:,ii), attRange)
+        colormap(t2,turbo)
+        axis equal tight
+        title(['RSLD, \mu=',num2str(mu(mm),2)])
+    end
+    c = colorbar;
+    c.Label.String = 'Att. [db/cm/MHz]';
+    
+    t3 = nexttile;
+    imagesc(x,z,Bmode,dynRange)
+    axis equal
+    xlim([x_ACS(1) x_ACS(end)]),
+    ylim([z_ACS(1) z_ACS(end)]),
+    colormap(t3,gray)
+    colorbar(t3,'westoutside')
+    title('Bmode')
+    
+    for ii = 1:size(BR,3)
+        t2 = nexttile; 
+        imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
+        colormap(t2,parula)
+        axis equal tight
+        title(['RSLD, \mu=',num2str(mu2(ii),2)])
+    end
+    c = colorbar;
+    c.Label.String = 'BS log ratio (a.u.)';
 end
-
-% Plotting
-figure('Units','centimeters', 'Position',[5 5 30 12]);
-tl = tiledlayout(2,size(BR,3)+1);
-title(tl,'Isotropic RSLD')
-t1 = nexttile;
-imagesc(x,z,Bmode,dynRange)
-axis equal
-xlim([x_ACS(1) x_ACS(end)]),
-ylim([z_ACS(1) z_ACS(end)]),
-colormap(t1,gray)
-colorbar(t1,'westoutside')
-title('Bmode')
-
-for ii = 1:size(BR,3)
-    t2 = nexttile; 
-    imagesc(x_ACS,z_ACS,BR(:,:,ii), attRange)
-    colormap(t2,turbo)
-    axis equal tight
-    title(['RSLD, \mu=',num2str(mu(ii),2)])
-end
-c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
-
-t3 = nexttile;
-imagesc(x,z,Bmode,dynRange)
-axis equal
-xlim([x_ACS(1) x_ACS(end)]),
-ylim([z_ACS(1) z_ACS(end)]),
-colormap(t3,gray)
-colorbar(t3,'westoutside')
-title('Bmode')
-
-for ii = 1:size(BR,3)
-    t2 = nexttile; 
-    imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
-    colormap(t2,parula)
-    axis equal tight
-    title(['RSLD, \mu=',num2str(mu2(ii),2)])
-end
-c = colorbar;
-c.Label.String = 'BS log ratio (a.u.)';
 
 %% RSLD ANISOTROPIC
 
@@ -325,7 +328,7 @@ for ii = 1:size(BR,3)
     imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
     colormap(t2,parula)
     axis equal tight
-    title(['RSLD, \mu=',num2str(mu(ii)/30,2)])
+    title(['RSLD, \mu=',num2str(mu2(ii),2)])
 end
 c = colorbar;
 c.Label.String = 'BS log ratio (a.u.)';
@@ -440,7 +443,7 @@ for ii = 1:size(BR,3)
     imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
     colormap(t2,parula)
     axis equal tight
-    title(['RSLD, \mu=',num2str(mu(ii)/30,2)])
+    title(['RSLD, \mu=',num2str(mu2(ii),2)])
 end
 c = colorbar;
 c.Label.String = 'BS log ratio (a.u.)';
@@ -511,7 +514,7 @@ for ii = 1:size(BR,3)
     imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
     colormap(t2,parula)
     axis equal tight
-    title(['RSLD, \mu=',num2str(mu(ii)/30,2)])
+    title(['RSLD, \mu=',num2str(mu2(ii),2)])
 end
 c = colorbar;
 c.Label.String = 'BS log ratio (a.u.)';
@@ -582,7 +585,7 @@ for ii = 1:size(BR,3)
     imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
     colormap(t2,parula)
     axis equal tight
-    title(['RSLD, \mu=',num2str(mu(ii)/30,2)])
+    title(['RSLD, \mu=',num2str(mu2(ii),2)])
 end
 c = colorbar;
 c.Label.String = 'BS log ratio (a.u.)';
@@ -649,7 +652,7 @@ for ii = 1:size(BR,3)
     imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
     colormap(t2,parula)
     axis equal tight
-    title(['RSLD, \mu=',num2str(mu(ii)/30,2)])
+    title(['RSLD, \mu=',num2str(mu2(ii),2)])
 end
 c = colorbar;
 c.Label.String = 'BS log ratio (a.u.)';
@@ -723,7 +726,7 @@ for ii = 1:size(BR,3)
     imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
     colormap(t2,parula)
     axis equal tight
-    title(['RSLD, \mu=',num2str(mu(ii)/30,2)])
+    title(['RSLD, \mu=',num2str(mu2(ii),2)])
 end
 c = colorbar;
 c.Label.String = 'BS log ratio (a.u.)';
@@ -792,7 +795,7 @@ for ii = 1:size(BR,3)
     imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
     colormap(t2,parula)
     axis equal tight
-    title(['RSLD, \mu=',num2str(mu(ii)/30,2)])
+    title(['RSLD, \mu=',num2str(mu2(ii),2)])
 end
 c = colorbar;
 c.Label.String = 'BS log ratio (a.u.)';
@@ -864,7 +867,147 @@ for ii = 1:size(BR,3)
     imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
     colormap(t2,parula)
     axis equal tight
-    title(['RSLD, \mu=',num2str(mu(ii)/30,2)])
+    title(['RSLD, \mu=',num2str(mu2(ii),2)])
+end
+c = colorbar;
+c.Label.String = 'BS log ratio (a.u.)';
+
+%% Minimizing BS log ratio
+b = (log(Sp) - log(Sd)) - (diffraction_compensation);
+
+A1 = kron( 4*L*f , speye(m*n) );
+A2 = kron( ones(size(f)) , speye(m*n) );
+A = [A1 A2];
+
+% Regularization: Au = b
+tol = 1e-3;
+
+clear mask
+mask = ones(m,n,p);
+mu = logspace(2.5,3.5,3);
+%mu = [1e3,1e3,1e3];
+mu2 = mu/100;
+%mu2 = logspace(0.5,1.5,3);
+%mu2 = [3.2,3.2,3.2];
+BR = zeros(m,n,length(mu));
+CR = zeros(m,n,length(mu));
+for mm = 1:length(mu)
+    tic
+    [Bn,Cn] = AlterOptiAdmmAnis_v2(A1,A2,b(:),mu(mm),mu2(mm),m,n,tol,mask(:),w);
+    toc
+    BR(:,:,mm) = (reshape(Bn*8.686,m,n));
+    CR(:,:,mm) = (reshape(Cn,m,n));
+end
+
+% Plotting
+figure('Units','centimeters', 'Position',[5 5 30 12]);
+tl = tiledlayout(2,size(BR,3)+1);
+title(tl,'TV and Tikhonov reg.')
+t1 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+axis equal
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+colormap(t1,gray)
+colorbar(t1,'westoutside')
+title('Bmode')
+
+for ii = 1:size(BR,3)
+    t2 = nexttile; 
+    imagesc(x_ACS,z_ACS,BR(:,:,ii), attRange)
+    colormap(t2,turbo)
+    axis equal tight
+    title(['RSLD, \mu=',num2str(mu(ii),2)])
+end
+c = colorbar;
+c.Label.String = 'Att. [db/cm/MHz]';
+
+t3 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+axis equal
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+colormap(t3,gray)
+colorbar(t3,'westoutside')
+title('Bmode')
+
+for ii = 1:size(BR,3)
+    t2 = nexttile; 
+    imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
+    colormap(t2,parula)
+    axis equal tight
+    title(['RSLD, \mu=',num2str(mu2(ii),2)])
+end
+c = colorbar;
+c.Label.String = 'BS log ratio (a.u.)';
+
+%% Minimizing BS log ratio and weighting
+b = (log(Sp) - log(Sd)) - (diffraction_compensation);
+
+A1 = kron( 4*L*f , speye(m*n) );
+A2 = kron( ones(size(f)) , speye(m*n) );
+A = [A1 A2];
+
+W = repmat(w,[1 1 p]);
+W = spdiags(W(:),0,m*n*p,m*n*p);
+bw = W*b(:);
+
+A1w = W*A1;
+A2w = W*A2;
+
+% Regularization: Au = b
+tol = 1e-3;
+
+clear mask
+mask = ones(m,n,p);
+mu = logspace(2.5,3.5,3);
+mu2 = mu/100;
+BR = zeros(m,n,length(mu));
+CR = zeros(m,n,length(mu));
+for mm = 1:length(mu)
+    tic
+    [Bn,Cn] = AlterOptiAdmmAnis_v3(A1w,A2w,bw,mu(mm),mu2(mm),m,n,tol,mask(:),w);
+    toc
+    BR(:,:,mm) = (reshape(Bn*8.686,m,n));
+    CR(:,:,mm) = (reshape(Cn,m,n));
+end
+
+% Plotting
+figure('Units','centimeters', 'Position',[5 5 30 12]);
+tl = tiledlayout(2,size(BR,3)+1);
+title(tl,'TV, Tikhonov reg and weights')
+t1 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+axis equal
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+colormap(t1,gray)
+colorbar(t1,'westoutside')
+title('Bmode')
+
+for ii = 1:size(BR,3)
+    t2 = nexttile; 
+    imagesc(x_ACS,z_ACS,BR(:,:,ii), attRange)
+    colormap(t2,turbo)
+    axis equal tight
+    title(['RSLD, \mu=',num2str(mu(ii),2)])
+end
+c = colorbar;
+c.Label.String = 'Att. [db/cm/MHz]';
+
+t3 = nexttile;
+imagesc(x_ACS,z_ACS,w)
+colormap(t3,parula)
+colorbar(t3,'westoutside')
+axis image
+title('Weights')
+
+for ii = 1:size(BR,3)
+    t2 = nexttile; 
+    imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
+    colormap(t2,parula)
+    axis equal tight
+    title(['RSLD, \mu=',num2str(mu2(ii),2)])
 end
 c = colorbar;
 c.Label.String = 'BS log ratio (a.u.)';
