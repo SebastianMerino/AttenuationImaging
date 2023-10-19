@@ -3,23 +3,28 @@ close all
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
 % targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\ID316V2\06-08-2023-Generic'];
 
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
 % refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\ID544V2\06-08-2023-Generic'];
 
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
+    '\Attenuation\Timana\data'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\Timana\ref'];
+
 croppedDir = [targetDir,'\cropped'];
-figDir = [targetDir,'\fig\18-10'];
+figDir = [targetDir,'\fig\19-10'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 %% Loading data
-for iAcq = 1:8
-iAcq = 8;
+for iAcq = 1:6
+%iAcq = 8;
 load([croppedDir,'\T',num2str(iAcq),'.mat'])
 load([refDir,'\compensation.mat']);
 attRange = [0.4,1.1];

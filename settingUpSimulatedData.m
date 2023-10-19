@@ -10,11 +10,10 @@ croppedDir = [targetDir,'\cropped'];
 if (~exist(croppedDir,"dir")), mkdir(croppedDir); end
 
 targetFiles = dir([targetDir,'\*.mat']);
-refFiles = dir([refDir,'\*.mat']);
+refFiles = dir([refDir,'\rf*.mat']);
 
 %% Cropping data
 for iAcq = 1:length(targetFiles)
-    %iAcq = 6;
     load([targetDir,'\',targetFiles(iAcq).name]);
     disp(['Target: ', targetFiles(iAcq).name]);
     attRange = [0.3,1.2];
@@ -28,29 +27,31 @@ for iAcq = 1:length(targetFiles)
     dynRange = [-50,0];
 
     % Plotting
-    [pSpectrum,f] = pwelch(rf,hamming(500),300,1024,fs);
-    meanSpectrum = mean(pSpectrum,2);
-    figure, plot(f,meanSpectrum)
-    xlim([0 fs/2])
-    title('Mean power spectrum')
-    
-    Bmode = db(hilbert(sam1));
-    Bmode = Bmode - max(Bmode(:));
-    figure, imagesc(x,z,Bmode); axis image; colormap gray; clim(dynRange);
-    hb2=colorbar; ylabel(hb2,'dB')
-    xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
+%     [pSpectrum,f] = pwelch(rf,hamming(500),300,1024,fs);
+%     meanSpectrum = mean(pSpectrum,2);
+%     figure, plot(f,meanSpectrum)
+%     xlim([0 fs/2])
+%     title('Mean power spectrum')
+%     
+%     Bmode = db(hilbert(sam1));
+%     Bmode = Bmode - max(Bmode(:));
+%     figure, imagesc(x,z,Bmode); axis image; colormap gray; clim(dynRange);
+%     hb2=colorbar; ylabel(hb2,'dB')
+%     xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 
 
     %% SETTING PARAMETERS
     blocksize = 15;     % Block size in wavelengths
     c0 = 1540;
     %freq_L = 2; freq_H = 9;
-    freq_L = 3; freq_H = 8;
+    freq_L = 3.3; freq_H = 8.7;
+    %freqC = 6.6;
+    freqC = (freq_L + freq_H )/2;
     overlap_pc      = 0.8;
     winsize         = 0.5;
     % Region for attenuation imaging
     x_inf = -2; x_sup = 2;
-    z_inf = 0; z_sup = 6;
+    z_inf = 0.5; z_sup = 4.5;
 
     % Limits for ACS estimation
     ind_x = x_inf <= x & x <= x_sup;
@@ -63,7 +64,7 @@ for iAcq = 1:length(targetFiles)
     freq_L = freq_L*1e6;   % (Hz)
     freq_H = freq_H*1e6;   % (Hz)
 
-    wl = c0/mean([freq_L freq_H]);   % Wavelength (m)
+    wl = c0/freqC/1e6;   % Wavelength (m)
 
     % Number of repetitions of datablocks within a single datablock
     rpt = 1/(1-overlap_pc);   % r = rep = 1/(1-overlap)
@@ -149,7 +150,7 @@ for iRef = 1:length(refFiles)
     x = x(1:L2);
     z = z(1:L1);
     fprintf("Checking difference, x: %f, z: %f\n",norm(x1-x), norm(z1-z))
-    samRef = RF;
+    samRef = rf;
     samRef = samRef(ind_z,ind_x);
     samRef = samRef(:,1:wx*(ncol+rpt-1));
     samRef = samRef(1:wz*(nrow+rpt-1),:);
@@ -160,8 +161,8 @@ end
 windowing = tukeywin(nw,0.25);   % Tukey Window. Parameter 0.25
 windowing = windowing*ones(1,nx);
 
-att_ref = attenuation_phantoms_Np(f, 3, []);
-%att_ref = 0.53*f/8.686; % From phantom especifications
+%att_ref = attenuation_phantoms_Np(f, 3, []);
+att_ref = 0.3*f/8.686; % From phantom especifications
 
 att_ref_map = zeros(m,n,p);
 for jj=1:n
@@ -188,19 +189,21 @@ for jj=1:n
         sub_block_d = ref{2}(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
         [tempSp2,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
         [tempSd2,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
-        % Reference 3
-        sub_block_p = ref{3}(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
-        sub_block_d = ref{3}(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
-        [tempSp3,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
-        [tempSd3,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
-        % Reference 4
-        sub_block_p = ref{4}(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
-        sub_block_d = ref{4}(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
-        [tempSp4,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
-        [tempSd4,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
+%         % Reference 3
+%         sub_block_p = ref{3}(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
+%         sub_block_d = ref{3}(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
+%         [tempSp3,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
+%         [tempSd3,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
+%         % Reference 4
+%         sub_block_p = ref{4}(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
+%         sub_block_d = ref{4}(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
+%         [tempSp4,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
+%         [tempSd4,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
 
-        tempSp = 1/4*(tempSp1 + tempSp2 + tempSp3 + tempSp4);
-        tempSd = 1/4*(tempSd1 + tempSd2 + tempSd3 + tempSd4);
+%         tempSp = 1/4*(tempSp1 + tempSp2 + tempSp3 + tempSp4);
+%         tempSd = 1/4*(tempSd1 + tempSd2 + tempSd3 + tempSd4);
+        tempSp = 1/2*(tempSp1 + tempSp2);
+        tempSd = 1/2*(tempSd1 + tempSd2);
         Sp_ref(ii,jj,:) = (tempSp(rang));
         Sd_ref(ii,jj,:) = (tempSd(rang));
     end

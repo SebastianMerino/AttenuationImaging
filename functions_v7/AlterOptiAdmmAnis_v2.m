@@ -1,4 +1,4 @@
-function [B,C,F] = AlterOptiAdmmAnis_v2(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
+function [B,C,F] = AlterOptiAdmmAnis_v2(A1,A2,b,mu1,mu2,m,n,tol,mask)
 
 p = length(mask)/(m*n);
 minimask = reshape(mask,[m n p]);
@@ -22,7 +22,7 @@ F(1) = 1/2*(norm( b - A1*B - A2*C ))^2 + mu1*TVcalc_anisotropic(B,m,n,minimask) 
 
 ite  = 0;
 error = 1;
-Wdiag = spdiags(W(:),0,m*n,m*n);
+% Wdiag = spdiags(W(:),0,m*n,m*n);
 
 while abs(error) > tol && ite < 20
     ite = ite + 1;
