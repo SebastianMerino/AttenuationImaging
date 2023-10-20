@@ -7,13 +7,10 @@
 
 clear; close all; clc; rng shuffle;
 addpath(genpath(pwd))
-%DATA_CAST = 'single';     % set to 'single' or 'gpuArray-single' to speed up computations
-DATA_CAST = 'gpuArray-single';     % set to 'single' or 'gpuArray-single' to speed up computations
+DATA_CAST = 'single';     % set to 'single' or 'gpuArray-single' to speed up computations
+% DATA_CAST = 'gpuArray-single';     % set to 'single' or 'gpuArray-single' to speed up computations
 %delete(gcp)
 %parpool
-BaseDir = '.';
-fileNames = {'layered1.mat','layered2.mat'};
-for iSim = 1:2
 %%
 
 normZero = @(x) x-max(x(:));
@@ -38,51 +35,59 @@ dx = dy;
 %kgrid = makeGrid(Nx, dx, Ny, dy);
 kgrid = kWaveGrid(Nx, dx, Ny, dy);
 
-offset = 5; % to prevent echo top
-
 %%
+
+sd = 0.02;
+medium.sound_speed = 1540;
+%-0*makeDisc(Nx,Ny,0,0,10e-3/dy);
+%medium.sound_speed = medium.sound_speed+1540*sd*randn(size(medium.sound_speed));
+medium.density = 1000; %-0*makeDisc(Nx,Ny,0,0,10e-3/dy);
+medium.density = medium.density + 1000*sd*randn(size(medium.density));
+% load("newliver20.mat")
+% for j =1:Ny
+%     for i=1:Nx
+%         if (liver11(i,j) == 3)
+%             medium.density(i,j)= 1000+1000*0.004*randn(1);
+%         elseif (liver11(i,j) == 1)
+%             medium.density(i,j)= 950+1000*0.001*randn(1);
+% %          elseif (liver11(i,j) == 0.5)
+% %             medium.density(i,j)= 1000+1000*0.004*randn(1);
+%          elseif (liver11(i,j) == 15)
+%             medium.density(i,j)= 1100+1000*0.10*randn(1);
+%             
+%          elseif (liver11(i,j) == 10)
+%             medium.density(i,j)= 1000+1000*0.08*randn(1);    
+%              elseif (liver11(i,j) == 6)
+%              medium.density(i,j)= 900+1000*0.004*randn(1);   
+%         else
+%             medium.density(i,j)= 1000+1000*0.03*randn(1);
+%         end
+%     end
+% end
+
+%medium.density = liver11
 Nx_tot = Nx;
 Ny_tot = Ny;
 rx = ones(Nx_tot,1)*linspace(-Ny_tot*dy/2,Ny_tot*dy/2,Ny_tot);
 rz = linspace(0,Nx_tot*dx,Nx)'*ones(1,Ny_tot);
 
+%medium.alpha_coeff = 0.5;
+
 % ACTIVATE THIS SECTION FOR INCLUSION
 radius_disk = 10e-3;
 center_depth = 25e-3;
 
-%%
-maskLayer = rz > 15e-3 & rz < 30e-3;
+offset = 5; % to prevent echo top
+circleA =single( 0.5 * makeDisc(Nx_tot, Ny_tot, round(center_depth/dx)+offset, Ny_tot/2, round(radius_disk/dx)));
+medium.alpha_coeff  = 0.5 + circleA;
 
-sd1 = 0.02; sd2 = 0.05;
-medium.sound_speed = 1540;
-medium.density = 1000 + zeros(Nx,Ny);
-medium.density = medium.density + 1000*sd1*randn(size(medium.density)).*maskLayer;
-medium.density = medium.density + 1000*sd2*randn(size(medium.density)).*~maskLayer;
-medium.density = single(medium.density);
+% load("em_1_att.mat")
+% medium.alpha_coeff = em;
 
-switch iSim
-    case 1
-        medium.alpha_coeff = 0.5 + zeros(Nx,Ny);
-        medium.alpha_coeff = medium.alpha_coeff + maskLayer*0.5;
-        medium.alpha_coeff = single(medium.alpha_coeff);
-    case 2
-        medium.alpha_coeff = 0.5 + zeros(Nx,Ny);
-        medium.alpha_coeff = single(medium.alpha_coeff);
-end
-figure, tiledlayout(1,2),
-nexttile,
-imagesc(100*rx(1,:),100*rz(:,1),medium.density)
-colorbar,
-axis image
-
-nexttile,
-imagesc(100*rx(1,:),100*rz(:,1),medium.alpha_coeff)
-colorbar,
-axis image
-
-%%
+%medium.alpha_power = 1.05;
 medium.alpha_power = 1;
 medium.alpha_mode = 'no_dispersion';
+
 
 c0 = 1540;
 t_end = (Nx*dx)*2/c0;     % [s]
@@ -104,6 +109,7 @@ nLines = floor(Ny/ratio); % vary slightly plm_y to get nLines=128
 bf_data_final = nan(kgrid.Nt ,nLines);
 
 for ii = 1:nLines
+
     jj = ratio*ii;
     axis_x = rz(:,1);
     axis_y = rx(1,:);
@@ -119,8 +125,12 @@ for ii = 1:nLines
     figure (6); plot(aperture_point_src(:,1),aperture_point_src(:,2),'sb');
     hold on; plot(focus_point(:,1),focus_point(:,1),'sr'); hold off;
 
+
+
+
 %%
-    sensor.mask = zeros(Nx, Ny);
+
+ sensor.mask = zeros(Nx, Ny);
     % Need a slight offset here to prevent backwards propagating pulse
     sensor.mask(offset, src_ini:ratio:src_fin) = 1;
     %sensor.directivity_size = 0.2698e-3;
@@ -129,7 +139,10 @@ for ii = 1:nLines
     sensor.directivity_size = 10*kgrid.dx;
     sensor.directivity_angle = zeros(size(sensor.mask));
 
+
+
 %%
+ %amp = 100000; % [au]
     source.p_mask = zeros(Nx, Ny);
     source.p_mask(offset,src_ini:src_fin) = 1;
     apod = boxcar(nnz(source.p_mask));
@@ -170,11 +183,15 @@ for ii = 1:nLines
     % run the simulation
     %colormap gray
     sensor_data = kspaceFirstOrder2D(kgrid, medium, source, sensor, input_args{:});
+
     sensor_data=sensor_data';
     
     
+    
+    
     %%
-    max_apert = 64; % elements
+    
+      max_apert = 64; % elements
     f_number = 2;
     c_bf = 1540;
     bf_data = BFangle(sensor_data,max_apert,fs,c_bf,elem_pitch,'rect',f_number,0);
@@ -188,6 +205,11 @@ for ii = 1:nLines
     end
 
     bf_data_final(:,ii) = bf_data(:,index);
+
+
+%         if ii == 10
+%             keyboard
+%         end
 
 end
     
@@ -206,6 +228,6 @@ axis image
 
 density_map = medium.density;
 attenuation_map = medium.alpha_coeff;
-save([BaseDir,'\',fileNames{iSim}],'rf','x','z','fs','density_map',...
-    'attenuation_map','kgrid','maskLayer');
-end
+save rf_qus_newliver13000_AC_test.mat rf x z fs density_map attenuation_map kgrid
+%return
+
