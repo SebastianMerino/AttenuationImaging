@@ -1,4 +1,6 @@
 function [B,C,F] = AlterOptiAdmmAnis_v2(A1,A2,b,mu1,mu2,m,n,tol,mask)
+% Solver for SLD with Anisotropic Total Variation regularization for ACS 
+% and Tikhonov regularization for BSC
 
 p = length(mask)/(m*n);
 minimask = reshape(mask,[m n p]);

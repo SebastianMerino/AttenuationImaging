@@ -1,6 +1,10 @@
-
-
 function [B,C,F] = AlterOptiAdmmAnisWeighted(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
+% Solver for SLD with Anisotropic TV regularization for ACS and weighted 
+% TV regularization for BSC.
+%
+% Approach by British columbia,
+% SWTV-ACE: Spatially Weighted Regularization Based Attenuation Coefficient
+% Estimation Method for Hepatic Steatosis Detection
 
 p = length(mask)/(m*n);
 minimask = reshape(mask,[m n p]);

@@ -3,21 +3,21 @@ close all
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-%     '\ID316V2\06-08-2023-Generic'];
-targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\ID316V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+    '\ID316V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\ID316V2\06-08-2023-Generic'];
 
-% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-%     '\ID544V2\06-08-2023-Generic'];
-refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\ID544V2\06-08-2023-Generic'];
+refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+    '\ID544V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\ID544V2\06-08-2023-Generic'];
 
 croppedDir = [targetDir,'\cropped'];
 figDir = [targetDir,'\fig\18-10'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 %%
-iAcq = 8;
+iAcq = 4;
 load([croppedDir,'\T',num2str(iAcq),'.mat'])
 load([refDir,'\compensation.mat']);
 attRange = [0.4,1.1];
@@ -51,18 +51,18 @@ A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
 A = [A1 A2];
 
-
-%% Examining spectrum (vertical slices)
-figure,
-for ix=1:n
-    SLDslice = squeeze(b(:,ix,:));
-    imagesc(f,z_ACS,SLDslice, [-3,3])
-    colorbar
-    xlabel('Frequency [Hz]')
-    ylabel('Depth [cm]')
-    title(num2str(ix))
-    pause(0.1)
-end
+% 
+% %% Examining spectrum (vertical slices)
+% figure,
+% for ix=1:n
+%     SLDslice = squeeze(b(:,ix,:));
+%     imagesc(f,z_ACS,SLDslice, [-3,3])
+%     colorbar
+%     xlabel('Frequency [Hz]')
+%     ylabel('Depth [cm]')
+%     title(num2str(ix))
+%     pause(0.1)
+% end
 
 %% Examining spectrum (frequency slices)
 figure,
@@ -71,8 +71,9 @@ for iFreq=1:p
     im = imagesc(x_ACS,z_ACS,SLDslice, [-3,3]);
     %im.AlphaData = (maskBack | maskInc) + 0.5;
 
-    %SLDslice = squeeze(log(Sd(:,:,iFreq)));
-    %imagesc(x_ACS,z_ACS,SLDslice, [11,20])
+    % SLDslice = squeeze(log(Sd(:,:,iFreq)));
+    % imagesc(x_ACS,z_ACS,SLDslice, [11,20])
+    
     colorbar
     xlabel('x [cm]')
     ylabel('Depth [cm]')
@@ -80,6 +81,31 @@ for iFreq=1:p
     pause(0.1)
 end
 
+%% Center of image
+ix = floor(n/2);
+figure,
+for iz = 1:m
+    plot(f,squeeze(log(Sp(iz,ix,:))))
+    hold on
+    plot(f,squeeze(log(Sd(iz,ix,:))))
+    hold off
+    ylim([11 20])
+    legend('Proximal','Distal')
+    xlim([f(1) f(end)])
+    grid on
+    pause(0.1)
+end
+
+%% Spectral log difference
+figure,
+for iz = 1:m
+    plot(f,squeeze(b(iz,ix,:)))   
+    ylim([-4 4])
+    %legend('Proximal','Distal')
+    xlim([f(1) f(end)])
+    grid on
+    pause(0.1)
+end
 %% Masks
 cx = 1.85; cz = 1.9; r = 0.6; rB = 1.2; % Both
 %cx = 1.85; cz = 1.9; r = 0.6; rB = 1.1; % T8
