@@ -14,7 +14,7 @@ BaseDir = '.';
 fileNames = {'layered1.mat','layered2.mat'};
 %% For looping simulations
 
-for iSim = 1:1
+for iSim = 1:2
     %% Generating grid
     elem_pitch = 0.30e-3;
 
@@ -79,7 +79,8 @@ for iSim = 1:1
     t_end = (Nx*dx)*2/c0;     % [s]
     kgrid.makeTime(c0, [], t_end);
     fs = 1/kgrid.dt;
-
+    
+    center_depth = 25e-3;
     focal_distance = center_depth;   % center of circle
     focal_number = 2;
     nAperture = (focal_distance/focal_number)/dy;

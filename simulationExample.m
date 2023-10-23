@@ -189,6 +189,8 @@ sound_speed_map = c0 * ones(Nx_tot, Ny_tot, Nz_tot) .* background_map;
 density_map = rho0 * ones(Nx_tot, Ny_tot, Nz_tot) .* background_map;
 alpha_map = 0.5 + zeros([Nx_tot, Ny_tot, Nz_tot]);      % [dB/(MHz^y cm)]
 
+[Y,X,~] = meshgrid(1:Ny_tot,1:Nx_tot,1:Nz_tot);
+
 homogeneous = true;
 if homogeneous == false
 % define a random distribution of scatterers for the layer
@@ -205,7 +207,6 @@ scattering_rho0 = rho0 * ones(Nx_tot, Ny_tot, Nz_tot) .* scattering_map;
 % y_pos = 15e-3;    % [m]
 % scattering_region3 = makeBall(Nx_tot, Ny_tot, Nz_tot, round(x_pos/dx), round(y_pos/dx), Nz_tot/2, round(radius/dx));
 
-[Y,X,~] = meshgrid(1:Ny_tot,1:Nx_tot,1:Nz_tot);
 startLayer = Nx_tot/2;
 maskLayer = X > startLayer;
 %stopLayer = round(40e-3/dx);
