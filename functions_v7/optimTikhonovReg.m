@@ -1,13 +1,13 @@
-%% Utility functions
 function x = optimTikhonovReg(A,B,Params)
-% Choice of regularization function (Tikhonov matrix)
+% Optimizes the system Ax = B using the generalized Tikhonov regularization
+%   ||Ax-b||^2 + alpha2 * ||Lx||_k
 switch (Params.operator)
-    case 'I'        % Penalizing greater SWS values
+    case 'I'        % Penalizing greater values
         L=speye(size(A,2));
     case 'G'        % Penalizing greater gradients
         L=speye(size(A,2))-circshift(speye(size(A,2)),[0 1]);
         L(end,:)=0;
-    case 'L'
+    case 'L'        % Penalizing customized matrix
         L = Params.L;
 end
 

@@ -1,6 +1,7 @@
-
-
 function [B,C,F] = AlterOptiAdmmAnisWeighted_v2(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
+% Solver for SLD with Anisotropic weighted TV regularization for ACS and BSC.
+% It is recommended to weight the equations too in order to avoid artifacts
+% at the borders of different BSC.
 
 p = length(mask)/(m*n);
 minimask = reshape(mask,[m n p]);
@@ -35,7 +36,7 @@ while abs(error) > tol && ite < 20
     B = IRLS_ANIS_TV_weighted(b-A2*C-D-v,A1,mu1/rho,m,n,tol,mask,minimask,W);
     
     % Second part of ADMM algorithm: BACKSCKATTER
-    [C,errorC] = IRLS_ANIS_TV_weighted(b-A1*B-D-v,A2,mu2/rho,m,n,tol,mask,minimask,W);
+    [C,~] = IRLS_ANIS_TV_weighted(b-A1*B-D-v,A2,mu2/rho,m,n,tol,mask,minimask,W);
 
 %     figure,plot(errorB)
 %     figure,plot(errorC)

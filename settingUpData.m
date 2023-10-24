@@ -217,3 +217,14 @@ end
 
 diffraction_compensation = ( log(Sp_ref) - log(Sd_ref) ) - 4*L*att_ref_map;
 save([refDir,'\compensation.mat'],"diffraction_compensation");
+% %%
+% SLD = ( log(Sp_ref) - log(Sd_ref) );
+% meanSLD = squeeze(mean(mean(SLD,1),2));
+% figure,
+% plot(f,[meanSLD-mean(meanSLD),att_ref-mean(att_ref)])
+% figure,
+% plot(f,meanSLD - att_ref)
+% figure,
+% imagesc(mean(Sp_ref,3)), colorbar
+% figure,
+% imagesc(f,z_ACS,squeeze(mean(Sp_ref,2))),colorbar

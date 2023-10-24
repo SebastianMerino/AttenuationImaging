@@ -11,7 +11,7 @@ DATA_CAST = 'single';     % set to 'single' or 'gpuArray-single' to speed up com
 % DATA_CAST = 'gpuArray-single';     % set to 'single' or 'gpuArray-single' to speed up computations
 
 BaseDir = '.';
-fileNames = {'layered1.mat','layered2.mat'};
+fileNames = {'rf_layered3.mat','rf_layered4.mat'};
 %% For looping simulations
 
 for iSim = 1:2
@@ -41,11 +41,12 @@ for iSim = 1:2
 
     % ACTIVATE THIS SECTION FOR INCLUSION
     % radius_disk = 10e-3;
-    center_depth = 25e-3;
+    % center_depth = 25e-3;
 
     maskLayer = rz > 15e-3 & rz < 30e-3;
 
-    sd1 = 0.02; sd2 = 0.05;
+    %sd1 = 0.02; sd2 = 0.05;
+    sd1 = 0.03; sd2 = 0.03;
     medium.sound_speed = 1540;
     medium.density = 1000 + zeros(Nx,Ny);
     medium.density = medium.density + 1000*sd1*randn(size(medium.density)).*maskLayer;
@@ -79,7 +80,8 @@ for iSim = 1:2
     t_end = (Nx*dx)*2/c0;     % [s]
     kgrid.makeTime(c0, [], t_end);
     fs = 1/kgrid.dt;
-
+    
+    center_depth = 25e-3;
     focal_distance = center_depth;   % center of circle
     focal_number = 2;
     nAperture = (focal_distance/focal_number)/dy;

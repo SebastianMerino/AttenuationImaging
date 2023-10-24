@@ -1,20 +1,23 @@
 clear,clc
 addpath('./functions_v7');
 
-targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
-    '\Attenuation\Timana\data'];
-refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\Timana\ref'];
-
+% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
+%     '\Attenuation\Timana\data'];
+% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\Timana\ref'];
+targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\data'];
+refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\ref'];
 croppedDir = [targetDir,'\cropped'];
 if (~exist(croppedDir,"dir")), mkdir(croppedDir); end
 
-targetFiles = dir([targetDir,'\*.mat']);
+targetFiles = dir([targetDir,'\rf*.mat']);
 refFiles = dir([refDir,'\rf*.mat']);
 
 %% Cropping data
 for iAcq = 1:length(targetFiles)
-    load([targetDir,'\',targetFiles(iAcq).name]);
+    load(fullfile(targetDir,targetFiles(iAcq).name));
     disp(['Target: ', targetFiles(iAcq).name]);
     attRange = [0.3,1.2];
 
@@ -27,17 +30,17 @@ for iAcq = 1:length(targetFiles)
     dynRange = [-50,0];
 
     % Plotting
-%     [pSpectrum,f] = pwelch(rf,hamming(500),300,1024,fs);
-%     meanSpectrum = mean(pSpectrum,2);
-%     figure, plot(f,meanSpectrum)
-%     xlim([0 fs/2])
-%     title('Mean power spectrum')
-%     
-%     Bmode = db(hilbert(sam1));
-%     Bmode = Bmode - max(Bmode(:));
-%     figure, imagesc(x,z,Bmode); axis image; colormap gray; clim(dynRange);
-%     hb2=colorbar; ylabel(hb2,'dB')
-%     xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
+    [pSpectrum,f] = pwelch(rf,hamming(500),300,1024,fs);
+    meanSpectrum = mean(pSpectrum,2);
+    figure, plot(f,meanSpectrum)
+    xlim([0 fs/2])
+    title('Mean power spectrum')
+
+    Bmode = db(hilbert(sam1));
+    Bmode = Bmode - max(Bmode(:));
+    figure, imagesc(x,z,Bmode); axis image; colormap gray; clim(dynRange);
+    hb2=colorbar; ylabel(hb2,'dB')
+    xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 
 
     %% SETTING PARAMETERS
@@ -51,7 +54,7 @@ for iAcq = 1:length(targetFiles)
     winsize         = 0.5;
     % Region for attenuation imaging
     x_inf = -2; x_sup = 2;
-    z_inf = 0.5; z_sup = 4.5;
+    z_inf = 0; z_sup = 4.6;
 
     % Limits for ACS estimation
     ind_x = x_inf <= x & x <= x_sup;
@@ -135,7 +138,7 @@ for iAcq = 1:length(targetFiles)
     disp(['Region of interest. columns: ',num2str(ncol,'%i'),', rows: ',num2str(nrow,'%i')]);
     disp(' ')
 
-    save([croppedDir,'\T',num2str(iAcq),'.mat']);
+    save(fullfile(croppedDir,targetFiles(iAcq).name));
 end
 
 %% Generating references
@@ -171,9 +174,11 @@ for jj=1:n
     end
 end
 
+%% Averaging samples of different backscatter
+
 % Four 'samples' of the reference phantom
-Sp_ref = zeros(m,n,p);
-Sd_ref = zeros(m,n,p);
+Sp_ref1 = zeros(m,n,p);
+Sd_ref1 = zeros(m,n,p);
 for jj=1:n
     for ii=1:m
         xw = x0(jj) ;   % x window
@@ -182,32 +187,50 @@ for jj=1:n
         % Reference 1
         sub_block_p = ref{1}(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
         sub_block_d = ref{1}(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
-        [tempSp1,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
-        [tempSd1,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
-        % Reference 2
-        sub_block_p = ref{2}(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
-        sub_block_d = ref{2}(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
-        [tempSp2,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
-        [tempSd2,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
-%         % Reference 3
-%         sub_block_p = ref{3}(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
-%         sub_block_d = ref{3}(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
-%         [tempSp3,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
-%         [tempSd3,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
-%         % Reference 4
-%         sub_block_p = ref{4}(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
-%         sub_block_d = ref{4}(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
-%         [tempSp4,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
-%         [tempSd4,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
+        [tempSp,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
+        [tempSd,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
 
-%         tempSp = 1/4*(tempSp1 + tempSp2 + tempSp3 + tempSp4);
-%         tempSd = 1/4*(tempSd1 + tempSd2 + tempSd3 + tempSd4);
-        tempSp = 1/2*(tempSp1 + tempSp2);
-        tempSd = 1/2*(tempSd1 + tempSd2);
-        Sp_ref(ii,jj,:) = (tempSp(rang));
-        Sd_ref(ii,jj,:) = (tempSd(rang));
+        Sp_ref1(ii,jj,:) = (tempSp(rang));
+        Sd_ref1(ii,jj,:) = (tempSd(rang));
     end
 end
+SLD1 = ( log(Sp_ref1) - log(Sd_ref1) ) - 4*L*att_ref_map;
 
-diffraction_compensation = ( log(Sp_ref) - log(Sd_ref) ) - 4*L*att_ref_map;
+
+
+% Four 'samples' of the reference phantom
+Sp_ref2 = zeros(m,n,p);
+Sd_ref2 = zeros(m,n,p);
+for jj=1:n
+    for ii=1:m
+        xw = x0(jj) ;   % x window
+        zp = z0p(ii);
+        zd = z0d(ii);
+        % Reference 1
+        sub_block_p = ref{2}(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
+        sub_block_d = ref{2}(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
+        [tempSp,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
+        [tempSd,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
+
+        Sp_ref2(ii,jj,:) = (tempSp(rang));
+        Sd_ref2(ii,jj,:) = (tempSd(rang));
+    end
+end
+SLD2 = ( log(Sp_ref2) - log(Sd_ref2) ) - 4*L*att_ref_map;
+diffraction_compensation = (SLD1 + SLD2)/2;
 save([refDir,'\compensation.mat'],"diffraction_compensation");
+
+%%
+diffraction_xz = mean(diffraction_compensation,3);
+diffraction_zf = squeeze(mean(diffraction_compensation,2));
+figure, tiledlayout(1,2)
+nexttile,
+imagesc(x_ACS,z_ACS,diffraction_xz, [-1 1]);
+title('Diffraction compensation'),
+xlabel('x [cm]'), ylabel('z [cm]'),
+colorbar
+nexttile,
+imagesc(f,z_ACS,diffraction_zf, [-1 1]);
+title('Diffraction compensation'),
+xlabel('f [MHz]'), ylabel('z [cm]'),
+colorbar

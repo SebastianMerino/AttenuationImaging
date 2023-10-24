@@ -66,12 +66,12 @@ dy = dx;                        % [m]
 dz = dx;                        % [m]
 
 % set desired grid size in the axial-direction not including the PML
-x = 50e-3;                      % [m]
-y = 30e-3;
+%x = 40e-3;                      % [m]
+%y = 32e-3;
 
 % set the size of the perfectly matched layer (PML)
-pml_x_size = 80;                % [grid points]
-pml_y_size = 40;                % [grid points]
+pml_x_size = 40;                % [grid points]
+pml_y_size = 20;                % [grid points]
 %pml_z_size = 10;                % [grid points]
 pml_z_size = 1;                % [grid points]
 
@@ -79,9 +79,11 @@ pml_z_size = 1;                % [grid points]
 %Nx = 256 - 2 * pml_x_size;      % [grid points]
 %Ny = 128 - 2 * pml_y_size;      % [grid points]
 %Nz = 128 - 2 * pml_z_size;      % [grid points]
-Nx = round(x/dx) - 2 * pml_x_size      % [grid points]
-Ny = round(y/dy) - 2 * pml_y_size      % [grid points]
-Nz = 7 - 2 * pml_z_size                % [grid points]
+Nx = 1024 - 2 * pml_x_size      % [grid points]
+Ny = 648 - 2 * pml_y_size      % [grid points]
+Nz = 6 - 2 * pml_z_size                % [grid points]
+
+fprintf("Grid size [cm]\n ax: %.2f  lat: %.2f\n",Nx*dx*100,Ny*dy*100)
 
 % create the k-space grid
 kgrid = kWaveGrid(Nx, dx, Ny, dy, Nz, dz);
@@ -95,9 +97,10 @@ kgrid = kWaveGrid(Nx, dx, Ny, dy, Nz, dz);
 % define the properties of the propagation medium
 c0 = 1540;                      % [m/s]
 rho0 = 1000;                    % [kg/m^3]
-medium.alpha_coeff = 0.75;      % [dB/(MHz^y cm)]
+medium.alpha_coeff = 0.5;      % [dB/(MHz^y cm)]
 medium.alpha_power = 1.05;
 medium.BonA = 6;
+medium.sound_speed_ref = c0;    % Added
 
 % create the time array
 t_end = (Nx * dx) * 2.2 / c0;   % [s]
@@ -128,9 +131,9 @@ input_signal = (source_strength ./ (c0 * rho0)) .* input_signal;
 % physical properties of the transducer
 %transducer.number_elements = 32;  	% total number of transducer elements
 pitch = 0.3e-3;
-transducer.number_elements = 96;
+transducer.number_elements = 64;
 transducer.element_width = round(pitch/dx);       % width of each element [grid points]
-transducer.element_length = 3;  	% length of each element [grid points]
+transducer.element_length = 2;  	% length of each element [grid points]
 transducer.element_spacing = 0;  	% spacing (kerf  width) between the elements [grid points]
 transducer.radius = inf;            % radius of curvature of the transducer [m]
 
@@ -171,7 +174,7 @@ transducer.properties;
 
 % define a large image size to move across
 number_scan_lines = 96;
-%number_scan_lines = 100;
+
 Nx_tot = Nx;
 Ny_tot = Ny + number_scan_lines * transducer.element_width;
 Nz_tot = Nz;
@@ -184,8 +187,12 @@ background_map = background_map_mean + background_map_std * randn([Nx_tot, Ny_to
 % define properties
 sound_speed_map = c0 * ones(Nx_tot, Ny_tot, Nz_tot) .* background_map;
 density_map = rho0 * ones(Nx_tot, Ny_tot, Nz_tot) .* background_map;
+alpha_map = 0.5 + zeros([Nx_tot, Ny_tot, Nz_tot]);      % [dB/(MHz^y cm)]
 
+[Y,X,~] = meshgrid(1:Ny_tot,1:Nx_tot,1:Nz_tot);
 
+homogeneous = true;
+if homogeneous == false
 % define a random distribution of scatterers for the layer
 scattering_map_mean = 1;
 scattering_map_std = 0.016;
@@ -199,16 +206,39 @@ scattering_rho0 = rho0 * ones(Nx_tot, Ny_tot, Nz_tot) .* scattering_map;
 % x_pos = 15.5e-3;    % [m]
 % y_pos = 15e-3;    % [m]
 % scattering_region3 = makeBall(Nx_tot, Ny_tot, Nz_tot, round(x_pos/dx), round(y_pos/dx), Nz_tot/2, round(radius/dx));
-[~,X,~] = meshgrid(1:Ny_tot,1:Nx_tot,1:Nz_tot);
-startLayer = round(15e-3/dx);
-stopLayer = round(30e-3/dx);
-maskLayer = X > startLayer & X < stopLayer;
+
+startLayer = Nx_tot/2;
+maskLayer = X > startLayer;
+%stopLayer = round(40e-3/dx);
+%maskLayer = X > startLayer & X < stopLayer;
 
 % assign region
 sound_speed_map(maskLayer) = scattering_c0(maskLayer);
 density_map(maskLayer) = scattering_rho0(maskLayer);
+alpha_map(maskLayer) = alpha_map(maskLayer) + 0.5;
+end
 
-%figure, imagesc(sound_speed_map(:,:,1))
+figure('Units','centimeters', 'Position',[5 5 30 10]),
+tiledlayout(1,3),
+nexttile,
+imagesc(100*dy*Y(1,:),100*dx*X(:,1),sound_speed_map(:,:,1))
+colorbar,
+axis image
+title('Sound speed')
+
+nexttile,
+imagesc(100*dx*Y(1,:),100*dx*X(:,1),density_map(:,:,1))
+colorbar,
+axis image
+title('Density')
+
+t3 = nexttile;
+imagesc(100*dy*Y(1,:),100*dx*X(:,1),alpha_map(:,:,1), [0 1])
+colormap(t3,"turbo")
+colorbar,
+axis image
+title('ACS')
+
 %%
 % =========================================================================
 % RUN THE SIMULATION
@@ -239,7 +269,8 @@ if RUN_SIMULATION
         % load the current section of the medium
         medium.sound_speed = sound_speed_map(:, medium_position:medium_position + Ny - 1, :);
         medium.density = density_map(:, medium_position:medium_position + Ny - 1, :);
-        
+        medium.alpha_coeff = alpha_map(:, medium_position:medium_position + Ny - 1, :);
+
         % run the simulation
         sensor_data = kspaceFirstOrder3DC(kgrid, medium, transducer, transducer, input_args{:});
 

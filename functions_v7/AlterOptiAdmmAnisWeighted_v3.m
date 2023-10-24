@@ -1,6 +1,8 @@
-
-
 function [B,C,F] = AlterOptiAdmmAnisWeighted_v3(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
+% Solver for SLD with Anisotropic TV regularization for BSC and weighted TV
+% regularization for ACS. Only elaborated for testing purposes.
+% It is recommended to weight the equations too in order to avoid artifacts
+% at the borders of different ACS and BSC.
 
 p = length(mask)/(m*n);
 minimask = reshape(mask,[m n p]);
