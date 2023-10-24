@@ -14,7 +14,7 @@ BaseDir = '.';
 fileNames = {'layered1.mat','layered2.mat'};
 %% For looping simulations
 
-for iSim = 1:1
+for iSim = 1:2
     %% Generating grid
     elem_pitch = 0.30e-3;
 
@@ -41,7 +41,7 @@ for iSim = 1:1
 
     % ACTIVATE THIS SECTION FOR INCLUSION
     % radius_disk = 10e-3;
-    % center_depth = 25e-3;
+    center_depth = 25e-3;
 
     maskLayer = rz > 15e-3 & rz < 30e-3;
 
@@ -156,7 +156,8 @@ for iSim = 1:1
             'DataCast',DATA_CAST, 'DataRecast', true, 'PlotSim',false};
 
         sensor_data = kspaceFirstOrder2DC(kgrid, medium, source, sensor, input_args{:});
-
+        sensor_data=sensor_data';
+        
         %%
         max_apert = 64; % elements
         f_number = 2;
