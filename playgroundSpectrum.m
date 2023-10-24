@@ -3,22 +3,29 @@ close all
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\data'];
+refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\ref'];
+
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
+
 % targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\ID316V2\06-08-2023-Generic'];
-
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
 % refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\ID544V2\06-08-2023-Generic'];
 
 croppedDir = [targetDir,'\cropped'];
-figDir = [targetDir,'\fig\22-10'];
+croppedFiles = dir([croppedDir,'\*.mat']); 
+figDir = [targetDir,'\fig\24-10-Playground'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 %%
-for iAcq = 1:8
-load([croppedDir,'\T',num2str(iAcq),'.mat'])
+for iAcq = 1:length(croppedFiles)
+    %iAcq = 2;
+load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load([refDir,'\compensation.mat']);
 attRange = [0.4,1.1];
 bsRange = [-2 2];
@@ -69,7 +76,7 @@ A = [A1 A2];
 % for iFreq=1:p
 %     SLDslice = squeeze(b(:,:,iFreq));
 %     im = imagesc(x_ACS,z_ACS,SLDslice, [-3,3]);
-%     %im.AlphaData = (maskBack | maskInc) + 0.5;
+%     im.AlphaData = (maskBack | maskInc) + 0.5;
 % 
 %     % SLDslice = squeeze(log(Sd(:,:,iFreq)));
 %     % imagesc(x_ACS,z_ACS,SLDslice, [11,20])
@@ -107,17 +114,21 @@ A = [A1 A2];
 %     pause(0.1)
 % end
 %% Masks
-cx = 1.85; cz = 1.9; r = 0.6; rB = 1.2; % Both
+%cx = 1.85; cz = 1.9; r = 0.6; rB = 1.2; % Both
 %cx = 1.85; cz = 1.9; r = 0.6; rB = 1.1; % T8
 %cx = 1.85; cz = 1.9; r = 0.7; rB = 1.2; % T7
+
+% Simulation
+cx = 0; cz = 2.75; r = 0.8; rB = 1.2; 
 [X,Z] = meshgrid(x_ACS,z_ACS);
 maskInc = (X - cx).^2 + (Z - cz).^2 < r^2;
 maskBack = (X - cx).^2 + (Z - cz).^2 > rB^2;
-im = imagesc(x_ACS,z_ACS,mean(b,3), [-3,3]);
+im = imagesc(x_ACS,z_ACS,mean(b,3), [-2,2]);
 im.AlphaData = (maskBack | maskInc) + 0.5;
 colorbar
 xlabel('x [cm]')
 ylabel('Depth [cm]')
+axis image
 title('SLD, frequency mean')
 
 
@@ -169,21 +180,24 @@ grid on
 legend('Back','Inc', 'Location','northwest')
 
 %% Masks
-cx = 1.85; cz = 1.9; r = 0.6; rB = 1.2; % Both
+%cx = 1.85; cz = 1.9; r = 0.6; rB = 1.2; % Both
+% Simulation
+cx = 0; cz = 2.75; r = 0.8; rB = 1.2; 
 [X,Z] = meshgrid(x_ACS,z_ACS);
-maskBorder = (X - cx).^2 + (Z - cz).^2 > 0.6^2 &...
-    (X - cx).^2 + (Z - cz).^2 < 1.2^2; 
-maskUp = maskBorder & Z > cz + 0.2;
-maskDown = maskBorder & Z < cz - 0.2;
+maskBorder = (X - cx).^2 + (Z - cz).^2 > r^2 &...
+    (X - cx).^2 + (Z - cz).^2 < rB^2; 
+maskUp = maskBorder & Z > cz + 0.3;
+maskDown = maskBorder & Z < cz - 0.3;
 
 % Examining spectrum (frequency slices)
 figure,
-im = imagesc(x_ACS,z_ACS,mean(b,3), [-3,3]);
+im = imagesc(x_ACS,z_ACS,mean(b,3), [-2,2]);
 im.AlphaData = (maskUp | maskDown) + 0.5;
 colorbar
 xlabel('x [cm]')
 ylabel('Depth [cm]')
 title('SLD, frequency mean')
+axis image
 
 %% Spectrums in borders
 spectrumUp = zeros(size(f));
@@ -245,11 +259,18 @@ end
 
 %% Error
 close all
-groundTruthT = [0.52,0.55,0.74,0.81,0.75,0.97,0.95,0.95,0.55];
-PEInc = ( attInc - groundTruthT(1:8) )./groundTruthT(1:8)*100;
-PEBack = ( attBack - groundTruthT(9) )./groundTruthT(9)*100;
-PEIncBsc0 = ( attIncBsc0 - groundTruthT(1:8) )./groundTruthT(1:8)*100;
-PEBackBsc0 = ( attBackBsc0 - groundTruthT(9) )./groundTruthT(9)*100;
+%groundTruthT = [0.52,0.55,0.74,0.81,0.75,0.97,0.95,0.95,0.55];
+groundTruthBack = [0.5 0.5 0.5 0.6 0.6 0.6];
+groundTruthInc = [1 1 1 1.4 1.4 1.4];
+
+% PEInc = ( attInc - groundTruthT(1:8) )./groundTruthT(1:8)*100;
+% PEBack = ( attBack - groundTruthT(9) )./groundTruthT(9)*100;
+% PEIncBsc0 = ( attIncBsc0 - groundTruthT(1:8) )./groundTruthT(1:8)*100;
+% PEBackBsc0 = ( attBackBsc0 - groundTruthT(9) )./groundTruthT(9)*100;
+PEInc = ( attInc - groundTruthInc )./groundTruthInc*100;
+PEBack = ( attBack - groundTruthBack )./groundTruthBack*100;
+PEIncBsc0 = ( attIncBsc0 - groundTruthInc )./groundTruthInc*100;
+PEBackBsc0 = ( attBackBsc0 - groundTruthBack )./groundTruthBack*100;
 figure('Units','centimeters', 'Position',[5 5 12 9])
 plot(PEInc,'o', 'LineWidth',2)
 hold on
@@ -274,7 +295,8 @@ figure('Units','centimeters', 'Position',[5 5 12 9])
 plot(attInc - attBack,'o', 'LineWidth',2)
 hold on
 plot(attIncBsc0 - attBackBsc0,'x', 'LineWidth',2)
-plot(groundTruthT(1:8) - groundTruthT(9),'k_', 'LineWidth',2)
+%plot(groundTruthT(1:8) - groundTruthT(9),'k_', 'LineWidth',2)
+plot(groundTruthInc - groundTruthBack,'k_', 'LineWidth',2)
 hold off
 grid on
 title('Difference in attenuation')

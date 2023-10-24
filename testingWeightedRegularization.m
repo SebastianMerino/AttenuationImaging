@@ -13,9 +13,10 @@ addpath('./AttUtils');
 %     'Attenuation\ID316V2\06-08-2023-Generic'];
 
 targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\data'];
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\ref'];
+    'Attenuation\Simulation\layered'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\ref'];
+
 % targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
 %     '\Attenuation\Timana\data'];
 % refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
@@ -23,14 +24,13 @@ refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 croppedDir = [targetDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']); 
-figDir = [targetDir,'\fig\23-10'];
+figDir = [targetDir,'\fig\24-10'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 %% Loading data
 for iAcq = 1:length(croppedFiles)
-iAcq = 1;
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
-load([refDir,'\compensation.mat']);
+load([targetDir,'\compensation.mat']);
 attRange = [0.4,1.1];
 bsRange = [-2 2];
 %% Spectrum
@@ -98,6 +98,31 @@ axis image
 title('SLD')
 c = colorbar;
 c.Label.String = 'BS log ratio (a.u.)';
+%% Diffraction compensation
+diffraction_zf = squeeze(mean(diffraction_compensation,2));
+SLD = squeeze(mean((log(Sp) - log(Sd)),2));
+SLDcomp = squeeze(mean(b,2));
+
+figure('Units','centimeters', 'Position',[5 5 25 12]);
+tiledlayout(1,3)
+nexttile,
+imagesc(f,z_ACS,SLD, [-2 2]);
+title('SLD'),
+xlabel('f [cm]'), ylabel('z [cm]'),
+colorbar
+nexttile,
+imagesc(f,z_ACS,diffraction_zf, [-2 2]);
+title('Diffraction compensation'),
+xlabel('f [MHz]'), ylabel('z [cm]'),
+colorbar
+
+nexttile,
+imagesc(f,z_ACS,SLDcomp, [-2 2]);
+title('SLD compensated'),
+xlabel('f [MHz]'), ylabel('z [cm]'),
+colorbar
+
+
 %% RSLD
 b = (log(Sp) - log(Sd)) - (diffraction_compensation);
 
@@ -159,33 +184,16 @@ for mm = 1:length(mu)
     c = colorbar;
     c.Label.String = 'BS log ratio (a.u.)';
 end
-
 %% JUST FOR LAYERED MEDIA
-% figure;
-% imagesc(x,z,Bmode,dynRange);
-% axis equal
-% xlim([x_ACS(1) x_ACS(end)]),
-% ylim([z_ACS(1) z_ACS(end)]),
-% colormap(gray)
-% colorbar('westoutside')
-% title('Bmode')
-% 
-% [X,Z] = meshgrid(x,z);
-% layerMask = Z>1.5 & Z < 2.9;
-% samEnhanced = sam1;
-% factor = std(sam1(~layerMask))/std(sam1(layerMask));
-% samEnhanced(layerMask) = samEnhanced(layerMask)*factor/2.5;
-% BmodeEnhanced = db(hilbert(samEnhanced));
-% BmodeEnhanced = BmodeEnhanced - max(BmodeEnhanced(:));
-% figure,
-% imagesc(x,z,BmodeEnhanced,dynRange);
-% axis equal
-% xlim([x_ACS(1) x_ACS(end)]),
-% ylim([z_ACS(1) z_ACS(end)]),
-% colormap(gray)
-% colorbar('westoutside')
-% title('Bmode')
-%% Spectrum and RSLD
+[X,Z] = meshgrid(x,z);
+layerMask = Z>1.5 & Z < 2.95;
+samEnhanced = sam1;
+factor = std(sam1(~layerMask))/std(sam1(layerMask));
+samEnhanced(layerMask) = samEnhanced(layerMask)*factor/2;
+BmodeEnhanced = db(hilbert(samEnhanced));
+BmodeEnhanced = BmodeEnhanced - max(BmodeEnhanced(:));
+
+% Spectrum and RSLD
 windowing = tukeywin(nw,0.25);   % Tukey Window. Parameter 0.25
 
 % Windowing neccesary before Fourier transform
@@ -221,7 +229,7 @@ tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
 mu = logspace(2.5,3.5,3);
-mu2 = logspace(0,1,3);
+mu2 = logspace(0,1,3)*10;
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
@@ -232,11 +240,11 @@ for mm = 1:length(mu)
         BR(:,:,mm2) = (reshape(Bn*8.686,m,n));
         CR(:,:,mm2) = (reshape(Cn,m,n));
     end
-    
+
     % Plotting
     figure('Units','centimeters', 'Position',[5 5 30 12]);
     tl = tiledlayout(2,size(BR,3)+1);
-    title(tl,'Isotropic RSLD')
+    title(tl,'Isotropic RSLD with equalized BSC')
     t1 = nexttile;
     imagesc(x,z,Bmode,dynRange)
     axis equal
@@ -245,7 +253,7 @@ for mm = 1:length(mu)
     colormap(t1,gray)
     colorbar(t1,'westoutside')
     title('Bmode')
-    
+
     for ii = 1:size(BR,3)
         t2 = nexttile; 
         imagesc(x_ACS,z_ACS,BR(:,:,ii), attRange)
@@ -255,10 +263,16 @@ for mm = 1:length(mu)
     end
     c = colorbar;
     c.Label.String = 'Att. [db/cm/MHz]';
-    
-    nexttile;
-    axis off
-    
+
+    t3 = nexttile;
+    imagesc(x,z,BmodeEnhanced,dynRange)
+    axis equal
+    xlim([x_ACS(1) x_ACS(end)]),
+    ylim([z_ACS(1) z_ACS(end)]),
+    colormap(t3,gray)
+    colorbar(t3,'westoutside')
+    title('Equalized Bmode')
+
     for ii = 1:size(BR,3)
         t2 = nexttile; 
         imagesc(x_ACS,z_ACS,CR(:,:,ii), bsRange)
@@ -288,6 +302,11 @@ for jj=1:n
         SNR(ii,jj) = mean(temp)/std(temp);
     end
 end
+
+figure,
+imagesc(x_ACS,z_ACS,SNR)
+colorbar
+
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
 a = 1; b = 0.1;

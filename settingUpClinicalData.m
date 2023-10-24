@@ -5,7 +5,7 @@ addpath('./functions_v7');
 %     '\Attenuation\DataQUS_4_Merino'];
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\DataQUS_4_Merino'];
-targetDir = [baseDir,'\Hashimoto'];
+targetDir = [baseDir,'\Carcinoma'];
 refDir = [baseDir,'\References\P4-CUELLO-3'];
 
 croppedDir = [targetDir,'\cropped'];
@@ -17,17 +17,16 @@ refFiles = dir([refDir,'\*.rf']);
 %% Generating .mat data
 for iAcq = 1:length(rawFiles)
     [out]=lectura_OK([targetDir,'\',rawFiles(iAcq).name]);
-    save([targetDir,'\T',num2str(iAcq),'.mat'],'-struct','out');
+    save([targetDir,'\',rawFiles(iAcq).name(1:end-3),'.mat'],'-struct','out');
 end
-
 for iAcq = 1:length(refFiles)
     [out]=lectura_OK([refDir,'\',refFiles(iAcq).name]);
     save([refDir,'\T',num2str(iAcq),'.mat'],'-struct','out');
 end
 %% Cropping data
+targetFiles = dir([targetDir,'\*.mat']);
 for iAcq = 1:length(rawFiles)
-    %iAcq = 3;
-    load([targetDir,'\T',num2str(iAcq),'.mat']);
+    load(fullfile(targetDir,targetFiles(iAcq).name));
     disp(['Target: ', rawFiles(iAcq).name]);
     attRange = [0.3,1.2];
 
@@ -146,7 +145,7 @@ for iAcq = 1:length(rawFiles)
     disp(['Region of interest. columns: ',num2str(ncol,'%i'),', rows: ',num2str(nrow,'%i')]);
     disp(' ')
 
-    save([croppedDir,'\T',num2str(iAcq),'.mat']);
+    save(fullfile(croppedDir,targetFiles(iAcq).name));
 end
 
 %% Generating references

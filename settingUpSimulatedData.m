@@ -6,9 +6,11 @@ addpath('./functions_v7');
 % refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\Timana\ref'];
 targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\data'];
+    'Attenuation\Simulation\layered'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\ref'];
+
+% cropped for layered, cropped 2 for inclusion
 croppedDir = [targetDir,'\cropped'];
 if (~exist(croppedDir,"dir")), mkdir(croppedDir); end
 
@@ -29,13 +31,13 @@ for iAcq = 1:length(targetFiles)
     sam1 = rf(:,:,1);
     dynRange = [-50,0];
 
-    % Plotting
-    [pSpectrum,f] = pwelch(rf,hamming(500),300,1024,fs);
-    meanSpectrum = mean(pSpectrum,2);
-    figure, plot(f,meanSpectrum)
-    xlim([0 fs/2])
-    title('Mean power spectrum')
-
+    % % Plotting
+    % [pSpectrum,f] = pwelch(rf,hamming(500),300,1024,fs);
+    % meanSpectrum = mean(pSpectrum,2);
+    % figure, plot(f,meanSpectrum)
+    % xlim([0 fs/2])
+    % title('Mean power spectrum')
+    % 
     Bmode = db(hilbert(sam1));
     Bmode = Bmode - max(Bmode(:));
     figure, imagesc(x,z,Bmode); axis image; colormap gray; clim(dynRange);
@@ -55,6 +57,7 @@ for iAcq = 1:length(targetFiles)
     % Region for attenuation imaging
     x_inf = -2; x_sup = 2;
     z_inf = 0; z_sup = 4.6;
+    %z_inf = 0.4; z_sup = 5.1;
 
     % Limits for ACS estimation
     ind_x = x_inf <= x & x <= x_sup;
@@ -165,7 +168,7 @@ windowing = tukeywin(nw,0.25);   % Tukey Window. Parameter 0.25
 windowing = windowing*ones(1,nx);
 
 %att_ref = attenuation_phantoms_Np(f, 3, []);
-att_ref = 0.3*f/8.686; % From phantom especifications
+att_ref = 0.3*f/8.686; % From SIMULATION
 
 att_ref_map = zeros(m,n,p);
 for jj=1:n
@@ -218,7 +221,7 @@ for jj=1:n
 end
 SLD2 = ( log(Sp_ref2) - log(Sd_ref2) ) - 4*L*att_ref_map;
 diffraction_compensation = (SLD1 + SLD2)/2;
-save([refDir,'\compensation.mat'],"diffraction_compensation");
+save([targetDir,'\compensation.mat'],"diffraction_compensation");
 
 %%
 diffraction_xz = mean(diffraction_compensation,3);
