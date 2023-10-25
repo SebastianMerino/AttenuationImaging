@@ -2,12 +2,15 @@ clear,clc
 close all
 addpath('./functions_v7');
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\', ...
-    'Attenuation\DataQUS_4_Merino'];
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
-%     '\Attenuation\DataQUS_4_Merino'];
-targetDir = [baseDir,'\Carcinoma'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\', ...
+%     'Attenuation\DataQUS_4_Merino'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
+    '\Attenuation\DataQUS_4_Merino'];
+
+targetDir = [baseDir,'\Hashimoto'];
 refDir = [baseDir,'\References\P4-CUELLO-3'];
+% targetDir = [baseDir ,'\TD_31456\31456'];
+% refDir = [targetDir,'\ref'];
 
 croppedDir = [targetDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
@@ -101,8 +104,8 @@ tol = 1e-3;
 
 clear mask
 mask = ones(m,n,p);
-mu = logspace(2.5,3.5,3);
-mu2 = logspace(0,1,3);
+mu = logspace(2,3,3);
+mu2 = logspace(-1,1,3);
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
@@ -169,9 +172,9 @@ for jj=1:n
     end
 end
 
-figure,
-imagesc(x_ACS,z_ACS,SNR)
-colorbar
+% figure,
+% imagesc(x_ACS,z_ACS,SNR)
+% colorbar
 
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
@@ -192,7 +195,7 @@ tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
 mu = logspace(2,3,3);
-mu2 = logspace(0,1,3);
+mu2 = logspace(-1,1,3);
 BR = zeros(m,n,length(mu));
 CR = zeros(m,n,length(mu));
 
@@ -260,8 +263,8 @@ tol = 1e-3;
 
 clear mask
 mask = ones(m,n,p);
-mu = logspace(2.5,3.5,3);
-mu2 = logspace(-0.5,0.5,3)*10;
+mu = logspace(2,3,3);
+mu2 = logspace(-1,1,3);
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
@@ -333,7 +336,7 @@ mu2 = 1;
 bscMap = (reshape(Cn,m,n));
 
 logBscRatio = bscMap*log10(exp(1))*20;
-w = 1./((logBscRatio/10).^2 + 1);
+w = 1./((logBscRatio/20).^2 + 1);
 
 
 figure('Units','centimeters', 'Position',[5 5 30 8]),
@@ -349,7 +352,7 @@ xlim([x_ACS(1) x_ACS(end)]), ylim([z_ACS(1) z_ACS(end)]);
 title('B-mode')
 
 t2 = nexttile;
-imagesc(x_ACS,z_ACS,logBscRatio)
+imagesc(x_ACS,z_ACS,logBscRatio, [-20 20])
 colormap(t2,parula)
 c = colorbar;
 ylabel(c,'dB')
@@ -382,8 +385,8 @@ A2w = W*A2;
 tol = 1e-3;
 
 mask = ones(m,n,p);
-mu = logspace(3,4,3);
-mu2 = logspace(0,1,3);
+mu = logspace(2,3,3);
+mu2 = logspace(-1,1,3);
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)

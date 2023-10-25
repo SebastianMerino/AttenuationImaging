@@ -1,12 +1,16 @@
 clear,clc
 addpath('./functions_v7');
 
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
-%     '\Attenuation\DataQUS_4_Merino'];
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\DataQUS_4_Merino'];
-targetDir = [baseDir,'\Carcinoma'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
+    '\Attenuation\DataQUS_4_Merino'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\DataQUS_4_Merino'];
+
+targetDir = [baseDir,'\Hashimoto'];
 refDir = [baseDir,'\References\P4-CUELLO-3'];
+
+% targetDir = [baseDir ,'\TD_31456\31456'];
+% refDir = [targetDir,'\ref'];
 
 croppedDir = [targetDir,'\cropped'];
 if (~exist(croppedDir,"dir")), mkdir(croppedDir); end
