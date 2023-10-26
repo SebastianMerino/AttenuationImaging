@@ -1,12 +1,12 @@
 clear,clc
 addpath('./functions_v7');
 
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
-    '\Attenuation\DataQUS_4_Merino'];
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\DataQUS_4_Merino'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
+%     '\Attenuation\DataQUS_4_Merino'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\DataQUS_4_Merino'];
 
-targetDir = [baseDir,'\Hashimoto'];
+targetDir = [baseDir,'\Carcinoma'];
 refDir = [baseDir,'\References\P4-CUELLO-3'];
 
 % targetDir = [baseDir ,'\TD_31456\31456'];
@@ -64,8 +64,10 @@ for iAcq = 1:length(rawFiles)
     overlap_pc      = 0.8;
     winsize         = 0.5;
     % Region for attenuation imaging
-    x_inf = 0.1; x_sup = 3.8;
-    z_inf = 0.2; z_sup = 3.1; % 3.5 if discarting T3
+    % x_inf = 0.1; x_sup = 3.8;
+    % z_inf = 0.2; z_sup = 3.1; % 3.5 if discarting T3
+    x_inf = 0.5; x_sup = 3;
+    z_inf = 0.5; z_sup = 2.1; % 3.5 if discarting T3
 
     % Limits for ACS estimation
     ind_x = x_inf <= x & x <= x_sup;

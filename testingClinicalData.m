@@ -2,23 +2,23 @@ clear,clc
 close all
 addpath('./functions_v7');
 
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\', ...
-%     'Attenuation\DataQUS_4_Merino'];
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
-    '\Attenuation\DataQUS_4_Merino'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\', ...
+    'Attenuation\DataQUS_4_Merino'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
+%     '\Attenuation\DataQUS_4_Merino'];
 
-targetDir = [baseDir,'\Hashimoto'];
+targetDir = [baseDir,'\Carcinoma'];
 refDir = [baseDir,'\References\P4-CUELLO-3'];
 % targetDir = [baseDir ,'\TD_31456\31456'];
 % refDir = [targetDir,'\ref'];
 
 croppedDir = [targetDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
-figDir = [targetDir,'\fig\24-10'];
+figDir = [targetDir,'\fig\25-10'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 %% Loading data
 for iAcq = 1:length(croppedFiles)
-%iAcq = 6;
+iAcq = 6;
 disp(['Loading ', croppedFiles(iAcq).name]);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load([refDir,'\compensation.mat']);
@@ -120,7 +120,7 @@ for mm = 1:length(mu)
     % Plotting
     figure('Units','centimeters', 'Position',[5 5 30 12]);
     tl = tiledlayout(2,size(BR,3)+1);
-    title(tl,'Isotropic RSLD')
+    title(tl,{'Isotropic RSLD',''})
     t1 = nexttile;
     imagesc(x,z,Bmode,dynRange)
     axis equal
@@ -279,7 +279,7 @@ for mm = 1:length(mu)
     % Plotting
     figure('Units','centimeters', 'Position',[5 5 30 12]);
     tl = tiledlayout(2,size(BR,3)+1);
-    title(tl,'RSLD with isotropic TV and Tikhonov reg.')
+    title(tl,{'RSLD with isotropic TV and Tikhonov reg.',''})
     t1 = nexttile;
     imagesc(x,z,Bmode,dynRange)
     axis equal
@@ -336,7 +336,7 @@ mu2 = 1;
 bscMap = (reshape(Cn,m,n));
 
 logBscRatio = bscMap*log10(exp(1))*20;
-w = 1./((logBscRatio/20).^2 + 1);
+w = 1./((logBscRatio/10).^2 + 1);
 
 
 figure('Units','centimeters', 'Position',[5 5 30 8]),
@@ -401,7 +401,7 @@ for mm = 1:length(mu)
     % Plotting
     figure('Units','centimeters', 'Position',[5 5 30 12]);
     tl = tiledlayout(2,size(BR,3)+1);
-    title(tl,'TV, Tikhonov reg and weights')
+    title(tl,{'TV, Tikhonov reg and weights',''})
     t1 = nexttile;
     imagesc(x,z,Bmode,dynRange)
     axis equal

@@ -4,9 +4,9 @@ addpath('./functions_v7');
 addpath('./AttUtils');
 
 targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\data'];
+    'Attenuation\Simulation\centered'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\ref'];
+    'Attenuation\Simulation\centered'];
 
 % targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
 %     '\ID316V2\06-08-2023-Generic'];
@@ -19,14 +19,14 @@ refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\ID544V2\06-08-2023-Generic'];
 
 croppedDir = [targetDir,'\cropped'];
-croppedFiles = dir([croppedDir,'\*.mat']); 
-figDir = [targetDir,'\fig\24-10-Playground'];
+croppedFiles = dir([croppedDir,'\rf*.mat']); 
+figDir = [targetDir,'\fig\25-10-Playground'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 %%
 for iAcq = 1:length(croppedFiles)
-    %iAcq = 2;
+  % iAcq = 2;
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
-load([refDir,'\compensation.mat']);
+load([targetDir,'\compensation.mat']);
 attRange = [0.4,1.1];
 bsRange = [-2 2];
 %% Spectrum
@@ -119,7 +119,7 @@ A = [A1 A2];
 %cx = 1.85; cz = 1.9; r = 0.7; rB = 1.2; % T7
 
 % Simulation
-cx = 0; cz = 2.75; r = 0.8; rB = 1.2; 
+cx = 0; cz = 2; r = 0.8; rB = 1.2; % or 2.75
 [X,Z] = meshgrid(x_ACS,z_ACS);
 maskInc = (X - cx).^2 + (Z - cz).^2 < r^2;
 maskBack = (X - cx).^2 + (Z - cz).^2 > rB^2;
@@ -180,9 +180,9 @@ grid on
 legend('Back','Inc', 'Location','northwest')
 
 %% Masks
-%cx = 1.85; cz = 1.9; r = 0.6; rB = 1.2; % Both
+r = 0.6; rB = 1.2; % Both
 % Simulation
-cx = 0; cz = 2.75; r = 0.8; rB = 1.2; 
+r = 0.8; rB = 1.2; 
 [X,Z] = meshgrid(x_ACS,z_ACS);
 maskBorder = (X - cx).^2 + (Z - cz).^2 > r^2 &...
     (X - cx).^2 + (Z - cz).^2 < rB^2; 
