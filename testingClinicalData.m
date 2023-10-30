@@ -2,61 +2,37 @@ clear,clc
 close all
 addpath('./functions_v7');
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\', ...
-    'Attenuation\DataQUS_4_Merino'];
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
-%     '\Attenuation\DataQUS_4_Merino'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\ThyroidSelected\CUELLO#3'];
 
-targetDir = [baseDir,'\Carcinoma'];
-refDir = [baseDir,'\References\P4-CUELLO-3'];
-% targetDir = [baseDir ,'\TD_31456\31456'];
-% refDir = [targetDir,'\ref'];
-
-croppedDir = [targetDir,'\cropped'];
+croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
-figDir = [targetDir,'\fig\25-10'];
-if (~exist(figDir,"dir")), mkdir(figDir); end
-%% Loading data
 for iAcq = 1:length(croppedFiles)
-iAcq = 6;
-disp(['Loading ', croppedFiles(iAcq).name]);
+    fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
+end 
+
+figDir = [baseDir,'\fig\27-10'];
+if (~exist(figDir,"dir")), mkdir(figDir); end
+
+% CASOS INTERESANTES: 2,4,6,8,9,13
+
+%% Loading data
+%for iAcq = 1:length(croppedFiles)
+iAcq = 13;
+fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
-load([refDir,'\compensation.mat']);
-attRange = [0.4,1.8];
+dynRange = [-35,-5];
+%attRange = [0.3,1.7];
+attRange = [0,1]; % Just for 13 acq
 bsRange = [-2 2];
 
-%% Spectrum
-windowing = tukeywin(nw,0.25);   % Tukey Window. Parameter 0.25
-
-% Windowing neccesary before Fourier transform
-windowing = windowing*ones(1,nx);
-Sp = zeros(m,n,length(f));
-Sd = zeros(m,n,length(f));
-for jj=1:n
-    for ii=1:m
-        xw = x0(jj) ;   % x window
-        zp = z0p(ii);
-        zd = z0d(ii);
-
-        sub_block_p = sam1(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
-        sub_block_d = sam1(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
-
-        [tempSp,~] = spectra(sub_block_p,windowing,0,nw,NFFT);
-        [tempSd,~] = spectra(sub_block_d,windowing,0,nw,NFFT);
-        Sp(ii,jj,:) = (tempSp(rang));
-        Sd(ii,jj,:) = (tempSd(rang));
-    end
-end
-
 %% Standard SLD
-b = (log(Sp) - log(Sd)) - (diffraction_compensation);
+b = (log(Sp) - log(Sd)) - (compensation);
 
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
 A = [A1 A2];
-
 [u,~] = cgs(A'*A,A'*b(:),1e-6,20);
-
 % Standard SLD
 % BS: Beta. Attenuation coefficient slopes of blocks.
 % CS: Constants of blocks.
@@ -68,6 +44,7 @@ CS = reshape(CS,m,n);
 figure('Units','centimeters', 'Position',[5 5 30 8]);
 tl = tiledlayout(1,3);
 title(tl,'Standard RSLD')
+subtitle(tl,['Patient ',croppedFiles(iAcq).name(1:end-4)])
 t1 = nexttile;
 imagesc(x,z,Bmode,dynRange)
 axis image
@@ -93,7 +70,7 @@ c.Label.String = 'BS log ratio (a.u.)';
 
 
 %% RSLD
-b = (log(Sp) - log(Sd)) - (diffraction_compensation);
+b = (log(Sp) - log(Sd)) - (compensation);
 
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
@@ -120,7 +97,8 @@ for mm = 1:length(mu)
     % Plotting
     figure('Units','centimeters', 'Position',[5 5 30 12]);
     tl = tiledlayout(2,size(BR,3)+1);
-    title(tl,{'Isotropic RSLD',''})
+    title(tl,'Isotropic RSLD')
+    subtitle(tl,['Patient ',croppedFiles(iAcq).name(1:end-4)])
     t1 = nexttile;
     imagesc(x,z,Bmode,dynRange)
     axis equal
@@ -164,8 +142,8 @@ for jj=1:n
         zp = z0p(ii);
         zd = z0d(ii);
 
-        sub_block_p = envelope(zp-(nw-1)/2:zp+(nw-1)/2,xw:xw+nx-1);
-        sub_block_d = envelope(zd-(nw-1)/2:zd+(nw-1)/2,xw:xw+nx-1);
+        sub_block_p = envelope(zp:zp+nz/2-1,xw:xw+nx-1);
+        sub_block_d = envelope(zd:zd+nz/2-1,xw:xw+nx-1);
         
         temp = [sub_block_p(:) sub_block_d(:)];
         SNR(ii,jj) = mean(temp)/std(temp);
@@ -183,7 +161,7 @@ desvMin = 15;
 w = a./(1 + exp(b.*(desvSNR - desvMin)));
 
 % RSLD ANISOTROPIC AND BS WEIGHTED
-b = (log(Sp) - log(Sd)) - (diffraction_compensation);
+b = (log(Sp) - log(Sd)) - (compensation);
 
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
@@ -213,6 +191,7 @@ for mm = 1:length(mu)
     figure('Units','centimeters', 'Position',[5 5 30 12]);
     tl = tiledlayout(2,size(BR,3)+1);
     title(tl,'British Columbia Approach')
+    subtitle(tl,['Patient ',croppedFiles(iAcq).name(1:end-4)])
     t1 = nexttile;
     imagesc(x,z,Bmode,dynRange)
     axis equal
@@ -252,7 +231,7 @@ end
 
 
 %% Minimizing BS log ratio
-b = (log(Sp) - log(Sd)) - (diffraction_compensation);
+b = (log(Sp) - log(Sd)) - (compensation);
 
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
@@ -264,7 +243,7 @@ tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
 mu = logspace(2,3,3);
-mu2 = logspace(-1,1,3);
+mu2 = logspace(-1.5,0.5,3);
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
@@ -280,6 +259,7 @@ for mm = 1:length(mu)
     figure('Units','centimeters', 'Position',[5 5 30 12]);
     tl = tiledlayout(2,size(BR,3)+1);
     title(tl,{'RSLD with isotropic TV and Tikhonov reg.',''})
+    subtitle(tl,['Patient ',croppedFiles(iAcq).name(1:end-4)])
     t1 = nexttile;
     imagesc(x,z,Bmode,dynRange)
     axis equal
@@ -299,14 +279,7 @@ for mm = 1:length(mu)
     c = colorbar;
     c.Label.String = 'Att. [db/cm/MHz]';
     
-    t3 = nexttile;
-    imagesc(x,z,Bmode,dynRange)
-    axis equal
-    xlim([x_ACS(1) x_ACS(end)]),
-    ylim([z_ACS(1) z_ACS(end)]),
-    colormap(t3,gray)
-    colorbar(t3,'westoutside')
-    title('Bmode')
+    nexttile; axis off
     
     for ii = 1:size(BR,3)
         t2 = nexttile; 
@@ -321,7 +294,7 @@ end
 
 
 %% NEW WEIGHTS
-b = (log(Sp) - log(Sd)) - (diffraction_compensation);
+b = (log(Sp) - log(Sd)) - (compensation);
 
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
@@ -367,7 +340,7 @@ axis image
 title('Weights')
 
 %% Weighting equation and regularizations
-b = (log(Sp) - log(Sd)) - (diffraction_compensation);
+b = (log(Sp) - log(Sd)) - (compensation);
 
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
@@ -385,8 +358,8 @@ A2w = W*A2;
 tol = 1e-3;
 
 mask = ones(m,n,p);
-mu = logspace(2,3,3);
-mu2 = logspace(-1,1,3);
+mu = logspace(2,3,3)*10;
+mu2 = logspace(-1.5,0.5,3);
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
@@ -402,6 +375,7 @@ for mm = 1:length(mu)
     figure('Units','centimeters', 'Position',[5 5 30 12]);
     tl = tiledlayout(2,size(BR,3)+1);
     title(tl,{'TV, Tikhonov reg and weights',''})
+    subtitle(tl,['Patient ',croppedFiles(iAcq).name(1:end-4)])
     t1 = nexttile;
     imagesc(x,z,Bmode,dynRange)
     axis equal
@@ -446,4 +420,4 @@ save_all_figures_to_directory(newDir);
 close all
 
 
-end
+%end
