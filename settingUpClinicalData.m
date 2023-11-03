@@ -24,25 +24,28 @@ overlap_pc      = 0.8;
 ratio_zx        = 1;
 
 targetFiles = dir([targetDir,'\*.mat']);
+for iAcq = 1:length(targetFiles)
+    fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
+end 
 %% For looping
-%for iAcq = 1:length(targetFiles)
-iAcq = 9;
+iAcq = 6;
+
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 dx = x(2)-x(1);
 dz = z(2)-z(1);
-x = x*1e2; % [cm]
-z = z*1e2; % [cm]
+xFull = x*1e2; % [cm]
+zFull = z*1e2; % [cm]
 
 sam1 = RF(:,:,1);
 dynRange = [-50,0];
 
 
-Bmode = db(hilbert(sam1));
-Bmode = Bmode - max(Bmode(:));
-figure('Units','centimeters', 'Position',[5 5 15 15]),
-imagesc(x,z,Bmode); axis image; colormap gray; clim(dynRange);
+BmodeFull = db(hilbert(sam1));
+BmodeFull = BmodeFull - max(BmodeFull(:));
+figure('Units','centimeters', 'Position',[5 5 18 18]),
+imagesc(x,z,BmodeFull); axis image; colormap gray; clim(dynRange);
 hb2=colorbar; ylabel(hb2,'dB')
 xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 
@@ -61,8 +64,9 @@ z_inf = rect(2); z_sup = rect(2)+rect(4);
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
 ind_z = z_inf <= z & z <= z_sup;
-x = x(ind_x);
-z = z(ind_z);
+roi = ind_x.*ind_z';
+x = xFull(ind_x);
+z = zFull(ind_z);
 sam1 = sam1(ind_z,ind_x);
 
 % Wavelength size
@@ -134,7 +138,7 @@ for iRef = 1:Nref
     out = load([refDir,'\',refFiles(iRef).name]);
     samRef = out.RF;
     samRef = samRef(ind_z,ind_x); % Cropping
-    %figure,imagesc(db(hilbert(samRef)))
+    % figure,imagesc(db(hilbert(samRef)))
     for jj=1:n
         for ii=1:m
             xw = x0(jj) ;   % x window
@@ -177,62 +181,13 @@ for jj=1:n
     end
 end
 
-% %% Saving data
-% save(fullfile(croppedDir,targetFiles(iAcq).name),"Sd","Sp",...
-%     "compensation","z_ACS","x_ACS","nx","nz","x0","z0p","z0d","sam1",...
-%     "m","n","p","Bmode","x","z","f","L")
 
-%end
-%%
-dynRange = [-35,-5];
+
+%% RSLD and plotting
+dynRange = [-40,0];
 attRange = [0.3,1.7];
-% attRange = [0,1]; % Just for 13 acq
 bsRange = [-2 2];
 
-
-%% Standard SLD
-b = (log(Sp) - log(Sd)) - (compensation);
-
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-A = [A1 A2];
-[u,~] = cgs(A'*A,A'*b(:),1e-6,20);
-% Standard SLD
-% BS: Beta. Attenuation coefficient slopes of blocks.
-% CS: Constants of blocks.
-BS = u(1:end/2); CS = u(end/2+1:end);
-BS = 8.686*BS;   % [dB.cm^{-1}.MHz^{-1}]
-BS = reshape(BS,m,n);
-CS = reshape(CS,m,n);
-
-figure('Units','centimeters', 'Position',[5 5 30 8]);
-tl = tiledlayout(1,3);
-title(tl,'Standard RSLD')
-subtitle(tl,['Patient ',targetFiles(iAcq).name(1:end-4)])
-t1 = nexttile;
-imagesc(x,z,Bmode,dynRange)
-axis image
-colormap(t1,gray)
-colorbar(t1,'westoutside')
-title('Bmode')
-
-t2 = nexttile; 
-imagesc(x_ACS,z_ACS,BS, attRange)
-colormap(t2,turbo)
-axis image
-title('SLD')
-c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
-
-t3 = nexttile; 
-imagesc(x_ACS,z_ACS,CS, bsRange)
-colormap(t3,parula)
-axis image
-title('SLD')
-c = colorbar;
-c.Label.String = 'BS log ratio (a.u.)';
-
-%% RSLD
 b = (log(Sp) - log(Sd)) - (compensation);
 
 A1 = kron( 4*L*f , speye(m*n) );
@@ -251,17 +206,17 @@ CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
     for mm2 = 1:length(mu2)
         tic
-        [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),mu(mm),mu2(mm2),m,n,tol,mask(:));
+        [Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),mu(mm),mu2(mm2),m,n,tol,mask(:));
         toc
         BR(:,:,mm2) = (reshape(Bn*8.686,m,n));
         CR(:,:,mm2) = (reshape(Cn,m,n));
     end
     
-    % Plotting
+    %% Plotting
     figure('Units','centimeters', 'Position',[5 5 30 12]);
     tl = tiledlayout(2,size(BR,3)+1);
     title(tl,'Isotropic TV')
-    subtitle(tl,['Patient ',targetFiles(iAcq).name(1:end-4)])
+    %subtitle(tl,['Patient ',targetFiles(iAcq).name(1:end-4)])
     t1 = nexttile;
     imagesc(x,z,Bmode,dynRange)
     axis equal
@@ -296,6 +251,17 @@ for mm = 1:length(mu)
 end
 
 %%
+figure,
+imOverlayInterp(BmodeFull,BR(:,:,2),dynRange,attRange,0.5,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+
+
+%% Saving data
+save(fullfile(croppedDir,targetFiles(iAcq).name),"Sd","Sp",...
+    "compensation","z_ACS","x_ACS","nx","nz","x0","z0p","z0d","sam1",...
+    "m","n","p","Bmode","x","z","f","L","xFull","zFull","BmodeFull")
+% 
+%end
 
 
 

@@ -11,19 +11,19 @@ for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\27-10'];
+figDir = [baseDir,'\fig\31-10'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 % CASOS INTERESANTES: 2,4,6,8,9,13
 
 %% Loading data
-%for iAcq = 1:length(croppedFiles)
-iAcq = 13;
+for iAcq = 1:length(croppedFiles)
+iAcq = 4;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
-dynRange = [-35,-5];
-%attRange = [0.3,1.7];
-attRange = [0,1]; % Just for 13 acq
+dynRange = [-40,-5];
+attRange = [0.3,1.7];
+%attRange = [0,1]; % Just for 13 acq
 bsRange = [-2 2];
 
 %% Standard SLD
@@ -358,7 +358,7 @@ A2w = W*A2;
 tol = 1e-3;
 
 mask = ones(m,n,p);
-mu = logspace(2,3,3)*10;
+mu = logspace(2,3,3);
 mu2 = logspace(-1.5,0.5,3);
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
@@ -414,10 +414,20 @@ for mm = 1:length(mu)
 end
 
 %%
+[X,Z] = meshgrid(xFull,zFull);
+roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
+%figure, imagesc(roi);
+
+figure,
+[~,~,hColor] = imOverlayInterp(BmodeFull,BR(:,:,2),[-50 0],attRange,0.5,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('B-mode and attenuation map')
+hColor.Label.String = 'dB/cm/MHz';
+%%
 newDir = fullfile(figDir,croppedFiles(iAcq).name(1:end-4));
 if(~exist(newDir,"dir")), mkdir(newDir); end
 save_all_figures_to_directory(newDir);
 close all
 
 
-%end
+end

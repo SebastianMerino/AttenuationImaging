@@ -8,4 +8,6 @@ function [hF,hB,hColor] = imOverlayInterp(B,SWS,climB,clim,alpha,x,z,ROI,xBm,zBm
 [X,Z] = meshgrid(x,z);
 [Xq,Zq] = meshgrid(xBm,zBm);
 imgInterp = interp2(X,Z,SWS,Xq,Zq);
-[hF,hB,hColor] = imoverlay2(B,imgInterp,climB,clim,alpha,x,z,ROI,xBm,zBm);
+emptyRegion = isnan(imgInterp);
+newRoi = ~emptyRegion & ROI;
+[hF,hB,hColor] = imoverlay2(B,imgInterp,climB,clim,alpha,x,z,newRoi,xBm,zBm);

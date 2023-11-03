@@ -11,19 +11,21 @@ for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\30-10'];
+figDir = [baseDir,'\fig\02-11'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
-groundTruthTop = [0.5,1,1];
-groundTruthBottom = [1,0.5,1];
+groundTruthTop = [0.5,1,1,0.5,1,1];
+groundTruthBottom = [1,0.5,1,1,0.5,1];
 
 %% Loading data
 for iAcq = 1:length(croppedFiles)
-% iAcq = 1;
+iAcq = 3;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
+load(fullfile(baseDir,'raw',croppedFiles(iAcq).name),"medium");
+
 dynRange = [-40,0];
-attRange = [0.3,1.2];
+attRange = [0,1.5];
 bsRange = [-2 2];
 
 
@@ -67,6 +69,25 @@ title('SLD')
 c = colorbar;
 c.Label.String = 'BS log ratio (a.u.)';
 
+%% 
+[~,Z] = meshgrid(x_ACS,z_ACS);
+topLayer = Z < 2.3;
+bottomLayer = Z > 2.7;
+NpTodb = 20*log10(exp(1));
+
+topSLD = squeeze(sum(sum(b.*topLayer,1),2))/sum(topLayer(:));
+slopeTop = f\topSLD;
+fprintf('Attenuation is %.2f\n',slopeTop*NpTodB)
+
+bottomSLD = squeeze(sum(sum(b.*bottomLayer,1),2))/sum(bottomLayer(:));
+slopeBottom = f\bottomSLD;
+fprintf('Attenuation is %.2f\n',slopeBottom*NpTodB)
+plot(f,topSLD)
+hold on
+plot(f,bottomSLD)
+plot(f,slopeTop*f, 'k--')
+plot(f,slopeBottom*f, 'k--')
+hold off
 
 %% RSLD
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -74,6 +95,8 @@ b = (log(Sp) - log(Sd)) - (compensation);
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
 % A = [A1 A2];
+
+%attRange = [0 1];
 
 % Regularization: Au = b
 tol = 1e-3;
