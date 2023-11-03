@@ -107,7 +107,7 @@ nAperture = nApertureEle*ratio;
 nLines = floor(Ny/ratio); % vary slightly plm_y to get nLines=128
 
 bf_data_final = nan(kgrid.Nt ,nLines);
-
+%%
 for ii = 1:nLines
 
     jj = ratio*ii;
