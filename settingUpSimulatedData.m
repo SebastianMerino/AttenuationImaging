@@ -25,8 +25,9 @@ refFiles = dir([refDir,'\rf*.mat']);
 
 %% Generating cropped data
 % SETTING PARAMETERS
-blocksize = 15;     % Block size in wavelengths
-freq_L = 3.3e6; freq_H = 8.7e6;
+blocksize = 20;     % Block size in wavelengths
+%freq_L = 3.3e6; freq_H = 8.7e6;
+freq_L = 4e6; freq_H = 9e6;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
 
@@ -45,6 +46,9 @@ z = z*1e2; % [cm]
 sam1 = rf(:,:,1);
 dynRange = [-50,0];
 
+
+% [pxx,fpxx] = pwelch(sam1,500,400,500,fs);
+% figure,plot(fpxx/1e6,mean(pxx,2))
 
 % Bmode = db(hilbert(sam1));
 % Bmode = Bmode - max(Bmode(:));

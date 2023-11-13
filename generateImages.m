@@ -19,7 +19,7 @@ if (~exist(figDir,"dir")), mkdir(figDir); end
 
 %% Loading data
 
-iAcq = 6;
+iAcq = 8;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 dynRange = [-40,-5];
@@ -294,6 +294,70 @@ c = colorbar;
 c.Label.String = 'Bsc. log ratio [a.u.]';
 
 %%
+%fc = (3.5+8)/2; %Central freq in MHz
+fc = 6;
+fs = 40000000;
+[b,a] = butter(6,[fc*0.9,fc*1.1]*1e6/fs*2);
+samFilt = filtfilt(b,a,sam1);
+
+fFull = (0:length(sam1)-1)/length(sam1)*fs/1e6;
+figure, tiledlayout(2,1)
+nexttile, plot(fFull,mean(abs(fft(sam1)),2))
+xlim([0 fs/2]/1e6)
+title('Spectrum')
+xlabel('Frequency [MHz]')
+nexttile, plot(fFull,mean(abs(fft(samFilt)),2))
+xlim([0 fs/2]/1e6)
+title('Filtered spectrum')
+xlabel('Frequency [MHz]')
+
+%%
+ix = 14;
+BmodeFilt = db(hilbert(samFilt));
+BmodeFilt = BmodeFilt - max(BmodeFilt(:));
+figure, imagesc(x,z,BmodeFilt,dynRange)
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+axis image
+colormap(gray)
+title('Filtered Bmode')
+xline(x_ACS(ix), 'b--', 'LineWidth',2)
+colorbar
+%%
+[X,Z] = meshgrid(x,z);
+lineBmode = BmodeFilt .* (Z>1.3 & Z<1.7);
+figure, plot(x,sum(lineBmode)./sum(Z>1.3 & Z<1.7)),
+grid on
+xlabel('Lateral dim [cm]')
+xline(x_ACS(ix), 'k--', 'LineWidth',2)
+
+%%
+figure, plot(z_ACS,[BR(:,ix),BRWTik(:,ix)])
+grid on
+legend('TV', 'WTV+WTik')
+ylim([0 1.6])
+xlim([0.5 1.9])
+xlabel('Depth [cm]')
+ylabel('ACS [dB/cm/MHz]')
+d = 0.8;
+enhancementTV = d*fc*4*0.6
+enhancementWTik = d*fc*4*0.8
+
+%%
+crop = BmodeFilt(:,60:80);
+figure, imagesc(crop,dynRange)
+figure, plot(mean(crop,2))
+
+%%
+imagesc(xFull,zFull,BmodeFull,dynRange)
+axis image
+colormap(gray)
+ylim([0.1 2.5])
+title('Bmode')
+xline(x_ACS(ix), 'b--', 'LineWidth',2)
+colorbar
+
+%%
 [X,Z] = meshgrid(xFull,zFull);
 roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 %figure, imagesc(roi);
@@ -303,12 +367,17 @@ figure,
     x_ACS,z_ACS,roi,xFull,zFull);
 title('B-mode and attenuation map')
 hColor.Label.String = 'dB/cm/MHz';
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
 
 figure,
 [~,~,hColor] = imOverlayInterp(BmodeFull,BRWTik,[-50 0],attRange,0.5,...
     x_ACS,z_ACS,roi,xFull,zFull);
 title('B-mode and attenuation map')
 hColor.Label.String = 'dB/cm/MHz';
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+
 
 %%
 newDir = fullfile(figDir,croppedFiles(iAcq).name(1:end-4));

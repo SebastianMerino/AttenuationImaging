@@ -11,20 +11,20 @@ for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\02-11'];
+figDir = [baseDir,'\fig\10-11'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 groundTruthTop = [0.5,1,1,0.5,1,1];
 groundTruthBottom = [1,0.5,1,1,0.5,1];
 
 %% Loading data
-for iAcq = 1:length(croppedFiles)
-iAcq = 3;
+for iAcq = 1:3
+iAcq = 5;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load(fullfile(baseDir,'raw',croppedFiles(iAcq).name),"medium");
 
-dynRange = [-40,0];
+dynRange = [-50,0];
 attRange = [0,1.5];
 bsRange = [-2 2];
 
@@ -71,9 +71,9 @@ c.Label.String = 'BS log ratio (a.u.)';
 
 %% 
 [~,Z] = meshgrid(x_ACS,z_ACS);
-topLayer = Z < 2.3;
-bottomLayer = Z > 2.7;
-NpTodb = 20*log10(exp(1));
+topLayer = Z < 2.2;
+bottomLayer = Z > 2.4;
+NpTodB = 20*log10(exp(1));
 
 topSLD = squeeze(sum(sum(b.*topLayer,1),2))/sum(topLayer(:));
 slopeTop = f\topSLD;
@@ -88,6 +88,8 @@ plot(f,bottomSLD)
 plot(f,slopeTop*f, 'k--')
 plot(f,slopeBottom*f, 'k--')
 hold off
+
+legend('Top','Bottom')
 
 %% RSLD
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -382,8 +384,13 @@ mu2 = 1;
 bscMap = (reshape(Cn,m,n));
 
 logBscRatio = bscMap*log10(exp(1))*20;
-w = 1./((logBscRatio/10).^2 + 1);
+w = 1./((logBscRatio/6).^2 + 1);
 
+% [~,Z] = meshgrid(x_ACS,z_ACS);
+% w = double(Z < 2.3 | Z > 2.8)*0.9 + 0.1;
+% w(Z>2.8) = 0.6;
+
+%%
 
 figure('Units','centimeters', 'Position',[5 5 30 8]),
 tl = tiledlayout(1,3);
@@ -549,7 +556,7 @@ end
 %% Attenuation 
 
 results1 = struct2table(MetricsTV);
-results2 = struct2table(MetricsTVTik);
+results2 = struct2table(MetricsSWTV);
 results3 = struct2table(MetricsSWTVTik);
 
 figure('Units','centimeters', 'Position',[5 5 12 8])
