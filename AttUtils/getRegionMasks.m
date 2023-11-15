@@ -18,6 +18,7 @@ function [back,inc] = getRegionMasks(x,z,c1x,c1z,L,d)
 x0 = c1x - L/2; 
 z0 = c1z - L/2;
 
+% Mask inclusion
 [X,Z] = meshgrid(x,z);
 maskZ = Z>z0 & Z<z0+L;
 maskInc = X>x0 & X<x0+L & maskZ;
@@ -26,9 +27,23 @@ inc = maskInc;
 % Upper left corner of each background rectangle
 xb1 = x0 - d - L/2;
 xb2 = x0 + L + d;
+
+% Mask background
 maskBack1 = X>xb1 & X<xb1+L/2 & maskZ;
 maskBack2 = X>xb2 & X<xb2+L/2 & maskZ;
 back = maskBack1 | maskBack2;
+
+
+% Vertical squares
+% [X,Z] = meshgrid(x,z);
+% maskX = X>x0 & X<x0+L;
+% maskInc = Z>z0 & Z<z0+L & maskX;
+% inc = maskInc;
+% zb1 = z0 - d - L/2;
+% zb2 = z0 + L + d;
+% maskBack1 = Z>zb1 & Z<zb1+L/2 & maskX;
+% maskBack2 = Z>zb2 & Z<zb2+L/2 & maskX;
+% back = maskBack1 | maskBack2;
 
 % ========================================================================
 end

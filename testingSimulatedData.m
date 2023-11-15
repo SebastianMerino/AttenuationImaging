@@ -91,6 +91,8 @@ plot(f,slopeTop*f, 'k--')
 plot(f,slopeBottom*f, 'k--')
 hold off
 
+legend('Top','Bottom')
+
 %% RSLD
 b = (log(Sp) - log(Sd)) - (compensation);
 
