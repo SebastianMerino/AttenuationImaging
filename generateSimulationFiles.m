@@ -10,15 +10,21 @@ addpath(genpath(pwd))
 DATA_CAST = 'single';     % set to 'single' or 'gpuArray-single' to speed up computations
 % DATA_CAST = 'gpuArray-single';     % set to 'single' or 'gpuArray-single' to speed up computations
 
-BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation';
+BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_11_11';
 % folderNames = {'twoLayers1','twoLayers2','twoLayers3'};
 % folderNames = {'layerRef1','layerRef2'};
-folderNames = {'twoLayers4','twoLayers5','twoLayers6'};
+% folderNames = {'twoLayers4','twoLayers5','twoLayers6'};
+folderNames = {'twoLayers1','twoLayers2','twoLayers3','twoLayers4',...
+    'twoLayers5','twoLayers6'};
+
 %% For looping simulations
 
 for iSim = 1:length(folderNames)
     if (~exist(fullfile(BaseDir,folderNames{iSim},"input"),"dir"))
         mkdir(fullfile(BaseDir,folderNames{iSim},"input"));
+    end
+    if (~exist(fullfile(BaseDir,folderNames{iSim},"output"),"dir"))
+        mkdir(fullfile(BaseDir,folderNames{iSim},"output"));
     end
 
     %% Generating grid
@@ -50,38 +56,53 @@ for iSim = 1:length(folderNames)
     rho0 = 1000;
 
     %maskLayer = rz > 15e-3 & rz < 30e-3;
-    maskLayer = rz > 25e-3;
+    maskLayer = rz > (20e-3 + offset*dx);
 
     % define properties of the layer
     switch iSim
         case 1
-            background_map_std = 0.04;
-            layer_map_std = 0.01;
-            background_alpha = 0.5;     % [dB/(MHz^y cm)]
-            layer_alpha = 1;            % [dB/(MHz^y cm)]
+            background_map_std = 0.005;
+            layer_map_std = 0.02;
+            background_alpha = 0.6;       % [dB/(MHz^y cm)]
+            layer_alpha = 1.2;            % [dB/(MHz^y cm)]
         case 2
-            background_map_std = 0.04;
-            layer_map_std = 0.01;
-            background_alpha = 1;
-            layer_alpha = 0.5;
+            background_map_std = 0.02;
+            layer_map_std = 0.005;
+            background_alpha = 0.6;
+            layer_alpha = 1.2;
         case 3
-            background_map_std = 0.04;
-            layer_map_std = 0.01;
-            background_alpha = 1;
-            layer_alpha = 1;
+            background_map_std = 0.005;
+            layer_map_std = 0.005;
+            background_alpha = 0.6;
+            layer_alpha = 1.2;
+        case 4
+            background_map_std = 0.005;
+            layer_map_std = 0.02;
+            background_alpha = 1.2;       % [dB/(MHz^y cm)]
+            layer_alpha = 0.6;            % [dB/(MHz^y cm)]
+        case 5
+            background_map_std = 0.02;
+            layer_map_std = 0.005;
+            background_alpha = 1.2;
+            layer_alpha = 0.6;
+        case 6
+            background_map_std = 0.005;
+            layer_map_std = 0.005;
+            background_alpha = 1.2;
+            layer_alpha = 0.6;
     end
 
     % Multiplicative maps for background and layer
-    background_map = 1 + background_map_std * randn(Nx,Ny);
-    layer_map = 1 + layer_map_std * randn(Nx,Ny);
+    % background_map = 1 + background_map_std * randn(Nx,Ny);
+    % layer_map = 1 + layer_map_std * randn(Nx,Ny);
 
     % Define properties for each region
-    sound_speed_map = c0 * ones(Nx,Ny) .* background_map;
-    density_map = rho0 * ones(Nx,Ny) .* background_map;
+    sound_speed_map = c0 * ones(Nx,Ny) .* (1 + background_map_std * randn(Nx,Ny));
+    density_map = rho0 * ones(Nx,Ny) .* (1 + background_map_std * randn(Nx,Ny));
     alpha_map = background_alpha + zeros(Nx,Ny);    
     
-    sound_speed_layer = c0 * ones(Nx,Ny) .* layer_map;
-    density_layer = rho0 * ones(Nx,Ny) .* layer_map;
+    sound_speed_layer = c0 * ones(Nx,Ny) .* (1 + layer_map_std * randn(Nx,Ny));
+    density_layer = rho0 * ones(Nx,Ny) .* (1 + layer_map_std * randn(Nx,Ny));
     alpha_layer = layer_alpha + zeros(Nx,Ny);      % [dB/(MHz^y cm)]
 
     % assign region
@@ -89,6 +110,7 @@ for iSim = 1:length(folderNames)
     density_map(maskLayer) = density_layer(maskLayer);
     alpha_map(maskLayer) = alpha_layer(maskLayer);
 
+    % medium.sound_speed = sound_speed_map;
     medium.sound_speed = sound_speed_map;
     medium.density = density_map;
     medium.alpha_coeff = alpha_map;

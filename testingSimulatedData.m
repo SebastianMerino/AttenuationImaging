@@ -2,8 +2,10 @@ clear,clc
 close all
 addpath('./functions_v7');
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\layeredNew'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\layeredNew'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\layeredNew'];
 
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
@@ -19,7 +21,7 @@ groundTruthBottom = [1,0.5,1,1,0.5,1];
 
 %% Loading data
 for iAcq = 1:length(croppedFiles)
-iAcq = 3;
+%iAcq = 3;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load(fullfile(baseDir,'raw',croppedFiles(iAcq).name),"medium");
@@ -73,7 +75,7 @@ c.Label.String = 'BS log ratio (a.u.)';
 [~,Z] = meshgrid(x_ACS,z_ACS);
 topLayer = Z < 2.3;
 bottomLayer = Z > 2.7;
-NpTodb = 20*log10(exp(1));
+NpTodB = 20*log10(exp(1));
 
 topSLD = squeeze(sum(sum(b.*topLayer,1),2))/sum(topLayer(:));
 slopeTop = f\topSLD;
@@ -536,7 +538,7 @@ xlabel('Depth [cm]'), ylabel('BCS log ratio [a.u.]')
 legend({'TV','SWTV','TV+Tik', 'SWTV+SWTik'}, 'Location','northeastoutside')
 
 
-% %%
+%%
 newDir = fullfile(figDir,croppedFiles(iAcq).name(1:end-4));
 if(~exist(newDir,"dir")), mkdir(newDir); end
 save_all_figures_to_directory(newDir);

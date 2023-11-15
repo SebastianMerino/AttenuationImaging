@@ -10,8 +10,8 @@ addpath(genpath(pwd))
 DATA_CAST = 'single';     % set to 'single' or 'gpuArray-single' to speed up computations
 % DATA_CAST = 'gpuArray-single';     % set to 'single' or 'gpuArray-single' to speed up computations
 
-BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation';
-folderNames = {'twoLayers7','twoLayers8'};
+BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_11_11';
+folderNames = {'twoLayers1','twoLayers2','twoLayers3'};
 %% For looping simulations
 
 for iSim = 1:length(folderNames)
@@ -103,6 +103,6 @@ for iSim = 1:length(folderNames)
 
     %density_map = medium.density;
     %attenuation_map = medium.alpha_coeff;
-    save(fullfile(BaseDir,folderNames{iSim},['rf_',folderNames{iSim},'.mat']),...
+    save(fullfile(BaseDir,['rf_',folderNames{iSim},'.mat']),...
         'rf','x','z','fs','medium');
 end
