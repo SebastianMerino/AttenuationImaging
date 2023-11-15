@@ -6,8 +6,10 @@ addpath('./functions_v7');
 %     'Attenuation\Simulation\layeredNew'];
 % baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\layeredNew'];
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\layered_14_11_23'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\layered_14_11_23'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\layered_14_11_23'];
 
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
@@ -24,7 +26,7 @@ groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
 groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
 %% Loading data
 for iAcq = 1:length(croppedFiles)
-%iAcq = 5;
+%iAcq = 2;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load(fullfile(baseDir,'raw',croppedFiles(iAcq).name),"medium");

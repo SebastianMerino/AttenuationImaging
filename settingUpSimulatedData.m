@@ -6,8 +6,11 @@ addpath('./AttUtils');
 %     'Attenuation\Simulation\layeredNew'];
 % baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\layeredNew'];
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\layered_14_11_23'];
+
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\layered_14_11_23'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\layered_14_11_23'];
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
