@@ -2,19 +2,13 @@ clear,clc
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets' ...
-%     '\Attenuation\Timana\data'];
-% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\Timana\ref'];
-% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\centered'];
-% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\ref'];
-
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\Simulation\layeredNew'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\layeredNew'];
 baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\layeredNew'];
+    'Attenuation\layered_14_11_23'];
+
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
@@ -35,7 +29,6 @@ ratio_zx        = 1;
 
 %% For looping
 for iAcq = 1:length(targetFiles)
-%iAcq = 1;
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
@@ -70,7 +63,7 @@ dynRange = [-50,0];
 % x_inf = rect(1); x_sup = rect(1)+rect(3);
 % z_inf = rect(2); z_sup = rect(2)+rect(4);
 x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.5; z_sup = 4.5;
+z_inf = 0.5; z_sup = 3.5;
 
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;

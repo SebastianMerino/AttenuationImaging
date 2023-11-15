@@ -11,7 +11,7 @@ DATA_CAST = 'single';     % set to 'single' or 'gpuArray-single' to speed up com
 % DATA_CAST = 'gpuArray-single';     % set to 'single' or 'gpuArray-single' to speed up computations
 
 BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_11_11';
-folderNames = {'twoLayers1','twoLayers2','twoLayers3'};
+folderNames = {'twoLayers4','twoLayers5','twoLayers6'};
 %% For looping simulations
 
 for iSim = 1:length(folderNames)
