@@ -338,7 +338,7 @@ A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
 
 muB = 10.^(2.5:0.5:4);
-muC = 10.^(0:0.5:2);
+muC = 10.^(-0.5:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -359,7 +359,7 @@ for mmB = 1:length(muB)
         toc
 
         BR = (reshape(Bn*8.686,m,n));
-        CR = (reshape(Cn,m,n));
+        CR = (reshape(Cn*8.686,m,n));
         RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         if RMSE<minRMSE
             minRMSE = RMSE;
@@ -395,7 +395,7 @@ colormap(t3,parula)
 axis image
 title(['RSLD-WFR, \mu=',num2str(muCopt,2)])
 c = colorbar;
-c.Label.String = 'BS log ratio (a.u.)';
+c.Label.String = 'BS log ratio [dB]';
 
 %%
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);

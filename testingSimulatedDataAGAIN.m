@@ -8,21 +8,23 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
+figDir = [baseDir,'\fig\17-11'];
 
+if ~exist(figDir,"dir"), mkdir(figDir); end
 %% Generating cropped data
 % SETTING PARAMETERS
-blocksize = 15;     % Block size in wavelengths
+%for blocksize = 10:5:20     % Block size in wavelengths
+blocksize = 15;
 freq_L = 4e6; freq_H = 9e6;
-%freq_L = 3e6; freq_H = 9e6;
 
+%freq_L = 3e6; freq_H = 9e6;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
-
+NptodB = log10(exp(1))*20;
 targetFiles = dir([targetDir,'\*.mat']);
 
-
 %% For looping
-iAcq = 2;
+iAcq = 5;
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
@@ -34,20 +36,19 @@ zFull = z*1e2; % [cm]
 sam1 = rf(:,:,1);
 dynRange = [-50,0];
 
-
 BmodeFull = db(hilbert(sam1));
 BmodeFull = BmodeFull - max(BmodeFull(:));
-figure('Units','centimeters', 'Position',[5 5 15 15]),
-imagesc(xFull,zFull,BmodeFull); axis image; colormap gray; clim(dynRange);
-hb2=colorbar; ylabel(hb2,'dB')
-xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
+% figure('Units','centimeters', 'Position',[5 5 15 15]),
+% imagesc(xFull,zFull,BmodeFull); axis image; colormap gray; clim(dynRange);
+% hb2=colorbar; ylabel(hb2,'dB')
+% xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 
-confirmation = '';
-while ~strcmp(confirmation,'Yes')
-    rect = getrect;
-    confirmation = questdlg('Sure?');
-end
-close,
+% confirmation = '';
+% while ~strcmp(confirmation,'Yes')
+%     rect = getrect;
+%     confirmation = questdlg('Sure?');
+% end
+% close,
 
 %% Cropping and finding sample sizes
 % Region for attenuation imaging
@@ -99,7 +100,6 @@ Bmode = Bmode - max(Bmode(:));
 % axis image; colormap gray; clim(dynRange);
 % hb2=colorbar; ylabel(hb2,'dB')
 % xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
-
 
 fprintf('\nFrequency range: %.2f - %.2f MHz\n',freq_L*1e-6,freq_H*1e-6)
 fprintf('Blocksize in wavelengths: %i\n',blocksize)
@@ -177,11 +177,18 @@ for jj=1:n
 end
 
 
-
+% ====================================================================== %
 %% RSLD and plotting
 dynRange = [-50,0];
 attRange = [0.4,1.4];
-bsRange = [-2 2];
+bsRange = [-15 15];
+
+groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
+groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
+[~,Z] = meshgrid(x_ACS,z_ACS);
+attIdeal = ones(size(Z));
+attIdeal(Z<=2) = groundTruthTop(iAcq);
+attIdeal(Z>2) = groundTruthBottom(iAcq);
 
 %% Weighting equation and regularizations
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -192,83 +199,163 @@ A2 = kron( ones(size(f)) , speye(m*n) );
 % Regularization: Au = b
 tol = 1e-3;
 mask = ones(m,n,p);
-mu = logspace(2.5,3.5,3)*10;
-muC = logspace(-0.5,1.5,3)*10;
+% muB = 10.^(3:0.5:4);
+% muC = 10.^(1:0.5:2);
+muB = 10^3.5; muC = 10^1.5;
 BRTV = zeros(m,n,length(muC));
 CRTV = zeros(m,n,length(muC));
-for mm = 1:length(mu)
+for mmB = 1:length(muB)
     for mmC = 1:length(muC)
         tic
-        [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),mu(mm),muC(mmC),m,n,tol,mask(:));
+        [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
         toc
-        BRTV(:,:,mmC) = (reshape(Bn*8.686,m,n));
-        CRTV(:,:,mmC) = (reshape(Cn,m,n));
+        BRTV(:,:,mmC) = (reshape(Bn*NptodB,m,n));
+        CRTV(:,:,mmC) = (reshape(Cn*NptodB,m,n));
     end
+        
+    figure('Units','centimeters', 'Position',[5 5 8 12]);
+    tl = tiledlayout(2,1);
+    title(tl,['RSLD-TV, BS = ',num2str(blocksize),'\lambda'])    
     
-    % Plotting
-    figure('Units','centimeters', 'Position',[5 5 30 12]);
-    tl = tiledlayout(2,size(BRTV,3)+1);
-    title(tl,{'RSLD - TV',''})
-    %subtitle(tl,['Patient ',croppedFiles(iAcq).name(1:end-4)])
-    t1 = nexttile;
-    imagesc(x,z,Bmode,dynRange)
-    axis equal
-    xlim([x_ACS(1) x_ACS(end)]),
-    ylim([z_ACS(1) z_ACS(end)]),
-    colormap(t1,gray)
-    colorbar(t1,'westoutside')
-    title('Bmode')
-    
-    for ii = 1:size(BRTV,3)
-        t2 = nexttile; 
-        imagesc(x_ACS,z_ACS,BRTV(:,:,ii), attRange)
-        colormap(t2,turbo)
-        axis equal tight
-        title(['RSLD, \mu=',num2str(mu(mm),2)])
-    end
+    t2 = nexttile; 
+    imagesc(x_ACS,z_ACS,BRTV(:,:,1), attRange)
+    colormap(t2,turbo)
+    axis image
+    title(['RSLD, \mu_B=',num2str(muB(mmB),2)])
     c = colorbar;
     c.Label.String = 'Att. [db/cm/MHz]';
     
-    nexttile;
-    axis off
-    
-    for ii = 1:size(BRTV,3)
-        t4 = nexttile; 
-        imagesc(x_ACS,z_ACS,CRTV(:,:,ii), bsRange)
-        colormap(t4,parula)
-        axis image
-        title(['RSLD, \mu=',num2str(muC(ii),2)])
-    end
-    c = colorbar(t4);
-    c.Label.String = 'BS log ratio (a.u.)';
+    t3 = nexttile; 
+    imagesc(x_ACS,z_ACS,CRTV(:,:,1), bsRange)
+    colormap(t3,parula)
+    axis image
+    title(['RSLD, \mu_C=',num2str(muC(mmC),2)])
+    c = colorbar;
+    c.Label.String = 'BS log ratio [dB]';
 end
-%%
 
-figure('Units','centimeters', 'Position',[5 5 6 8]),
-imOverlayInterp(BmodeFull,BRTV(:,:,2),dynRange,attRange,0.5,...
-    x_ACS,z_ACS,roi,xFull,zFull);
-title('RSLD-TV')
-xlabel('x [cm]'), ylabel('z [cm]'), 
+% figure('Units','centimeters', 'Position',[5 5 6 8]),
+% imOverlayInterp(BmodeFull,BRTV(:,:,2),dynRange,attRange,0.5,...
+%     x_ACS,z_ACS,roi,xFull,zFull);
+% title('RSLD-TV')
+% xlabel('x [cm]'), ylabel('z [cm]'), 
+% 
+% fprintf('ACS = %.2f\n',mean(BRTV(:,:,2),'all'))
 
-fprintf('ACS = %.2f\n',mean(BRTV(:,:,2),'all'))
-%% Weighting equation and regularizations
-b = (log(Sp) - log(Sd)) - (compensation);
-
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-
-mu = logspace(2.5,3.5,3)*10;
-muC = logspace(-0.5,1.5,3)*10;
+%% TV on Att an L1 norm on BSC
+% muB = 10.^(2.5:0.5:3.5);
+% muC = 10.^(-0.5:0.5:0.5);
+muB = 10^3.5; muC = 10^0.5;
 BWFR = zeros(m,n,length(muC));
 CWFR = zeros(m,n,length(muC));
-for mm = 1:length(mu)
+for mmB = 1:length(muB)
     for mmC = 1:length(muC)
         tic
-        [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),mu(mm),muC(mmC),m,n,tol,mask(:));
-        bscMap = (reshape(Cn,m,n));
+        [Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
+        toc
+        BWFR(:,:,mmB) = reshape(Bn*NptodB,m,n);
+        CWFR(:,:,mmC) = reshape(Cn*NptodB,m,n);
+        % Plotting
+        figure('Units','centimeters', 'Position',[5 5 8 12]);
+        tl = tiledlayout(2,1);
+        title(tl,['RSLD-TVL1, BS = ',num2str(blocksize),'\lambda'])
 
-        logBscRatio = bscMap*log10(exp(1))*20;
-        w = 1./((logBscRatio/6).^4 + 1);
+        t2 = nexttile;
+        imagesc(x_ACS,z_ACS,BWFR(:,:,mmB), attRange)
+        colormap(t2,turbo)
+        axis image
+        title(['RSLD, \mu_B=',num2str(muB(mmB),2)])
+        c = colorbar;
+        c.Label.String = 'Att. [db/cm/MHz]';
+
+        t3 = nexttile;
+        imagesc(x_ACS,z_ACS,CWFR(:,:,mmC), bsRange)
+        colormap(t3,parula)
+        axis image
+        title(['RSLD, \mu_C=',num2str(muC(mmC),2)])
+        c = colorbar;
+        c.Label.String = 'BS log ratio [dB]';
+
+    end
+
+end
+
+% figure('Units','centimeters', 'Position',[5 5 6 8]),
+% imOverlayInterp(BmodeFull,BWFR(:,:,2),dynRange,attRange,0.5,...
+%     x_ACS,z_ACS,roi,xFull,zFull);
+% title('RSLD-TV')
+% xlabel('x [cm]'), ylabel('z [cm]'), 
+% 
+% fprintf('ACS = %.2f\n',mean(BWFR(:,:,2),'all'))
+
+
+%% Weights
+% order = 1;
+% 
+% [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),10^3.5,10^0.5,m,n,tol,mask(:));
+% bscMap = (reshape(Cn,m,n));
+% 
+% logBscRatio = bscMap*log10(exp(1))*20;
+% w = 1./((logBscRatio/6).^(2*order) + 1);
+% %w = ones(size(BRTV(:,:,1)));
+% figure('Units','centimeters','Position',[5 5 10 10]),
+% imagesc(x_ACS,z_ACS,w,[0 1])
+% axis image
+% colormap(parula)
+% colorbar
+% title(['Weights, order =',num2str(order)])
+% 
+% w = movmin(w,5);
+% w = medfilt2(w,[5 5],'symmetric');
+% figure('Units','centimeters','Position',[5 5 10 10]),
+% imagesc(x_ACS,z_ACS,w,[0 1])
+% axis image
+% colormap(parula)
+% colorbar
+% title('New weights')
+% 
+% W = repmat(w,[1 1 p]);
+% W = spdiags(W(:),0,m*n*p,m*n*p);
+% bw = W*b(:);        
+% A1w = W*A1;
+% A2w = W*A2;
+ratioCutOff = 10;
+xWeights = -20:0.05:20;
+legends = {};
+figure('Units','centimeters', 'Position',[5 5 15 8])
+for order = 1:5
+    yWeights = 1./((xWeights/ratioCutOff).^(2*order) + 1);
+    plot(xWeights,yWeights)
+    legends{order} = ['order=',num2str(order)];
+    hold on
+end
+xline(ratioCutOff,'--')
+xline(-ratioCutOff,'--')
+hold off
+legend(legends)
+grid on
+xlabel('Log BSC ratio [dB]')
+ylabel('Weights')
+title(['Weights, cut-off = ',num2str(ratioCutOff),'dB'])
+
+%% Weighting equation and regularizations
+% muB = 10.^(3:0.5:4);
+% muC = 10.^(1:0.5:2);
+ratioCutOff = 10;
+order = 2;
+extension = 1;
+for extension = 1:2:7
+muB = 10^4; muC = 10^0.5;
+BWFR = zeros(m,n,length(muC));
+CWFR = zeros(m,n,length(muC));
+
+for mmB = 1:length(muB)
+    for mmC = 1:length(muC)
+        tic
+        [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));        
+        logBscRatio = reshape(Cn*NptodB,m,n);
+        w = (1./((logBscRatio/ratioCutOff).^(2*order) + 1));
+        w = movmin(w,extension);
 
         W = repmat(w,[1 1 p]);
         W = spdiags(W(:),0,m*n*p,m*n*p);
@@ -276,69 +363,111 @@ for mm = 1:length(mu)
         A1w = W*A1;
         A2w = W*A2;
 
-        [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,mu(mm),muC(mmC),m,n,tol,mask(:),w);
+        [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muB(mmB),muC(mmC),m,n,tol,mask(:),w);
         toc
-        BWFR(:,:,mmC) = (reshape(Bn*8.686,m,n));
-        CWFR(:,:,mmC) = (reshape(Cn,m,n));
+
+        BWFR(:,:,mmC) = reshape(Bn*NptodB,m,n);
+        CWFR(:,:,mmC) = reshape(Cn*NptodB,m,n);
     end
+    fprintf('ACS Bottom: %.2f\n',mean(BWFR(22:end,:),'all'))
 
     % Plotting
-    figure('Units','centimeters', 'Position',[5 5 30 12]);
-    tl = tiledlayout(2,size(BWFR,3)+1);
-    title(tl,{'TV, Tikhonov reg and weights',''})
-    %subtitle(tl,['Patient ',croppedFiles(iAcq).name(1:end-4)])
-    t1 = nexttile;
-    imagesc(x,z,Bmode,dynRange)
-    axis equal
-    xlim([x_ACS(1) x_ACS(end)]),
-    ylim([z_ACS(1) z_ACS(end)]),
-    colormap(t1,gray)
-    colorbar(t1,'westoutside')
-    title('Bmode')
-
-    for ii = 1:size(BWFR,3)
-        t2 = nexttile; 
-        imagesc(x_ACS,z_ACS,BWFR(:,:,ii), attRange)
-        colormap(t2,turbo)
-        axis equal tight
-        title(['RSLD, \mu=',num2str(mu(mm),2)])
-    end
+    figure('Units','centimeters', 'Position',[5 5 8 12]);
+    tl = tiledlayout(2,1);
+    title(tl,['RSLD-WFR, BS = ',num2str(blocksize),'\lambda'])    
+    t2 = nexttile; 
+    imagesc(x_ACS,z_ACS,BWFR(:,:,1), attRange)
+    colormap(t2,turbo)
+    axis image
+    title(['RSLD, \mu_B=',num2str(muB(mmB),2)])
     c = colorbar;
     c.Label.String = 'Att. [db/cm/MHz]';
-
-    t3 = nexttile;
+    
+    t3 = nexttile; 
     imagesc(x_ACS,z_ACS,w,[0 1])
-    axis image
     colormap(t3,parula)
-    colorbar(t3,'westoutside')
-    title('Weights')
-
-    for ii = 1:size(BWFR,3)
-        t4 = nexttile; 
-        imagesc(x_ACS,z_ACS,CWFR(:,:,ii), bsRange)
-        colormap(t4,parula)
-        axis image
-        title(['RSLD, \mu=',num2str(muC(ii),2)])
-    end
-    c = colorbar(t4);
-    c.Label.String = 'BS log ratio (a.u.)';
-    pause()
+    colorbar
+    %title(['Weights, CutOff=',num2str(ratioCutOff),'dB'])
+    %title(['Weights, order=',num2str(order)])
+    title(['Weights, extension=',num2str(extension)])
+    axis image
 end
-%%
-figure('Units','centimeters', 'Position',[5 5 6 8]),
-imOverlayInterp(BmodeFull,BWFR(:,:,3),dynRange,attRange,0.5,...
-    x_ACS,z_ACS,roi,xFull,zFull);
-title('RSLD-WFR')
-xlabel('x [cm]'), ylabel('z [cm]'), 
 
-fprintf('ACS = %.2f\n',mean(BWFR(:,:,3),'all'))
+end
+% save_all_figures_to_directory(figDir,'extension');
+% close all;
+
+%% MANUAL WEIGHTS
+[~,border] = gradient(attIdeal);
+manualW = double(border==0);
+
+manualW(manualW == 0) = 10^-2;
+extension = 5;
+
+dxACS = x_ACS(2)-x_ACS(1);
+BScm = blocksize*wl*100;
+manualW = movmin(manualW,extension);
+fprintf("\nBS = %.2f cm, Border width = %.2f cm\n",BScm,dxACS*(extension+1))
+
+w = manualW;
+W = repmat(w,[1 1 p]);
+W = spdiags(W(:),0,m*n*p,m*n*p);
+bw = W*b(:);
+A1w = W*A1;
+A2w = W*A2;
+
+
+muB = 10^4;
+muC = 10.^(0.5:1:2.5);
+for mmB = 1:length(muB)
+    for mmC = 1:length(muC)
+        tic
+        [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muB(mmB),muC(mmC),m,n,tol,mask(:),w);
+        toc
+
+        BWFR(:,:,mmC) = reshape(Bn*NptodB,m,n);
+        CWFR(:,:,mmC) = reshape(Cn*NptodB,m,n);
+        fprintf('ACS Bottom: %.2f\n',mean(BWFR(22:end,:,mmC),'all'))
+    
+        % Plotting
+        figure('Units','centimeters', 'Position',[5 5 20 6]);
+        tl = tiledlayout(1,3);
+        t3 = nexttile; 
+        imagesc(x_ACS,z_ACS,w,[0 1])
+        colormap(t3,parula)
+        colorbar
+        title('Manual weights')
+        axis image
+    
+        title(tl,['RSLD-WFR, BS = ',num2str(blocksize),'\lambda'])    
+        t2 = nexttile; 
+        imagesc(x_ACS,z_ACS,BWFR(:,:,mmC), attRange)
+        colormap(t2,turbo)
+        axis image
+        title(['RSLD, \mu_B=',num2str(muB(mmB),2)])
+        c = colorbar;
+        c.Label.String = 'Att. [db/cm/MHz]';
+        
+        t3 = nexttile;
+        imagesc(x_ACS,z_ACS,CWFR(:,:,mmC), bsRange)
+        colormap(t3,parula)
+        axis image
+        title(['RSLD, \mu_C=',num2str(muC(mmC),2)])
+        c = colorbar;
+        c.Label.String = 'BS log ratio [dB]';
+    end
+
+
+end
+
+save_all_figures_to_directory(figDir,'manualR100');
+close all;
 
 %% Saving data
-% save(fullfile(croppedDir,targetFiles(iAcq).name),"Sd","Sp",...
-%     "compensation","z_ACS","x_ACS","nx","nz","x0","z0p","z0d","sam1",...
-%     "m","n","p","Bmode","x","z","f","L","xFull","zFull","BmodeFull")
+% save_all_figures_to_directory(figDir,['L',num2str(blocksize),'figure']);
+% close all;
+
 
 % end
-
 
 
