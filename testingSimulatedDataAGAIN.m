@@ -2,8 +2,10 @@ clear,clc
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\layered_14_11_23'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\layered_14_11_23'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\layered_14_11_23'];
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
@@ -401,8 +403,8 @@ end
 [~,border] = gradient(attIdeal);
 manualW = double(border==0);
 
-manualW(manualW == 0) = 10^-2;
-extension = 5;
+manualW(manualW == 0) = 10^-1;
+extension = 7;
 
 dxACS = x_ACS(2)-x_ACS(1);
 BScm = blocksize*wl*100;
@@ -417,8 +419,8 @@ A1w = W*A1;
 A2w = W*A2;
 
 
-muB = 10^4;
-muC = 10.^(0.5:1:2.5);
+muB = 10.^(4:0.5:5);
+muC = 10.^(1:1:3);
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
         tic
@@ -460,8 +462,20 @@ for mmB = 1:length(muB)
 
 end
 
-save_all_figures_to_directory(figDir,'manualR100');
-close all;
+%%
+
+axialProfile = mean(BWFR(:,:,3),2);
+figure, plot(z_ACS,axialProfile)
+grid on
+hold on
+plot(z_ACS,mean(attIdeal,2),'k--')
+hold off
+ylim([0.5 1.3])
+xlabel('Depth [cm]')
+ylabel('ACS [dB/cm/MHz]')
+
+%save_all_figures_to_directory(figDir,'manualR100');
+%close all;
 
 %% Saving data
 % save_all_figures_to_directory(figDir,['L',num2str(blocksize),'figure']);
