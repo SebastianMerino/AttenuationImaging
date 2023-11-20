@@ -17,7 +17,7 @@ for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\14-11'];
+figDir = [baseDir,'\fig\19-11'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 % groundTruthTop = [0.5,1,1,0.5,1,1];
@@ -26,14 +26,15 @@ groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
 groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
 %% Loading data
 for iAcq = 1:length(croppedFiles)
-%iAcq = 2;
+iAcq = 2;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load(fullfile(baseDir,'raw',croppedFiles(iAcq).name),"medium");
 
 dynRange = [-40,0];
 attRange = [0.4,1.4];
-bsRange = [-2 2];
+bsRange = [-15 15];
+NptodB = log10(exp(1))*20;
 
 tol = 1e-3;
 clear mask
@@ -55,7 +56,7 @@ A = [A1 A2];
 % BS: Beta. Attenuation coefficient slopes of blocks.
 % CS: Constants of blocks.
 BS = u(1:end/2); CS = u(end/2+1:end);
-BS = 8.686*BS;   % [dB.cm^{-1}.MHz^{-1}]
+BS = NptodB*BS;   % [dB.cm^{-1}.MHz^{-1}]
 BS = reshape(BS,m,n);
 CS = reshape(CS,m,n);
 
@@ -82,7 +83,7 @@ colormap(t3,parula)
 axis image
 title('SLD')
 c = colorbar;
-c.Label.String = 'BS log ratio (a.u.)';
+c.Label.String = 'BS log ratio [dB]';
 
 %% 
 [~,Z] = meshgrid(x_ACS,z_ACS);
@@ -115,7 +116,7 @@ A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
 % A = [A1 A2];
 
-muB = 10.^(2.5:0.5:4);
+muB = 10.^(3:0.5:4);
 muC = 10.^(0:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -123,8 +124,8 @@ for mmB = 1:length(muB)
         tic
         [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
         toc
-        BR = (reshape(Bn*8.686,m,n));
-        CR = (reshape(Cn,m,n));
+        BR = reshape(Bn*NptodB,m,n);
+        CR = reshape(Cn*NptodB,m,n);
 
         RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         if RMSE<minRMSE
@@ -161,7 +162,7 @@ colormap(t3,parula)
 axis image
 title(['RSLD, \mu=',num2str(muCopt,2)])
 c = colorbar;
-c.Label.String = 'BS log ratio (a.u.)';
+c.Label.String = 'BS log ratio [dB]';
 
 %%
 [X,Z] = meshgrid(x_ACS,z_ACS);
@@ -214,7 +215,7 @@ b = (log(Sp) - log(Sd)) - (compensation);
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
 
-muB = 10.^(2.5:0.5:4);
+muB = 10.^(3:0.5:4);
 muC = 10.^(0:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -223,8 +224,8 @@ for mmB = 1:length(muB)
         [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muB(mmB),muC(mmC),...
         m,n,tol,mask(:),w);
         toc
-        BR = (reshape(Bn*8.686,m,n));
-        CR = (reshape(Cn,m,n));
+        BR = reshape(Bn*NptodB,m,n);
+        CR = reshape(Cn*NptodB,m,n);
 
         RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         if RMSE<minRMSE
@@ -261,7 +262,7 @@ colormap(t3,parula)
 axis image
 title(['RSLD, \mu=',num2str(muCopt,2)])
 c = colorbar;
-c.Label.String = 'BS log ratio (a.u.)';
+c.Label.String = 'BS log ratio [dB]';
 
 
 %% Minimizing BS log ratio
@@ -270,7 +271,7 @@ b = (log(Sp) - log(Sd)) - (compensation);
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
 
-muB = 10.^(2.5:0.5:4);
+muB = 10.^(3:0.5:4);
 muC = 10.^(0:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -278,8 +279,8 @@ for mmB = 1:length(muB)
         tic
         [Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
         toc
-        BR = (reshape(Bn*8.686,m,n));
-        CR = (reshape(Cn,m,n));
+        BR = reshape(Bn*NptodB,m,n);
+        CR = reshape(Cn*NptodB,m,n);
 
         RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         if RMSE<minRMSE
@@ -316,7 +317,7 @@ colormap(t3,parula)
 axis image
 title(['RSLD-TVL1, \mu=',num2str(muCopt,2)])
 c = colorbar;
-c.Label.String = 'BS log ratio (a.u.)';
+c.Label.String = 'BS log ratio [dB]';
 
 %%
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);
@@ -344,7 +345,7 @@ for mmB = 1:length(muB)
     for mmC = 1:length(muC)
         tic
         [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
-        bscMap = (reshape(Cn,m,n));
+        bscMap = reshape(Cn*NptodB,m,n);
         
         logBscRatio = bscMap*log10(exp(1))*20;
         w = 1./((logBscRatio/6).^2 + 1);
@@ -358,8 +359,8 @@ for mmB = 1:length(muB)
         [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muB(mmB),muC(mmC),m,n,tol,mask(:),w);
         toc
 
-        BR = (reshape(Bn*8.686,m,n));
-        CR = (reshape(Cn*8.686,m,n));
+        BR = reshape(Bn*NptodB,m,n);
+        CR = (reshape(Cn*NptodB,m,n));
         RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         if RMSE<minRMSE
             minRMSE = RMSE;

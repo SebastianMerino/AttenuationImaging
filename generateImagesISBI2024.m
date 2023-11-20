@@ -536,7 +536,7 @@ figDir = 'C:\Users\sebas\Pictures\ISBI2024';
 
 targetFiles = dir([targetDir,'\*.mat']);
 
-blocksize = 10;     % Block size in wavelengths
+blocksize = 15;     % Block size in wavelengths
 freq_L = 3.5e6; freq_H = 8e6;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
