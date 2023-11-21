@@ -1,6 +1,7 @@
 clear,clc
 close all
 addpath('./functions_v7');
+addpath('./AttUtils');
 
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\Simulation\layeredNew'];
@@ -17,7 +18,7 @@ for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\19-11'];
+figDir = [baseDir,'\fig\21-11'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 % groundTruthTop = [0.5,1,1,0.5,1,1];
@@ -26,16 +27,21 @@ groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
 groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
 %% Loading data
 for iAcq = 1:length(croppedFiles)
-iAcq = 2;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load(fullfile(baseDir,'raw',croppedFiles(iAcq).name),"medium");
 
+% Plotting
 dynRange = [-40,0];
 attRange = [0.4,1.4];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
+% System of equations
+b = (log(Sp) - log(Sd)) - (compensation);
+A1 = kron( 4*L*f , speye(m*n) );
+A2 = kron( ones(size(f)) , speye(m*n) );
+A = [A1 A2];
 tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
@@ -45,79 +51,99 @@ mask = ones(m,n,p);
 attIdeal = ones(size(Z));
 attIdeal(Z<=2) = groundTruthTop(iAcq);
 attIdeal(Z>2) = groundTruthBottom(iAcq);
-%% Standard SLD
-b = (log(Sp) - log(Sd)) - (compensation);
 
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-A = [A1 A2];
-[u,~] = cgs(A'*A,A'*b(:),1e-6,20);
-% Standard SLD
-% BS: Beta. Attenuation coefficient slopes of blocks.
-% CS: Constants of blocks.
-BS = u(1:end/2); CS = u(end/2+1:end);
-BS = NptodB*BS;   % [dB.cm^{-1}.MHz^{-1}]
-BS = reshape(BS,m,n);
-CS = reshape(CS,m,n);
 
-figure('Units','centimeters', 'Position',[5 5 30 8]);
-tl = tiledlayout(1,3);
-t1 = nexttile;
+figure('Units','centimeters', 'Position',[5 5 9 6]);
 imagesc(x,z,Bmode,dynRange)
 axis image
-colormap(t1,gray)
-colorbar(t1,'westoutside')
+colormap(gray)
+colorbar('westoutside')
 title('Bmode')
 
-t2 = nexttile; 
-imagesc(x_ACS,z_ACS,BS, attRange)
-colormap(t2,turbo)
+figure('Units','centimeters', 'Position',[5 5 9 6]);
+imagesc(x,z,attIdeal,attRange)
 axis image
-title('SLD')
-c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
+colormap(turbo)
+c = colorbar('westoutside');
+c.Label.String = 'dB/cm/MHz';
+title('Ideal ACS')
+%% Standard SLD
+% [u,~] = cgs(A'*A,A'*b(:),1e-6,20);
+% % Standard SLD
+% % BS: Beta. Attenuation coefficient slopes of blocks.
+% % CS: Constants of blocks.
+% BS = u(1:end/2); CS = u(end/2+1:end);
+% BS = reshape(BS,m,n)*NptodB;
+% CS = reshape(CS,m,n)*NptodB;
+% 
+% figure('Units','centimeters', 'Position',[5 5 30 8]);
+% tl = tiledlayout(1,3);
+% t1 = nexttile;
+% imagesc(x,z,Bmode,dynRange)
+% axis image
+% colormap(t1,gray)
+% colorbar(t1,'westoutside')
+% title('Bmode')
+% 
+% t2 = nexttile; 
+% imagesc(x_ACS,z_ACS,BS, attRange)
+% colormap(t2,turbo)
+% axis image
+% title('SLD')
+% c = colorbar;
+% c.Label.String = 'Att. [db/cm/MHz]';
+% 
+% t3 = nexttile; 
+% imagesc(x_ACS,z_ACS,CS, bsRange)
+% colormap(t3,parula)
+% axis image
+% title('SLD')
+% c = colorbar;
+% c.Label.String = 'BS log ratio [dB]';
 
-t3 = nexttile; 
-imagesc(x_ACS,z_ACS,CS, bsRange)
-colormap(t3,parula)
-axis image
-title('SLD')
-c = colorbar;
-c.Label.String = 'BS log ratio [dB]';
-
-%% 
-[~,Z] = meshgrid(x_ACS,z_ACS);
-topLayer = Z < 1.9;
-bottomLayer = Z > 2.1;
-NpTodB = 20*log10(exp(1));
-
-topSLD = squeeze(sum(sum(b.*topLayer,1),2))/sum(topLayer(:));
-slopeTop = f\topSLD;
-fprintf('Attenuation is %.2f\n',slopeTop*NpTodB)
-
-bottomSLD = squeeze(sum(sum(b.*bottomLayer,1),2))/sum(bottomLayer(:));
-slopeBottom = f\bottomSLD;
-fprintf('Attenuation is %.2f\n',slopeBottom*NpTodB)
-plot(f,topSLD)
-hold on
-plot(f,bottomSLD)
-plot(f,slopeTop*f, 'k--')
-plot(f,slopeBottom*f, 'k--')
-hold off
-
-legend('Top','Bottom')
-
+%% Spectrum
+% [~,Z] = meshgrid(x_ACS,z_ACS);
+% topLayer = Z < 1.9;
+% bottomLayer = Z > 2.1;
+% NpTodB = 20*log10(exp(1));
+% 
+% topSLD = squeeze(sum(sum(b.*topLayer,1),2))/sum(topLayer(:));
+% slopeTop = f\topSLD;
+% fprintf('Attenuation is %.2f\n',slopeTop*NpTodB)
+% 
+% bottomSLD = squeeze(sum(sum(b.*bottomLayer,1),2))/sum(bottomLayer(:));
+% slopeBottom = f\bottomSLD;
+% fprintf('Attenuation is %.2f\n',slopeBottom*NpTodB)
+% plot(f,topSLD)
+% hold on
+% plot(f,bottomSLD)
+% plot(f,slopeTop*f, 'k--')
+% plot(f,slopeBottom*f, 'k--')
+% hold off
+% 
+% legend('Top','Bottom')
 
 
 %% RSLD
-b = (log(Sp) - log(Sd)) - (compensation);
+% muB = 10.^(3:0.5:4);
+% muC = 10.^(0:0.5:2);
+switch iAcq
+    case 1
+        muB = 10^3; muC = 10^0.5;
+    case 2
+        muB = 10^4; muC = 10^2;
+    case 3
+        muB = 10^3.5; muC = 10^2;
+    case 4
+        muB = 10^3.5; muC = 10^1;
+    case 5
+        muB = 10^3.5; muC = 10^1.5;
+    case 6
+        muB = 10^3.5; muC = 10^1;
+    otherwise
+        muB = 10^3.5; muC = 10^1.5;
+end
 
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-% A = [A1 A2];
-
-muB = 10.^(3:0.5:4);
-muC = 10.^(0:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -138,15 +164,9 @@ for mmB = 1:length(muB)
     end
 end
 
-figure('Units','centimeters', 'Position',[5 5 30 8]);
-tl = tiledlayout(1,3);
+figure('Units','centimeters', 'Position',[5 5 15 6]);
+tl = tiledlayout(1,2, "Padding","tight");
 title(tl,'Isotropic RSLD')
-t1 = nexttile;
-imagesc(x,z,Bmode,dynRange)
-axis image
-colormap(t1,gray)
-colorbar(t1,'westoutside')
-title('Bmode')
 
 t2 = nexttile; 
 imagesc(x_ACS,z_ACS,BRopt, attRange)
@@ -175,10 +195,12 @@ r.meanTop = mean(AttInterp(top),"omitnan");
 r.stdTop = std(AttInterp(top),"omitnan");
 r.meanBottom = mean(AttInterp(bottom),"omitnan");
 r.stdBottom = std(AttInterp(bottom),"omitnan");
-r.MPETop = mean( (AttInterp(top) - groundTruthTop(iAcq)) /...
-    groundTruthTop(iAcq),"omitnan") * 100;
-r.MPEBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)) /...
-    groundTruthBottom(end),"omitnan") * 100;
+% r.MPETop = mean( (AttInterp(top) - groundTruthTop(iAcq)) /...
+%     groundTruthTop(iAcq),"omitnan") * 100;
+% r.MPEBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)) /...
+%     groundTruthBottom(end),"omitnan") * 100;
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsTV(iAcq) = r;
 
@@ -200,23 +222,30 @@ for jj=1:n
     end
 end
 
-% figure,
-% imagesc(x_ACS,z_ACS,SNR)
-% colorbar
-
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
-a = 1; b = 0.1;
+aSNR = 1; bSNR = 0.1;
 desvMin = 15;
-w = a./(1 + exp(b.*(desvSNR - desvMin)));
+w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
-
-b = (log(Sp) - log(Sd)) - (compensation);
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-
-muB = 10.^(3:0.5:4);
-muC = 10.^(0:0.5:2);
+muB = 10.^(2.5:0.5:4);
+muC = 10.^(0:0.5:3);
+% switch iAcq
+%     case 1
+%         muB = 10^2.5; muC = 10^0;
+%     case 2
+%         muB = 10^3.5; muC = 10^3;
+%     case 3
+%         muB = 10^3; muC = 10^0;
+%     case 4
+%         muB = 10^3; muC = 10^0;
+%     case 5
+%         muB = 10^3; muC = 10^1.5;
+%     case 6
+%         muB = 10^3; muC = 10^0;
+%     otherwise
+%         muB = 10^3.5; muC = 10^1.5;
+% end
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -238,15 +267,15 @@ for mmB = 1:length(muB)
     end
 end
 
-figure('Units','centimeters', 'Position',[5 5 30 8]);
-tl = tiledlayout(1,3);
+figure('Units','centimeters', 'Position',[5 5 22 6]);
+tl = tiledlayout(1,3, "Padding","tight");
 title(tl,'RSLD - SWTV by British Columbia')
-t1 = nexttile;
-imagesc(x,z,Bmode,dynRange)
+t1 = nexttile; 
+imagesc(x_ACS,z_ACS,w, [0 1])
+colormap(t1,parula)
 axis image
-colormap(t1,gray)
-colorbar(t1,'westoutside')
-title('Bmode')
+title('Weights')
+c = colorbar;
 
 t2 = nexttile; 
 imagesc(x_ACS,z_ACS,BRopt, attRange)
@@ -264,15 +293,39 @@ title(['RSLD, \mu=',num2str(muCopt,2)])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
+AttInterp = interp2(X,Z,BRopt,Xq,Zq);
+r.meanTop = mean(AttInterp(top),"omitnan");
+r.stdTop = std(AttInterp(top),"omitnan");
+r.meanBottom = mean(AttInterp(bottom),"omitnan");
+r.stdBottom = std(AttInterp(bottom),"omitnan");
+% r.MPETop = mean( (AttInterp(top) - groundTruthTop(iAcq)) /...
+%     groundTruthTop(iAcq),"omitnan") * 100;
+% r.MPEBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)) /...
+%     groundTruthBottom(end),"omitnan") * 100;
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+MetricsSWTV(iAcq) = r;
 
 %% Minimizing BS log ratio
-b = (log(Sp) - log(Sd)) - (compensation);
-
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-
-muB = 10.^(3:0.5:4);
-muC = 10.^(0:0.5:2);
+% muB = 10.^(3:0.5:4);
+% muC = 10.^(0:0.5:2);
+switch iAcq
+    case 1
+        muB = 10^3.5; muC = 10^1;
+    case 2
+        muB = 10^3.5; muC = 10^1.5;
+    case 3
+        muB = 10^4; muC = 10^2;
+    case 4
+        muB = 10^3.5; muC = 10^0;
+    case 5
+        muB = 10^3.5; muC = 10^0.5;
+    case 6
+        muB = 10^4; muC = 10^1.5;
+    otherwise
+        muB = 10^3.5; muC = 10^1.5;
+end
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -293,15 +346,9 @@ for mmB = 1:length(muB)
     end
 end
 
-figure('Units','centimeters', 'Position',[5 5 30 8]);
-tl = tiledlayout(1,3);
+figure('Units','centimeters', 'Position',[5 5 15 6]);
+tl = tiledlayout(1,2, "Padding","tight");
 title(tl,'RSLD with TV(B)+||C||_1')
-t1 = nexttile;
-imagesc(x,z,Bmode,dynRange)
-axis image
-colormap(t1,gray)
-colorbar(t1,'westoutside')
-title('Bmode')
 
 t2 = nexttile; 
 imagesc(x_ACS,z_ACS,BRopt, attRange)
@@ -325,37 +372,58 @@ r.meanTop = mean(AttInterp(top),"omitnan");
 r.stdTop = std(AttInterp(top),"omitnan");
 r.meanBottom = mean(AttInterp(bottom),"omitnan");
 r.stdBottom = std(AttInterp(bottom),"omitnan");
-r.MPETop = mean( (AttInterp(top) - groundTruthTop(iAcq)) /...
-    groundTruthTop(iAcq),"omitnan") * 100;
-r.MPEBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)) /...
-    groundTruthBottom(end),"omitnan") * 100;
+% r.MPETop = mean( (AttInterp(top) - groundTruthTop(iAcq)) /...
+%     groundTruthTop(iAcq),"omitnan") * 100;
+% r.MPEBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)) /...
+%     groundTruthBottom(end),"omitnan") * 100;
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsTVL1(iAcq) = r;
 
 %% Minimizing BS log ratio and WEIGHTS
-b = (log(Sp) - log(Sd)) - (compensation);
+% First estimation
+switch iAcq
+    case 1
+        muB = 10^3.5; muC = 10^1;
+    case 2
+        muB = 10^3.5; muC = 10^1;
+    case 3
+        muB = 10^4; muC = 10^1;
+    case 4
+        muB = 10^3.5; muC = 10^1;
+    case 5
+        muB = 10^3.5; muC = 10^1;
+    case 6
+        muB = 10^4; muC = 10^1;
+    otherwise
+        muB = 10^3.5; muC = 10^1;
+end
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1)*3.2,m,n,tol,mask(:));
+bscMap = reshape(Cn*NptodB,m,n);
 
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
+ratioCutOff = 6;
+order = 5;
+reject = 0.1;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+% w = movmin(w,5);
+% 
+% % w = movmin(w,3);
+% figure, imagesc(w)
 
-muB = 10.^(2.5:0.5:4);
-muC = 10.^(-0.5:0.5:2);
+%%
+W = repmat(w,[1 1 p]);
+W = spdiags(W(:),0,m*n*p,m*n*p);
+bw = W*b(:);        
+A1w = W*A1;
+A2w = W*A2;
+
+muB = 10.^(3.5:0.5:5);
+muC = 10.^(1:0.5:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
         tic
-        [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
-        bscMap = reshape(Cn*NptodB,m,n);
-        
-        logBscRatio = bscMap*log10(exp(1))*20;
-        w = 1./((logBscRatio/6).^2 + 1);
-        
-        W = repmat(w,[1 1 p]);
-        W = spdiags(W(:),0,m*n*p,m*n*p);
-        bw = W*b(:);        
-        A1w = W*A1;
-        A2w = W*A2;
-
         [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muB(mmB),muC(mmC),m,n,tol,mask(:),w);
         toc
 
@@ -371,16 +439,18 @@ for mmB = 1:length(muB)
         end
     end
 end
-%%
-figure('Units','centimeters', 'Position',[5 5 30 8]);
-tl = tiledlayout(1,3);
+
+figure('Units','centimeters', 'Position',[5 5 22 6]);
+tl = tiledlayout(1,3, "Padding","tight");
 title(tl,'Weighted Fidelity and Regularization')
-t1 = nexttile;
-imagesc(x,z,Bmode,dynRange)
+
+t1 = nexttile; 
+imagesc(x_ACS,z_ACS,w, [0 1])
+colormap(t1,parula)
 axis image
-colormap(t1,gray)
-colorbar(t1,'westoutside')
-title('Bmode')
+title('Weights')
+c = colorbar;
+%c.Label.String = 'BS log ratio [dB]';
 
 t2 = nexttile; 
 imagesc(x_ACS,z_ACS,BRopt, attRange)
@@ -398,22 +468,24 @@ title(['RSLD-WFR, \mu=',num2str(muCopt,2)])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
-%%
+
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
 r.stdTop = std(AttInterp(top),"omitnan");
 r.meanBottom = mean(AttInterp(bottom),"omitnan");
 r.stdBottom = std(AttInterp(bottom),"omitnan");
-r.MPETop = mean( (AttInterp(top) - groundTruthTop(iAcq)) /...
-    groundTruthTop(iAcq),"omitnan") * 100;
-r.MPEBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)) /...
-    groundTruthBottom(end),"omitnan") * 100;
+% r.MPETop = mean( (AttInterp(top) - groundTruthTop(iAcq)) /...
+%     groundTruthTop(iAcq),"omitnan") * 100;
+% r.MPEBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)) /...
+%     groundTruthBottom(end),"omitnan") * 100;
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsWFR(iAcq) = r;
+
 %%
-newDir = fullfile(figDir,croppedFiles(iAcq).name(1:end-4));
-if(~exist(newDir,"dir")), mkdir(newDir); end
-save_all_figures_to_directory(newDir,'figure');
+save_all_figures_to_directory(figDir,['sim',num2str(iAcq),'Figure']);
 close all
 
 
@@ -423,115 +495,135 @@ end
 %% Attenuation 
 
 results1 = struct2table(MetricsTV);
-results2 = struct2table(MetricsTVL1);
-results3 = struct2table(MetricsWFR);
+results2 = struct2table(MetricsSWTV);
+results3 = struct2table(MetricsTVL1);
+results4 = struct2table(MetricsWFR);
 
-figure('Units','centimeters', 'Position',[5 5 12 8])
-errorbar(results1.meanTop, results1.stdTop,'o', 'LineWidth',2)
-hold on,
-errorbar(results2.meanTop, results2.stdTop, 'x', 'LineWidth',2)
-errorbar(results3.meanTop, results3.stdTop, 's', 'LineWidth',2)
-plot(groundTruthTop, "_k"	, 'LineWidth',2)
-hold off
-xlim([0.5 6.5])
-ylim([0.3 1.6])
-grid on
-legend({'TV','TVL1','WFR'})
-title('Results top')
-xlabel('Target')
-ylabel('Attenuation [db/cm/MHz]')
+disp('Bias Top')
+disp(results1.biasTop)
+disp(results2.biasTop)
+disp(results3.biasTop)
+disp(results4.biasTop)
 
-figure('Units','centimeters', 'Position',[5 5 12 8])
-errorbar(results1.meanBottom, results1.stdBottom,'o', 'LineWidth',2)
-hold on,
-errorbar(results2.meanBottom, results2.stdBottom, 'x', 'LineWidth',2)
-errorbar(results3.meanBottom, results3.stdBottom, 's', 'LineWidth',2)
-plot(groundTruthBottom, '_k', 'LineWidth',2)
-hold off
-xlim([0.5 6.5])
-ylim([0.3 1.6])
-grid on
-legend({'TV','TVL1','WFR'})
-title('Results bottom')
-xlabel('Target')
-ylabel('Attenuation [db/cm/MHz]')
+disp('Bias Bottom')
+disp(results1.biasBottom)
+disp(results2.biasBottom)
+disp(results3.biasBottom)
+disp(results4.biasBottom)
 
-%% CV
-figure('Units','centimeters', 'Position',[5 5 12 8])
-plot(results1.stdTop./results1.meanTop*100,'o', 'LineWidth',2)
-hold on,
-plot(results2.stdTop./results2.meanTop*100, 'x', 'LineWidth',2)
-plot(results3.stdTop./results3.meanTop*100, 's', 'LineWidth',2)
-hold off
-xlim([0.5 6.5])
-ylim([0 15])
-grid on
-legend({'TV','TVL1','WFR'})
-title('Results top')
-xlabel('Target')
-ylabel('Coefficient of Variation [%]')
+disp('CNR')
+disp(results1.cnr)
+disp(results2.cnr)
+disp(results3.cnr)
+disp(results4.cnr)
 
-figure('Units','centimeters', 'Position',[5 5 12 8])
-plot(results1.stdBottom./results1.meanBottom*100,'o', 'LineWidth',2)
-hold on,
-plot(results2.stdBottom./results2.meanBottom*100, 'x', 'LineWidth',2)
-plot(results3.stdBottom./results3.meanBottom*100, 's', 'LineWidth',2)
-hold off
-xlim([0.5 6.5])
-ylim([0 15])
-grid on
-legend({'TV','TVL1','WFR'})
-title('Results bottom')
-xlabel('Target')
-ylabel('Coefficient of Variation [%]')
-
-%% Mean Percentage error
-figure('Units','centimeters', 'Position',[5 5 12 8])
-plot(results1.MPETop, 'o', 'LineWidth',2)
-hold on,
-plot(results2.MPETop, 'x', 'LineWidth',2)
-plot(results3.MPETop, 's', 'LineWidth',2)
-yline(0, 'k--', 'LineWidth',2)
-hold off
-xlim([0.5 6.5])
-ylim([-10 50])
-grid on
-legend({'TV','TV+Tik','SWTV+SWTik'}, 'Location','northeast')
-title('Results top')
-xlabel('Target')
-ylabel('MPE %')
-
-figure('Units','centimeters', 'Position',[5 5 12 8])
-plot(results1.MPEBottom, 'o', 'LineWidth',2)
-hold on,
-plot(results2.MPEBottom, 'x', 'LineWidth',2)
-plot(results3.MPEBottom, 's', 'LineWidth',2)
-yline(0, 'k--', 'LineWidth',2)
-hold off
-xlim([0.5 6.5])
-ylim([-10 50])
-grid on
-legend({'TV','TV+Tik','SWTV+SWTik'}, 'Location','northeast')
-title('Results bottom')
-xlabel('Target')
-ylabel('MPE %')
-
-%% cnr
-figure('Units','centimeters', 'Position',[5 5 12 8])
-plot(results1.cnr, 'o', 'LineWidth',2)
-hold on,
-plot(results2.cnr, 'x', 'LineWidth',2)
-plot(results3.cnr, 's', 'LineWidth',2)
-hold off
-xlim([0.5 6.5])
-ylim([-0.1 20])
-grid on
-legend({'TV','TV+Tik','SWTV+SWTik'}, 'Location','northeast')
-title('Contrast-to-noise ratio')
-xlabel('Target')
-ylabel('CNR')
-
-
-%%
-save_all_figures_to_directory(figDir,'figure');
+% 
+% figure('Units','centimeters', 'Position',[5 5 12 8])
+% errorbar(results1.meanTop, results1.stdTop,'o', 'LineWidth',2)
+% hold on,
+% errorbar(results2.meanTop, results2.stdTop, 'x', 'LineWidth',2)
+% errorbar(results3.meanTop, results3.stdTop, 's', 'LineWidth',2)
+% plot(groundTruthTop, "_k"	, 'LineWidth',2)
+% hold off
+% xlim([0.5 6.5])
+% ylim([0.3 1.6])
+% grid on
+% legend({'TV','TVL1','WFR'})
+% title('Results top')
+% xlabel('Target')
+% ylabel('Attenuation [db/cm/MHz]')
+% 
+% figure('Units','centimeters', 'Position',[5 5 12 8])
+% errorbar(results1.meanBottom, results1.stdBottom,'o', 'LineWidth',2)
+% hold on,
+% errorbar(results2.meanBottom, results2.stdBottom, 'x', 'LineWidth',2)
+% errorbar(results3.meanBottom, results3.stdBottom, 's', 'LineWidth',2)
+% plot(groundTruthBottom, '_k', 'LineWidth',2)
+% hold off
+% xlim([0.5 6.5])
+% ylim([0.3 1.6])
+% grid on
+% legend({'TV','TVL1','WFR'})
+% title('Results bottom')
+% xlabel('Target')
+% ylabel('Attenuation [db/cm/MHz]')
+% 
+% %% CV
+% figure('Units','centimeters', 'Position',[5 5 12 8])
+% plot(results1.stdTop./results1.meanTop*100,'o', 'LineWidth',2)
+% hold on,
+% plot(results2.stdTop./results2.meanTop*100, 'x', 'LineWidth',2)
+% plot(results3.stdTop./results3.meanTop*100, 's', 'LineWidth',2)
+% hold off
+% xlim([0.5 6.5])
+% ylim([0 15])
+% grid on
+% legend({'TV','TVL1','WFR'})
+% title('Results top')
+% xlabel('Target')
+% ylabel('Coefficient of Variation [%]')
+% 
+% figure('Units','centimeters', 'Position',[5 5 12 8])
+% plot(results1.stdBottom./results1.meanBottom*100,'o', 'LineWidth',2)
+% hold on,
+% plot(results2.stdBottom./results2.meanBottom*100, 'x', 'LineWidth',2)
+% plot(results3.stdBottom./results3.meanBottom*100, 's', 'LineWidth',2)
+% hold off
+% xlim([0.5 6.5])
+% ylim([0 15])
+% grid on
+% legend({'TV','TVL1','WFR'})
+% title('Results bottom')
+% xlabel('Target')
+% ylabel('Coefficient of Variation [%]')
+% 
+% %% Mean Percentage error
+% figure('Units','centimeters', 'Position',[5 5 12 8])
+% plot(results1.MPETop, 'o', 'LineWidth',2)
+% hold on,
+% plot(results2.MPETop, 'x', 'LineWidth',2)
+% plot(results3.MPETop, 's', 'LineWidth',2)
+% yline(0, 'k--', 'LineWidth',2)
+% hold off
+% xlim([0.5 6.5])
+% ylim([-10 50])
+% grid on
+% legend({'TV','TV+Tik','SWTV+SWTik'}, 'Location','northeast')
+% title('Results top')
+% xlabel('Target')
+% ylabel('MPE %')
+% 
+% figure('Units','centimeters', 'Position',[5 5 12 8])
+% plot(results1.MPEBottom, 'o', 'LineWidth',2)
+% hold on,
+% plot(results2.MPEBottom, 'x', 'LineWidth',2)
+% plot(results3.MPEBottom, 's', 'LineWidth',2)
+% yline(0, 'k--', 'LineWidth',2)
+% hold off
+% xlim([0.5 6.5])
+% ylim([-10 50])
+% grid on
+% legend({'TV','TV+Tik','SWTV+SWTik'}, 'Location','northeast')
+% title('Results bottom')
+% xlabel('Target')
+% ylabel('MPE %')
+% 
+% %% cnr
+% figure('Units','centimeters', 'Position',[5 5 12 8])
+% plot(results1.cnr, 'o', 'LineWidth',2)
+% hold on,
+% plot(results2.cnr, 'x', 'LineWidth',2)
+% plot(results3.cnr, 's', 'LineWidth',2)
+% hold off
+% xlim([0.5 6.5])
+% ylim([-0.1 20])
+% grid on
+% legend({'TV','TV+Tik','SWTV+SWTik'}, 'Location','northeast')
+% title('Contrast-to-noise ratio')
+% xlabel('Target')
+% ylabel('CNR')
+% 
+% 
+% %%
+% save_all_figures_to_directory(figDir,'figure');
 
