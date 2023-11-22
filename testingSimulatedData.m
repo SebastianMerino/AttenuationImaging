@@ -383,23 +383,25 @@ MetricsTVL1(iAcq) = r;
 
 %% Minimizing BS log ratio and WEIGHTS
 % First estimation
-switch iAcq
-    case 1
-        muB = 10^3.5; muC = 10^1;
-    case 2
-        muB = 10^3.5; muC = 10^1;
-    case 3
-        muB = 10^4; muC = 10^1;
-    case 4
-        muB = 10^3.5; muC = 10^1;
-    case 5
-        muB = 10^3.5; muC = 10^1;
-    case 6
-        muB = 10^4; muC = 10^1;
-    otherwise
-        muB = 10^3.5; muC = 10^1;
-end
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1)*3.2,m,n,tol,mask(:));
+% switch iAcq
+%     case 1
+%         muB = 10^3.5; muC = 10^1;
+%     case 2
+%         muB = 10^3.5; muC = 10^1;
+%     case 3
+%         muB = 10^4; muC = 10^1;
+%     case 4
+%         muB = 10^3.5; muC = 10^1;
+%     case 5
+%         muB = 10^3.5; muC = 10^1;
+%     case 6
+%         muB = 10^4; muC = 10^1;
+%     otherwise
+%         muB = 10^3.5; muC = 10^1;
+% end
+muB = 10^3.5; muC = 10^1;
+
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
 
 ratioCutOff = 6;

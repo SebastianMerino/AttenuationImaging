@@ -7,10 +7,10 @@ addpath('./AttUtils');
 %     'Attenuation\Simulation\layeredNew'];
 % baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\layeredNew'];
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\layered_14_11_23'];
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\layered_14_11_23'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\layered_14_11_23'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\layered_14_11_23'];
 
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
@@ -76,7 +76,7 @@ title('Ideal ACS')
 
 %% Minimizing BS log ratio and WEIGHTS - VERSION 1 
 % First estimation
-muB = 10^4; muC = 10^1.5;
+muB = 10^3.5; muC = 10^1;
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
 
@@ -158,7 +158,7 @@ MetricsWFRv1(iAcq) = r;
 
 %% Minimizing BS log ratio and WEIGHTS - VERSION 2
 % First estimation
-muB = 10^4; muC = 10^1.5;
+muB = 10^3.5; muC = 10^1;
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
 
@@ -240,7 +240,7 @@ MetricsWFRv2(iAcq) = r;
 
 %% Minimizing BS log ratio and WEIGHTS - VERSION 3
 % First estimation
-muB = 10^4; muC = 10^1.5;
+muB = 10^3.5; muC = 10^1;
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
 
@@ -324,7 +324,7 @@ MetricsWFRv3(iAcq) = r;
 
 %% Minimizing BS log ratio and WEIGHTS - VERSION 4
 % First estimation
-muB = 10^4; muC = 10^1.5;
+muB = 10^3.5; muC = 10^1;
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
 
