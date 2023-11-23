@@ -922,11 +922,19 @@ maskThyroid = Z>1.3;
 dataTV = dataRoi{1}.TV(maskThyroid);
 dataSWTV = dataRoi{1}.SWTV(maskThyroid);
 dataWFR = dataRoi{1}.WFR(maskThyroid);
-fprintf("\nHeterogeneous results: \n")
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataTV(:)),std(dataTV(:)))
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataSWTV(:)),std(dataSWTV(:)))
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
+fprintf("\nHeterogeneous results: \n BOTTOM\n")
+fprintf("Median: %.2f, Std: %.2f\n",median(dataTV(:)),std(dataTV(:)))
+fprintf("Median: %.2f, Std: %.2f\n",median(dataSWTV(:)),std(dataSWTV(:)))
+fprintf("Median: %.2f, Std: %.2f\n",median(dataWFR(:)),std(dataWFR(:)))
 
+maskNodule = Z<1.1;
+dataTV = dataRoi{1}.TV(maskNodule);
+dataSWTV = dataRoi{1}.SWTV(maskNodule);
+dataWFR = dataRoi{1}.WFR(maskNodule);
+fprintf("\nHeterogeneous results: \n TOP\n")
+fprintf("Median: %.2f, Std: %.2f\n",median(dataTV(:)),std(dataTV(:)))
+fprintf("Median: %.2f, Std: %.2f\n",median(dataSWTV(:)),std(dataSWTV(:)))
+fprintf("Median: %.2f, Std: %.2f\n",median(dataWFR(:)),std(dataWFR(:)))
 
 %%
 

@@ -18,13 +18,23 @@ if (~exist(figDir,"dir")), mkdir(figDir); end
 
 %% Loading data
 for iAcq = 1:length(croppedFiles)
-iAcq = 4;
+iAcq = 8;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 dynRange = [-40,-5];
 attRange = [0.3,1.7];
 %attRange = [0,1]; % Just for 13 acq
 bsRange = [-2 2];
+
+%% ACOUSTIC ENHANCEMENT
+
+imagesc(x,z,Bmode,dynRange)
+axis image
+colormap(gray)
+colorbar('westoutside')
+title('Bmode')
+
+
 
 %% Standard SLD
 b = (log(Sp) - log(Sd)) - (compensation);
