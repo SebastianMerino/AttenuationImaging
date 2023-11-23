@@ -18,7 +18,7 @@ for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\21-11'];
+figDir = [baseDir,'\fig\23-11'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 % groundTruthTop = [0.5,1,1,0.5,1,1];
@@ -228,24 +228,24 @@ aSNR = 1; bSNR = 0.1;
 desvMin = 15;
 w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
-muB = 10.^(2.5:0.5:4);
-muC = 10.^(0:0.5:3);
-% switch iAcq
-%     case 1
-%         muB = 10^2.5; muC = 10^0;
-%     case 2
-%         muB = 10^3.5; muC = 10^3;
-%     case 3
-%         muB = 10^3; muC = 10^0;
-%     case 4
-%         muB = 10^3; muC = 10^0;
-%     case 5
-%         muB = 10^3; muC = 10^1.5;
-%     case 6
-%         muB = 10^3; muC = 10^0;
-%     otherwise
-%         muB = 10^3.5; muC = 10^1.5;
-% end
+% muB = 10.^(2.5:0.5:4);
+% muC = 10.^(0:0.5:3);
+switch iAcq
+    case 1
+        muB = 10^2.5; muC = 10^0;
+    case 2
+        muB = 10^3.5; muC = 10^3;
+    case 3
+        muB = 10^3; muC = 10^0;
+    case 4
+        muB = 10^3; muC = 10^0;
+    case 5
+        muB = 10^3; muC = 10^1.5;
+    case 6
+        muB = 10^3; muC = 10^0;
+    otherwise
+        muB = 10^3.5; muC = 10^1.5;
+end
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -407,11 +407,9 @@ bscMap = reshape(Cn*NptodB,m,n);
 ratioCutOff = 6;
 order = 5;
 reject = 0.1;
+extension = 3;
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
-% w = movmin(w,5);
-% 
-% % w = movmin(w,3);
-% figure, imagesc(w)
+w = movmin(w,extension);
 
 %%
 W = repmat(w,[1 1 p]);
@@ -420,8 +418,8 @@ bw = W*b(:);
 A1w = W*A1;
 A2w = W*A2;
 
-muB = 10.^(3.5:0.5:5);
-muC = 10.^(1:0.5:3);
+muB = 10.^(3.5:0.5:4.5);
+muC = 10.^(1:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)

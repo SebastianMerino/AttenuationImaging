@@ -15,6 +15,7 @@ iAcq = 1;
 muTV = 3.2E3; mu2TV = 10;
 muWTV = 3.2E3; mu2WTV = 10;
 muWTik = 1E4; mu2WTik = 3.2;
+NptodB = log10(exp(1))*20;
 
 fprintf("Simulation no. %i, %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
@@ -35,7 +36,7 @@ mask = ones(m,n,p);
 tic
 [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muTV,mu2TV,m,n,tol,mask(:));
 toc
-BR = (reshape(Bn*8.686,m,n));
+BR = (reshape(Bn*NptodB,m,n));
 CR = (reshape(Cn,m,n));
 
 %% British Columbia Approach
@@ -78,10 +79,10 @@ mask = ones(m,n,p);
 tic
 [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muWTV,mu2WTV,m,n,tol,mask(:),w);
 toc
-BRBC = (reshape(Bn*8.686,m,n));
+BRBC = (reshape(Bn*NptodB,m,n));
 CRBC = (reshape(Cn,m,n));
 
-%% NEW WEIGHTS
+%% WEIGHTS FROM TVL1
 b = (log(Sp) - log(Sd)) - (compensation);
 
 A1 = kron( 4*L*f , speye(m*n) );
@@ -91,11 +92,13 @@ A2 = kron( ones(size(f)) , speye(m*n) );
 % Regularization: Au = b
 tol = 1e-3;
 mask = ones(m,n,p);
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muWTik,mu2WTik,m,n,tol,mask(:));
-bscMap = (reshape(Cn,m,n));
 
-logBscRatio = bscMap*log10(exp(1))*20;
-w = 1./((logBscRatio/10).^2 + 1);
+muB = 10^3; muC = 10^0.5;
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
+bscMap = reshape(Cn*NptodB,m,n);
+
+% Weight function
+w = 1./((bscMap/10).^2 + 1);
 
 %% Weighting equation and regularizations
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -118,7 +121,7 @@ tol = 1e-3;
 tic
 [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muWTik,mu2WTik,m,n,tol,mask(:),w);
 toc
-BRWTik = (reshape(Bn*8.686,m,n));
+BRWTik = (reshape(Bn*NptodB,m,n));
 CRWTik = (reshape(Cn,m,n));
 
 %% Plotting three results
@@ -262,13 +265,13 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
      '\ID316V2\06-08-2023-Generic'];
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
+NptodB = log10(exp(1))*20;
 
 figDir = 'C:\Users\sebas\Pictures\ISBI2024';
 
 %% For looping each phantom
 
 for iAcq = 1:3
-%iAcq = 3;
 fprintf("Phantom no. %i, %s\n",iAcq,croppedFiles(iAcq+5).name);
 load(fullfile(croppedDir,croppedFiles(iAcq+5).name));
 
@@ -336,7 +339,7 @@ mask = ones(m,n,p);
 tic
 [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muTV,mu2TV,m,n,tol,mask(:));
 toc
-BR = (reshape(Bn*8.686,m,n));
+BR = (reshape(Bn*NptodB,m,n));
 CR = (reshape(Cn,m,n));
 
 figure('Units','centimeters', 'Position',[5 5 5 3.8]);
@@ -390,7 +393,7 @@ tol = 1e-3;
 tic
 [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muWTV,mu2WTV,m,n,tol,mask(:),w);
 toc
-BRBC = (reshape(Bn*8.686,m,n));
+BRBC = (reshape(Bn*NptodB,m,n));
 CRBC = (reshape(Cn,m,n));
 
 figure('Units','centimeters', 'Position',[5 5 5 3.8]);
@@ -414,11 +417,13 @@ hold off
 tol = 1e-3;
 mask = ones(m,n,p);
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muWTik,mu2WTik,m,n,tol,mask(:));
-bscMap = (reshape(Cn,m,n));
+bscMap = reshape(Cn,m,n)*NptodB;
 
-logBscRatio = bscMap*log10(exp(1))*20;
-w = 1./((logBscRatio/6).^2 + 1);
-
+ratioCutOff = 6;
+order = 5;
+reject = 0.05;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+w = movmin(w,5);
 
 % Weighting equation and regularizations
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -441,7 +446,7 @@ tol = 1e-3;
 tic
 [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muWTik,mu2WTik,m,n,tol,mask(:),w);
 toc
-BRWTik = (reshape(Bn*8.686,m,n));
+BRWTik = (reshape(Bn*NptodB,m,n));
 CRWTik = (reshape(Cn,m,n));
 
 figure('Units','centimeters', 'Position',[5 5 5 3.8]);
@@ -504,7 +509,7 @@ MetricsWFR(iAcq) = r;
 end
 
 %%
-for iAcq =1:3
+for iAcq = 1:3
     fprintf("T%i\n",iAcq);
     r = MetricsTV(iAcq);
     fprintf("TV,   MPEinc: %.2f, MPEback: %.2f, CNR: %.2f, \n",...
@@ -540,9 +545,9 @@ blocksize = 15;     % Block size in wavelengths
 freq_L = 3.5e6; freq_H = 8e6;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
+NptodB = log10(exp(1))*20;
 
 attRange = [0,1.7];
-
 %% Loading case
 iAcq = 8;
 for iRoi = 1:2
@@ -565,16 +570,17 @@ BmodeFull = BmodeFull - max(BmodeFull(:));
 % xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 % ylim([0.05 3])
 
-%    rect = [0.93; 0.49; 1.7; 1.69]; % Previous rectangle
 if iRoi == 1
-    rect = [1.03; 0.49; 1.6; 1.69];
+    rect = [1.03; 0.49; 1.6; 1.69]; % Previous rectangle
+    % rect = [1.03; 0.4; 1.6; 1.8];
     muTV = 1E3; mu2TV = 3.2;
     muWTV = 1E3; mu2WTV = 3.2;
     muWTik = 1E3; mu2WTik = 3.2;
 else
-    rect = [2.63; 0.49; 1.6; 1.69];
-    muTV = 1E4; mu2TV = 10;
-    muWTV = 1E4; mu2WTV = 10;
+    rect = [2.63; 0.49; 1.6; 1.69]; % Previous rectangle
+    % rect = [2.63; 0.4; 1.6; 1.8];
+    muTV = 1E4; mu2TV = 100;
+    muWTV = 1E4; mu2WTV = 100;
     muWTik = 1E4; mu2WTik = 10;
 end
 % hold on
@@ -710,7 +716,7 @@ mask = ones(m,n,p);
 tic
 [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muTV,mu2TV,m,n,tol,mask(:));
 toc
-BR = (reshape(Bn*8.686,m,n));
+BR = (reshape(Bn*NptodB,m,n));
 CR = (reshape(Cn,m,n));
 
 %% British Columbia Approach
@@ -748,18 +754,32 @@ tol = 1e-3;
 tic
 [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muWTV,mu2WTV,m,n,tol,mask(:),w);
 toc
-BRBC = (reshape(Bn*8.686,m,n));
+BRBC = (reshape(Bn*NptodB,m,n));
 CRBC = (reshape(Cn,m,n));
 
 %% NEW WEIGHTS
 tol = 1e-3;
 mask = ones(m,n,p);
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muWTik,mu2WTik,m,n,tol,mask(:));
-bscMap = (reshape(Cn,m,n));
+[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muWTik,mu2WTik,m,n,tol,mask(:));
+bscMap = reshape(Cn,m,n)*NptodB;
+% test = reshape(Bn,m,n)*NptodB;
+% figure,
+% imagesc(x_ACS,z_ACS,test);
+% axis image
+% colormap turbo
+% colorbar
 
-logBscRatio = bscMap*log10(exp(1))*20;
-w = 1./((logBscRatio/10).^2 + 1);
+% w = 1./((bscMap/10).^2 + 1);
 
+% Weight function
+ratioCutOff = 6;
+order = 5;
+reject = 0.1;
+extension = 3;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+w = movmin(w,extension);
+
+% figure, imagesc(w)
 
 % Weighting equation and regularizations
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -782,7 +802,7 @@ tol = 1e-3;
 tic
 [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muWTik,mu2WTik,m,n,tol,mask(:),w);
 toc
-BRWTik = (reshape(Bn*8.686,m,n));
+BRWTik = (reshape(Bn*NptodB,m,n));
 CRWTik = (reshape(Cn,m,n));
 
 imageData.x = x_ACS;
@@ -792,6 +812,7 @@ imageData.TV = BR;
 imageData.SWTV = BRBC;
 imageData.WFR = BRWTik;
 dataRoi{iRoi} = imageData;
+
 end
 
 %% PLOTTING IMAGES
@@ -909,5 +930,5 @@ fprintf("Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
 
 %%
 
-save_all_figures_to_directory(figDir,'clinical');
+save_all_figures_to_directory(figDir,'clinicalTEST');
 close all

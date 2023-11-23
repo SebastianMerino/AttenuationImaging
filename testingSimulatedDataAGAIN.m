@@ -7,10 +7,10 @@ addpath('./AttUtils');
 %     'Attenuation\Simulation\layeredNew'];
 % baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\layeredNew'];
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\layered_14_11_23'];
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\layered_14_11_23'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\layered_14_11_23'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\layered_14_11_23'];
 
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
@@ -18,7 +18,7 @@ for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\22-11'];
+figDir = [baseDir,'\fig\22-11-matenme'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 % groundTruthTop = [0.5,1,1,0.5,1,1];
@@ -27,6 +27,7 @@ groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
 groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
 %% Loading data
 for iAcq = 1:length(croppedFiles)
+iAcq = 5;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load(fullfile(baseDir,'raw',croppedFiles(iAcq).name),"medium");
@@ -81,8 +82,13 @@ muB = 10^3.5; muC = 10^1;
 bscMap = reshape(Cn*NptodB,m,n);
 
 ratioCutOff = 6;
-w = 1./((bscMap/ratioCutOff).^2 + 1);
-%figure, imagesc(w)
+order = 5;
+% order = 1;
+reject = 0.1;
+%reject = 0;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+w = movmin(w,3);
+% w = 10.^(-abs(bscMap)/10);
 
 W = repmat(w,[1 1 p]);
 W = spdiags(W(:),0,m*n*p,m*n*p);
@@ -163,8 +169,10 @@ muB = 10^3.5; muC = 10^1;
 bscMap = reshape(Cn*NptodB,m,n);
 
 ratioCutOff = 6;
-w = 1./((bscMap/ratioCutOff).^4 + 1);
-% figure, imagesc(w)
+order = 5;
+reject = 0.1;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+w = movmin(w,7);
 
 W = repmat(w,[1 1 p]);
 W = spdiags(W(:),0,m*n*p,m*n*p);
@@ -246,8 +254,9 @@ bscMap = reshape(Cn*NptodB,m,n);
 
 ratioCutOff = 6;
 order = 5;
-reject = 0.1;
+reject = 0.05;
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+w = movmin(w,3);
 % figure, imagesc(w)
 
 W = repmat(w,[1 1 p]);
@@ -330,9 +339,9 @@ bscMap = reshape(Cn*NptodB,m,n);
 
 ratioCutOff = 6;
 order = 5;
-reject = 0.1;
+reject = 0.05;
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
-w = movmin(w,3);
+w = movmin(w,5);
 %figure, imagesc(w)
 
 W = repmat(w,[1 1 p]);
