@@ -4,35 +4,61 @@ close all
 addpath('./functions_v7');
 addpath('./AttUtils');
 
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\layeredNew'];
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\layeredNew'];
+    'Attenuation\Simulation\layered_14_11_23'];
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
 
-figDir = 'C:\Users\sebas\Pictures\ISBI2024';
+figDir = 'C:\Users\sebas\Pictures\ISBI2024\v3';
+mkdir(figDir)
 %%
-iAcq = 1;
-muTV = 3.2E3; mu2TV = 10;
-muWTV = 3.2E3; mu2WTV = 10;
-muWTik = 1E4; mu2WTik = 3.2;
-NptodB = log10(exp(1))*20;
+for iAcq = [1,2,3]
+switch iAcq
+    case 1                
+        muTV = 10^3; mu2TV = 10^0.5;
+        muWTV = 10^2.5; mu2WTV = 10^0;
+        muWTik = 10^4.5; mu2WTik = 10^2;
+    case 2
+        muTV = 10^4; mu2TV = 10^2;
+        muWTV = 10^3.5; mu2WTV = 10^3;
+        muWTik = 10^4; mu2WTik = 10^2;
+    case 3
+        muTV = 10^4; mu2TV = 10^5;
+        muWTV = 10^3; mu2WTV = 10^0;
+        muWTik = 10^4; mu2WTik = 10^2;
+    case 6
+        muTV = 10^3.5; mu2TV = 10^1;
+        muWTV = 10^3; mu2WTV = 10^0;
+        muWTik = 10^4.5; mu2WTik = 10^1.5;
+end
+muB = 10^3.5; muC = 10^1;
 
+NptodB = log10(exp(1))*20;
 fprintf("Simulation no. %i, %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load(fullfile(baseDir,'raw',croppedFiles(iAcq).name),"medium");
 
-
-%% RSLD
+% Setting up equations
 b = (log(Sp) - log(Sd)) - (compensation);
-
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
-% A = [A1 A2];
-
-% Regularization: Au = b
 tol = 1e-3;
 mask = ones(m,n,p);
 
+% GT
+% groundTruthTop = [0.5,1,1,0.5,1,1];
+% groundTruthBottom = [1,0.5,1,1,0.5,1];
+groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
+groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
+
+% Creating reference
+[~,Z] = meshgrid(x_ACS,z_ACS);
+attIdeal = ones(size(Z));
+attIdeal(Z<=2) = groundTruthTop(iAcq);
+attIdeal(Z>2) = groundTruthBottom(iAcq);
+%% RSLD
 tic
 [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muTV,mu2TV,m,n,tol,mask(:));
 toc
@@ -59,23 +85,11 @@ end
 
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
-a = 1; b = 0.1;
+aSNR = 1; bSNR = 0.1;
 desvMin = 15;
-w = a./(1 + exp(b.*(desvSNR - desvMin)));
+w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
-
-%% RSLD ANISOTROPIC AND BS WEIGHTED
-b = (log(Sp) - log(Sd)) - (compensation);
-
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-% A = [A1 A2];
-
-% Regularization: Au = b
-tol = 1e-3;
-
-clear mask
-mask = ones(m,n,p);
+% RSLD ANISOTROPIC AND BS WEIGHTED
 tic
 [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muWTV,mu2WTV,m,n,tol,mask(:),w);
 toc
@@ -83,23 +97,17 @@ BRBC = (reshape(Bn*NptodB,m,n));
 CRBC = (reshape(Cn,m,n));
 
 %% WEIGHTS FROM TVL1
-b = (log(Sp) - log(Sd)) - (compensation);
-
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-
-
-% Regularization: Au = b
-tol = 1e-3;
-mask = ones(m,n,p);
-
-muB = 10^3; muC = 10^0.5;
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB,muC,m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
 
 % Weight function
-w = 1./((bscMap/10).^2 + 1);
-
+% w = 1./((bscMap/10).^2 + 1);
+ratioCutOff = 6;
+order = 5;
+reject = 0.1;
+extension = 3;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+w = movmin(w,extension);
 %% Weighting equation and regularizations
 b = (log(Sp) - log(Sd)) - (compensation);
 
@@ -124,91 +132,18 @@ toc
 BRWTik = (reshape(Bn*NptodB,m,n));
 CRWTik = (reshape(Cn,m,n));
 
-%% Plotting three results
-dynRange = [-50,0];
-attRange = [0.3,1.2];
-bsRange = [-2 2];
-
-figure('Units','centimeters', 'Position',[5 5 5 5]);
-imagesc(x,z,Bmode,dynRange)
-xlim([x_ACS(1) x_ACS(end)]),
-ylim([z_ACS(1) z_ACS(end)]),
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-axis image
-colormap(gray)
-title('Bmode')
-c = colorbar;
-c.Label.String = 'dB';
-fontsize(gcf,8,'points')
-
-figure('Units','centimeters', 'Position',[5 5 5 5]);
-imagesc(x_ACS,z_ACS,BR, attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-colormap(turbo)
-axis image
-title('RSLD-TV')
-c = colorbar;
-c.Label.String = 'ACS [dB/cm/MHz]';
-fontsize(gcf,8,'points')
-
-figure('Units','centimeters', 'Position',[5 5 5 5]);
-imagesc(x_ACS,z_ACS,BRBC, attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-colormap(turbo)
-axis image
-title('RSLD-SWTV')
-c = colorbar;
-c.Label.String = 'ACS [dB/cm/MHz]';
-fontsize(gcf,8,'points')
-
-figure('Units','centimeters', 'Position',[5 5 5 5]);
-imagesc(x_ACS,z_ACS,BRWTik, attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-colormap(turbo)
-axis image
-title('RSLD-WFR')
-c = colorbar;
-c.Label.String = 'ACS [dB/cm/MHz]';
-fontsize(gcf,8,'points')
-
-%%
-attTV = mean(BR,2);
-attSWTV = mean(BRBC,2);
-attSWTVTik = mean(BRWTik,2);
-
-bscTV = mean(CR,2);
-bscSWTV = mean(CRBC,2);
-bscSWTVTik = mean(CRWTik,2);
-
-attGT = zeros(size(z_ACS));
-attGT(z_ACS < 2.4) = 0.5;
-attGT(z_ACS > 2.4) = 1;
-
-figure('Units','centimeters', 'Position',[5 5 8 4]);
-
-plot(z_ACS,[attTV,attSWTV,attSWTVTik], 'LineWidth',1.5)
-hold on
-plot(z_ACS,attGT, 'k--')
-hold off
-title('Axial profile')
-grid on
-xlim([z_ACS(1),z_ACS(end)])
-ylim([0.4 1.2])
-xlabel('Depth [cm]'), ylabel('ACS [dB/cm/MHz]')
-legend({'TV','SWTV','WFR'}, 'Location','southeast')
-fontsize(gcf,8,'points')
-
 %% Metrics
-groundTruthTop = [0.5,1,1,0.5,1,1];
-groundTruthBottom = [1,0.5,1,1,0.5,1];
+fprintf('\nMetrics in simulation %i\n',iAcq);
 
 
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
 AttInterp = interp2(X,Z,BR,Xq,Zq);
 
-top = Zq < 2.3;
-bottom = Zq > 2.5;
+% top = Zq < 2.3;
+% bottom = Zq > 2.5;
+top = Zq < 1.9;
+bottom = Zq > 2.1;
 
 r.meanTop = mean(AttInterp(top),"omitnan");
 r.stdTop = std(AttInterp(top),"omitnan");
@@ -218,8 +153,12 @@ r.MPETop = mean( (AttInterp(top) - groundTruthTop(iAcq)) /...
     groundTruthTop(iAcq),"omitnan") * 100;
 r.MPEBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)) /...
     groundTruthBottom(end),"omitnan") * 100;
-r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2)
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsTV(iAcq) = r;
+fprintf('RSLD-TV\n');
+fprintf('%.2f\n',r.MPETop);
+fprintf('%.2f\n',r.MPEBottom);
+fprintf('%.2f\n',r.cnr);
 
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
@@ -233,8 +172,12 @@ r.MPETop = mean( (AttInterp(top) - groundTruthTop(iAcq)) /...
     groundTruthTop(iAcq),"omitnan") * 100;
 r.MPEBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)) /...
     groundTruthBottom(end),"omitnan") * 100;
-r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2)
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsSWTV(iAcq) = r;
+fprintf('RSLD-SWTV\n');
+fprintf('%.2f\n',r.MPETop);
+fprintf('%.2f\n',r.MPEBottom);
+fprintf('%.2f\n',r.cnr);
 
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
@@ -248,13 +191,116 @@ r.MPETop = mean( (AttInterp(top) - groundTruthTop(iAcq)) /...
     groundTruthTop(iAcq),"omitnan") * 100;
 r.MPEBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)) /...
     groundTruthBottom(end),"omitnan") * 100;
-r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2)
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsWFR(iAcq) = r;
+fprintf('RSLD-WFR\n');
+fprintf('%.2f\n',r.MPETop);
+fprintf('%.2f\n',r.MPEBottom);
+fprintf('%.2f\n',r.cnr);
+
+
+%% Plotting three results
+rmseTV = sqrt(mean((BR-attIdeal).^2,'all'));
+rmseSWTV = sqrt(mean((BRBC-attIdeal).^2,'all'));
+rmseWFR = sqrt(mean((BRWTik-attIdeal).^2,'all'));
+
+dynRange = [-50,0];
+attRange = [0.4,1.4];
+bsRange = [-2 2];
+
+figure('Units','centimeters', 'Position',[5 5 5 4.3]);
+imagesc(x,z,Bmode,dynRange)
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+axis image
+colormap(gray)
+title('Bmode')
+subtitle(' ')
+c = colorbar;
+c.Label.String = 'dB';
+fontsize(gcf,8,'points')
+
+figure('Units','centimeters', 'Position',[5 5 5 4.3]);
+imagesc(x_ACS,z_ACS,attIdeal,attRange)
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+colormap(turbo)
+axis image
+title('Ideal')
+subtitle(' ')
+c = colorbar;
+c.Label.String = 'ACS [dB/cm/MHz]';
+fontsize(gcf,8,'points')
+
+figure('Units','centimeters', 'Position',[5 5 5 4.3]);
+imagesc(x_ACS,z_ACS,BR, attRange)
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+colormap(turbo)
+axis image
+title('RSLD-TV')
+subtitle(['RMSE:',num2str(rmseTV,2),', CNR:',num2str(MetricsTV(iAcq).cnr,2)])
+c = colorbar;
+c.Label.String = 'ACS [dB/cm/MHz]';
+fontsize(gcf,8,'points')
+
+figure('Units','centimeters', 'Position',[5 5 5 4.3]);
+imagesc(x_ACS,z_ACS,BRBC, attRange)
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+colormap(turbo)
+axis image
+title('RSLD-SWTV')
+subtitle(['RMSE:',num2str(rmseSWTV,2),', CNR:',num2str(MetricsSWTV(iAcq).cnr,2)])
+c = colorbar;
+c.Label.String = 'ACS [dB/cm/MHz]';
+fontsize(gcf,8,'points')
+
+figure('Units','centimeters', 'Position',[5 5 5 4.3]);
+imagesc(x_ACS,z_ACS,BRWTik, attRange)
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+colormap(turbo)
+axis image
+title('RSLD-WFR')
+subtitle(['RMSE:',num2str(rmseWFR,2),', CNR:',num2str(MetricsWFR(iAcq).cnr,2)])
+c = colorbar;
+c.Label.String = 'ACS [dB/cm/MHz]';
+fontsize(gcf,8,'points')
+
+%% Profile
+
+% attTV = mean(BR,2);
+% attSWTV = mean(BRBC,2);
+% attSWTVTik = mean(BRWTik,2);
+% 
+% bscTV = mean(CR,2);
+% bscSWTV = mean(CRBC,2);
+% bscSWTVTik = mean(CRWTik,2);
+% 
+% attGT = zeros(size(z_ACS));
+% attGT(z_ACS < 2) = groundTruthTop(iAcq);
+% attGT(z_ACS > 2) = groundTruthBottom(iAcq);
+% 
+% figure('Units','centimeters', 'Position',[5 5 8 4]);
+% 
+% plot(z_ACS,[attTV,attSWTV,attSWTVTik], 'LineWidth',1.5)
+% hold on
+% plot(z_ACS,attGT, 'k--')
+% hold off
+% title('Axial profile')
+% grid on
+% xlim([z_ACS(1),z_ACS(end)])
+% ylim([0.5 1.3])
+% xlabel('Depth [cm]'), ylabel('ACS [dB/cm/MHz]')
+% legend({'TV','SWTV','WFR'}, 'Location','southeast')
+% fontsize(gcf,8,'points')
+
+%% Save
+save_all_figures_to_directory(figDir,['simulation',num2str(iAcq),'fig']);
+close all
+
+end
 
 %%
 
-save_all_figures_to_directory(figDir,'simulation');
-close all
 
 % ======================================================================
 % ======================================================================
@@ -267,7 +313,7 @@ croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
 NptodB = log10(exp(1))*20;
 
-figDir = 'C:\Users\sebas\Pictures\ISBI2024';
+figDir = 'C:\Users\sebas\Pictures\ISBI2024\v2';
 
 %% For looping each phantom
 
@@ -277,23 +323,19 @@ load(fullfile(croppedDir,croppedFiles(iAcq+5).name));
 
 switch iAcq
     case 1
-        muTV = 3.2E3; mu2TV = 3.2E2;
-        muWTV = 1E3; mu2WTV = 1E3;
-        muWTik = 3.2E3; mu2WTik = 3.2E2;
+        muTV = 10^3; mu2TV = 10^2.5;
+        muWTV = 10^3; mu2WTV = 10^3;
+        muWTik = 10^3.5; mu2WTik = 10^2.5;
     case 2
-        muTV = 3.2E3; mu2TV = 3.2;
-        muWTV = 1E3; mu2WTV = 10;
-        muWTik = 3.2E3; mu2WTik = 3.2;
+        muTV = 10^3.5; mu2TV = 10^2;
+        muWTV = 10^3; mu2WTV = 10^2.5;
+        muWTik = 10^4; mu2WTik = 10^2;
     case 3
-        muTV = 3.2E3; mu2TV = 3.2;
-        muWTV = 1E3; mu2WTV = 10;
-        muWTik = 3.2E3; mu2WTik = 3.2;
-    otherwise        
-        muTV = 3.2E3; mu2TV = 3.2;
-        muWTV = 1E3; mu2WTV = 10;
-        muWTik = 3.2E3; mu2WTik = 3.2;
+        muTV = 10^3; mu2TV = 10^0.5;
+        muWTV = 10^2.5; mu2WTV = 10^1;
+        muWTik = 10^4; mu2WTik = 10^2.5;
 end
-
+muB = 10^3; muC = 10^0.5;
 %% Plotting B-mode
 dynRange = [-50,0];
 attRange = [0.4,1.1];
@@ -343,11 +385,13 @@ BR = (reshape(Bn*NptodB,m,n));
 CR = (reshape(Cn,m,n));
 
 figure('Units','centimeters', 'Position',[5 5 5 3.8]);
+%figure('Units','centimeters', 'Position',[5 5 5 4.4]);
 imagesc(x_ACS,z_ACS,BR, attRange)
 xlabel('Lateral [cm]'), ylabel('Axial [cm]')
 colormap(turbo)
 axis image
 title('RSLD-TV')
+%subtitle({'MPE_T = 30%, CNR = 30%'})
 c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
 fontsize(gcf,8,'points')
@@ -378,9 +422,9 @@ for jj=1:n
 end
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
-a = 1; b = 0.1;
+aSNR = 1; bSNR = 0.1;
 desvMin = 15;
-w = a./(1 + exp(b.*(desvSNR - desvMin)));
+w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 
 % RSLD ANISOTROPIC AND BS WEIGHTED
@@ -416,14 +460,15 @@ hold off
 % Regularization: Au = b
 tol = 1e-3;
 mask = ones(m,n,p);
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muWTik,mu2WTik,m,n,tol,mask(:));
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB,muC,m,n,tol,mask(:));
 bscMap = reshape(Cn,m,n)*NptodB;
 
 ratioCutOff = 6;
 order = 5;
-reject = 0.05;
+reject = 0.1;
+extension = 3;
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
-w = movmin(w,5);
+w = movmin(w,extension);
 
 % Weighting equation and regularizations
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -506,6 +551,8 @@ r.MPEBack = mean( (AttInterp(back) - groundTruthTargets(end)) /...
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 MetricsWFR(iAcq) = r;
 
+save_all_figures_to_directory(figDir,['phantom',num2str(iAcq),'fig']);
+close all
 end
 
 %%
@@ -523,8 +570,8 @@ for iAcq = 1:3
 end
 
 %%
-save_all_figures_to_directory(figDir,'phantom');
-close all
+%save_all_figures_to_directory(figDir,'phantom');
+%close all
 
 % ========================================================================
 % ========================================================================
@@ -537,7 +584,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\references'];
 croppedDir = [baseDir,'\cropped'];
-figDir = 'C:\Users\sebas\Pictures\ISBI2024';
+figDir = 'C:\Users\sebas\Pictures\ISBI2024\v2';
 
 targetFiles = dir([targetDir,'\*.mat']);
 
@@ -573,15 +620,15 @@ BmodeFull = BmodeFull - max(BmodeFull(:));
 if iRoi == 1
     rect = [1.03; 0.49; 1.6; 1.69]; % Previous rectangle
     % rect = [1.03; 0.4; 1.6; 1.8];
-    muTV = 1E3; mu2TV = 3.2;
-    muWTV = 1E3; mu2WTV = 3.2;
-    muWTik = 1E3; mu2WTik = 3.2;
+    muTV = 10^3; mu2TV = 10^0.5;
+    muWTV = 10^3; mu2WTV = 10^0.5;
+    muWTik = 10^3; mu2WTik = 10^0.5;
 else
     rect = [2.63; 0.49; 1.6; 1.69]; % Previous rectangle
     % rect = [2.63; 0.4; 1.6; 1.8];
-    muTV = 1E4; mu2TV = 100;
-    muWTV = 1E4; mu2WTV = 100;
-    muWTik = 1E4; mu2WTik = 10;
+    muTV = 10^4; mu2TV = 10^2;
+    muWTV = 10^4; mu2WTV = 10^2;
+    muWTik = 10^4; mu2WTik = 10^2;
 end
 % hold on
 % rectangle('Position',rect)
@@ -739,9 +786,9 @@ for jj=1:n
 end
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
-a = 1; b = 0.1;
+aSNR = 1; bSNR = 0.1;
 desvMin = 15;
-w = a./(1 + exp(b.*(desvSNR - desvMin)));
+w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 
 % RSLD ANISOTROPIC AND BS WEIGHTED
@@ -923,20 +970,20 @@ dataTV = dataRoi{1}.TV(maskThyroid);
 dataSWTV = dataRoi{1}.SWTV(maskThyroid);
 dataWFR = dataRoi{1}.WFR(maskThyroid);
 fprintf("\nHeterogeneous results: \n BOTTOM\n")
-fprintf("Median: %.2f, Std: %.2f\n",median(dataTV(:)),std(dataTV(:)))
-fprintf("Median: %.2f, Std: %.2f\n",median(dataSWTV(:)),std(dataSWTV(:)))
-fprintf("Median: %.2f, Std: %.2f\n",median(dataWFR(:)),std(dataWFR(:)))
+fprintf("Mean: %.2f, Std: %.2f\n",mean(dataTV(:)),std(dataTV(:)))
+fprintf("Mean: %.2f, Std: %.2f\n",mean(dataSWTV(:)),std(dataSWTV(:)))
+fprintf("Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
 
 maskNodule = Z<1.1;
 dataTV = dataRoi{1}.TV(maskNodule);
 dataSWTV = dataRoi{1}.SWTV(maskNodule);
 dataWFR = dataRoi{1}.WFR(maskNodule);
 fprintf("\nHeterogeneous results: \n TOP\n")
-fprintf("Median: %.2f, Std: %.2f\n",median(dataTV(:)),std(dataTV(:)))
-fprintf("Median: %.2f, Std: %.2f\n",median(dataSWTV(:)),std(dataSWTV(:)))
-fprintf("Median: %.2f, Std: %.2f\n",median(dataWFR(:)),std(dataWFR(:)))
+fprintf("Mean: %.2f, Std: %.2f\n",mean(dataTV(:)),std(dataTV(:)))
+fprintf("Mean: %.2f, Std: %.2f\n",mean(dataSWTV(:)),std(dataSWTV(:)))
+fprintf("Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
 
 %%
 
-save_all_figures_to_directory(figDir,'clinicalTEST');
+save_all_figures_to_directory(figDir,'clinical');
 close all

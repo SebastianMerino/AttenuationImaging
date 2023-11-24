@@ -125,24 +125,25 @@ title('Ideal ACS')
 
 
 %% RSLD
-% muB = 10.^(3:0.5:4);
-% muC = 10.^(0:0.5:2);
-switch iAcq
-    case 1
-        muB = 10^3; muC = 10^0.5;
-    case 2
-        muB = 10^4; muC = 10^2;
-    case 3
-        muB = 10^3.5; muC = 10^2;
-    case 4
-        muB = 10^3.5; muC = 10^1;
-    case 5
-        muB = 10^3.5; muC = 10^1.5;
-    case 6
-        muB = 10^3.5; muC = 10^1;
-    otherwise
-        muB = 10^3.5; muC = 10^1.5;
-end
+muB = 10.^(3.5:0.5:5);
+muC = 10.^(3.5:0.5:5);
+% switch iAcq
+%     case 1
+%         muB = 10^3; muC = 10^0.5;
+%     case 2
+%         muB = 10^4; muC = 10^2;
+%     case 3
+%         %muB = 10^3.5; muC = 10^2;
+%         muB = 10^4.5; muC = 10^3;
+%     case 4
+%         muB = 10^3.5; muC = 10^1;
+%     case 5
+%         muB = 10^3.5; muC = 10^1.5;
+%     case 6
+%         muB = 10^3.5; muC = 10^1;
+%     otherwise
+%         muB = 10^3.5; muC = 10^1.5;
+% end
 
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -163,7 +164,7 @@ for mmB = 1:length(muB)
         end
     end
 end
-
+%%
 figure('Units','centimeters', 'Position',[5 5 15 6]);
 tl = tiledlayout(1,2, "Padding","tight");
 title(tl,'Isotropic RSLD')
@@ -228,15 +229,17 @@ aSNR = 1; bSNR = 0.1;
 desvMin = 15;
 w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
-% muB = 10.^(2.5:0.5:4);
-% muC = 10.^(0:0.5:3);
+muB = 10.^(3:0.5:5);
+muC = 10.^(0:0.5:5);
 switch iAcq
     case 1
         muB = 10^2.5; muC = 10^0;
     case 2
         muB = 10^3.5; muC = 10^3;
     case 3
-        muB = 10^3; muC = 10^0;
+        %muB = 10^3; muC = 10^0;
+        % muB = 10^3; muC = 10^3.5; % optimal
+        % muB = 10^3; muC = 10^0;
     case 4
         muB = 10^3; muC = 10^0;
     case 5
@@ -292,7 +295,7 @@ axis image
 title(['RSLD, \mu=',num2str(muCopt,2)])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
-
+%%
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
 r.stdTop = std(AttInterp(top),"omitnan");

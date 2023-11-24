@@ -206,7 +206,7 @@ A2 = kron( ones(size(f)) , speye(m*n) );
 tol = 1e-3;
 mask = ones(m,n,p);
 mu = logspace(2.5,3.5,3);
-mu2 = logspace(-1.5,0.5,3);
+mu2 = logspace(-1.5,0.5,3)*100;
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
@@ -343,9 +343,9 @@ imOverlayInterp(BmodeFull,BR(:,:,2),dynRange,attRange,0.5,...
 
 
 %% Saving data
-% save(fullfile(croppedDir,targetFiles(iAcq).name),"Sd","Sp",...
-%     "compensation","z_ACS","x_ACS","nx","nz","x0","z0p","z0d","sam1",...
-%     "m","n","p","Bmode","x","z","f","L","xFull","zFull","BmodeFull")
+save(fullfile(croppedDir,targetFiles(iAcq).name),"Sd","Sp",...
+    "compensation","z_ACS","x_ACS","nx","nz","x0","z0p","z0d","sam1",...
+    "m","n","p","Bmode","x","z","f","L","xFull","zFull","BmodeFull")
 
 % end
 
