@@ -1,9 +1,11 @@
-clear,clc
+%clear,clc
 close all
 addpath('./functions_v7');
 
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\ThyroidSelected\CUELLO#3'];
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\ThyroidSelected\CUELLO#3'];
+    'Attenuation\ThyroidSelected\CUELLO#2'];
 
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
@@ -11,14 +13,17 @@ for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\31-10'];
+figDir = [baseDir,'\fig\28-11'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
-% CASOS INTERESANTES: 2,4,6,8,9,13
+% CASOS INTERESANTES CUELLO 3:  2,4,6,8,9,13
+
+% CASOS INTERESANTES CUELLO 2:  1,3,9
 
 %% Loading data
 for iAcq = 1:length(croppedFiles)
-iAcq = 8;
+
+iAcq =1;
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 dynRange = [-40,-5];
@@ -26,18 +31,20 @@ attRange = [0.3,1.7];
 %attRange = [0,1]; % Just for 13 acq
 bsRange = [-2 2];
 
-
-
-%% Standard SLD
-b = (log(Sp) - log(Sd)) - (compensation);
-
+%% System
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
 A = [A1 A2];
-[u,~] = cgs(A'*A,A'*b(:),1e-6,20);
-% Standard SLD
+b = (log(Sp) - log(Sd)) - (compensation);
+
+tol = 1e-3;
+clear mask
+mask = ones(m,n,p);
+
+%% Standard SLD
 % BS: Beta. Attenuation coefficient slopes of blocks.
 % CS: Constants of blocks.
+[u,~] = cgs(A'*A,A'*b(:),1e-6,20);
 BS = u(1:end/2); CS = u(end/2+1:end);
 BS = 8.686*BS;   % [dB.cm^{-1}.MHz^{-1}]
 BS = reshape(BS,m,n);
@@ -72,17 +79,7 @@ c.Label.String = 'BS log ratio (a.u.)';
 
 
 %% RSLD
-b = (log(Sp) - log(Sd)) - (compensation);
 
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-% A = [A1 A2];
-
-% Regularization: Au = b
-tol = 1e-3;
-
-clear mask
-mask = ones(m,n,p);
 mu = logspace(2,3,3);
 mu2 = logspace(-1,1,3);
 BR = zeros(m,n,length(mu2));
@@ -134,6 +131,14 @@ for mm = 1:length(mu)
     c.Label.String = 'BS log ratio (a.u.)';
 end
 
+%%
+tic
+[Bn,~] = AlterOpti_ADMM(A1,A2,b(:),1E3,10,m,n,tol,mask(:));
+toc
+BRTV = (reshape(Bn*8.686,m,n));
+
+
+
 %% British Columbia Approach
 envelope = abs(hilbert(sam1));
 
@@ -158,9 +163,10 @@ end
 
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
-a = 1; b = 0.1;
+aSNR = 1; bSNR = 0.1;
 desvMin = 15;
-w = a./(1 + exp(b.*(desvSNR - desvMin)));
+w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
+
 
 % RSLD ANISOTROPIC AND BS WEIGHTED
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -294,24 +300,38 @@ for mm = 1:length(mu)
     c.Label.String = 'BS log ratio (a.u.)';
 end
 
+%%
+tic
+% CASO 1
+% [Bn,~] = optimAdmmTvTikhonov(A1,A2,b(:),1E3,10^0.5,m,n,tol,mask(:));
+
+% CASO 3
+[Bn,~] = optimAdmmTvTikhonov(A1,A2,b(:),1E3,10^-0.5,m,n,tol,mask(:));
+toc
+BRTVL1 = (reshape(Bn*8.686,m,n));
+
 
 %% NEW WEIGHTS
 b = (log(Sp) - log(Sd)) - (compensation);
 
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
-
+NptodB = 20*log10(exp(1));
 
 % Regularization: Au = b
 tol = 1e-3;
 mask = ones(m,n,p);
-mu = 1e3;
-mu2 = 1;
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),mu,mu2,m,n,tol,mask(:));
-bscMap = (reshape(Cn,m,n));
 
-logBscRatio = bscMap*log10(exp(1))*20;
-w = 1./((logBscRatio/10).^2 + 1);
+mu = 1e3;
+mu2 = 10;
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),mu,mu2,m,n,tol,mask(:));
+bscMap = reshape(Cn,m,n)*NptodB;
+% Weight function
+ratioCutOff = 10;
+order = 5;
+reject = 0.1;
+extension = 3;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 
 
 figure('Units','centimeters', 'Position',[5 5 30 8]),
@@ -327,7 +347,7 @@ xlim([x_ACS(1) x_ACS(end)]), ylim([z_ACS(1) z_ACS(end)]);
 title('B-mode')
 
 t2 = nexttile;
-imagesc(x_ACS,z_ACS,logBscRatio, [-20 20])
+imagesc(x_ACS,z_ACS,bscMap, [-20 20])
 colormap(t2,parula)
 c = colorbar;
 ylabel(c,'dB')
@@ -355,13 +375,13 @@ bw = W*b(:);
 
 A1w = W*A1;
 A2w = W*A2;
-
+%%
 % Regularization: Au = b
 tol = 1e-3;
 
 mask = ones(m,n,p);
-mu = logspace(2,3,3);
-mu2 = logspace(-1.5,0.5,3);
+mu = 10.^(3:0.5:4);
+mu2 = 10.^(-0.5:1:1.5);
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
@@ -416,19 +436,82 @@ for mm = 1:length(mu)
 end
 
 %%
+tic
+% CASO 1
+% [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,10^3.5,10^0.5,m,n,tol,mask(:),w);
+% CASO 3
+[Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,2*10^3,10^-0.5,m,n,tol,mask(:),w);
+toc
+BRWFR = (reshape(Bn*8.686,m,n));
+
+
+figure('Units','centimeters', 'Position',[5 5 30 8]);
+tl = tiledlayout(1,4);
+title(tl,{'Comparison'})
+subtitle(tl,['Patient ',croppedFiles(iAcq).name(1:end-4)])
+t1 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+axis equal
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+colormap(t1,gray)
+colorbar(t1,'westoutside')
+title('Bmode')
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,BRTV, attRange)
+colormap(t2,turbo)
+axis equal tight
+% title(['TV, \mu=',num2str(mu(mm),2)])
+title('TV')
+c = colorbar;
+c.Label.String = 'Att. [db/cm/MHz]';
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,BRTVL1, attRange)
+colormap(t2,turbo)
+axis equal tight
+%title(['SWTV, \mu=',num2str(mu(mm),2)])
+title('TV-L1')
+c = colorbar;
+c.Label.String = 'Att. [db/cm/MHz]';
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,BRWFR, attRange)
+colormap(t2,turbo)
+axis equal tight
+%title(['WFR, \mu=',num2str(mu(mm),2)])
+title('WFR')
+c = colorbar;
+c.Label.String = 'Att. [db/cm/MHz]';
+
+%%
 [X,Z] = meshgrid(xFull,zFull);
 roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 %figure, imagesc(roi);
 
 figure,
-[~,~,hColor] = imOverlayInterp(BmodeFull,BR(:,:,2),[-50 0],attRange,0.5,...
+[~,~,hColor] = imOverlayInterp(BmodeFull,BRWFR,[-50 0],attRange,0.5,...
     x_ACS,z_ACS,roi,xFull,zFull);
 title('B-mode and attenuation map')
 hColor.Label.String = 'dB/cm/MHz';
+
+ylim([0.1, 3])
+%%
+
+[X,Z] = meshgrid(x_ACS,z_ACS);
+% inc = X>1.4 & Z<1.6 & Z>0.8;
+inc = X>1.8 & Z<2.2 & Z>1.3;
+
+mean(BRTV(inc),'all')
+mean(BRTVL1(inc),'all')
+mean(BRWFR(inc),'all')
+im = imagesc(BRWFR);
+im.AlphaData = (0.5 + inc);
 %%
 newDir = fullfile(figDir,croppedFiles(iAcq).name(1:end-4));
 if(~exist(newDir,"dir")), mkdir(newDir); end
-save_all_figures_to_directory(newDir);
+save_all_figures_to_directory(newDir,'figure');
 close all
 
 

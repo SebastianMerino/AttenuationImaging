@@ -1,4 +1,4 @@
-function [back,inc] = getRegionMasks(x,z,c1x,c1z,L,d)
+function [back,inc] = getRegionMasks(x,z,c1x,c1z,L,d,Lz)
 % ========================================================================
 % Function that gives data from a square in the center of an image 
 % (inclusion) and two rectangles, one at each side (background)
@@ -16,11 +16,11 @@ function [back,inc] = getRegionMasks(x,z,c1x,c1z,L,d)
 
 % Upper left corner of inclusion
 x0 = c1x - L/2; 
-z0 = c1z - L/2;
+z0 = c1z - Lz/2;
 
 % Mask inclusion
 [X,Z] = meshgrid(x,z);
-maskZ = Z>z0 & Z<z0+L;
+maskZ = Z>z0 & Z<z0+Lz;
 maskInc = X>x0 & X<x0+L & maskZ;
 inc = maskInc;
 

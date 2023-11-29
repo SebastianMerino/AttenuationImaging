@@ -1,7 +1,8 @@
 %% PHANTOMSSS
 clear,
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-     '\ID316V2\06-08-2023-Generic'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%      '\ID316V2\06-08-2023-Generic'];
+
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
 NptodB = log10(exp(1))*20;
@@ -10,7 +11,7 @@ figDir = 'C:\Users\sebas\Pictures\ISBI2024\23-11';
 mkdir(figDir)
 %% For looping each phantom
 
-for iAcq = 1:3
+for iAcq = 2:3
 fprintf("Phantom no. %i, %s\n",iAcq,croppedFiles(iAcq+5).name);
 load(fullfile(croppedDir,croppedFiles(iAcq+5).name));
 
@@ -35,13 +36,16 @@ fontsize(gcf,8,'points')
 % ROI
 c1x = 1.95; c1z = 1.93;
 roiL = 1; roiD = 0.6;
+roiLz = 1.5;
+%roiL = 1.2; roiD = 0.6;
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
 rI = 0.6; rB = 1.2; % Both
 x0mask = c1x - roiL/2; 
-z0mask = c1z - roiL/2;
-[back,inc] = getRegionMasks(x,z,c1x,c1z,roiL,roiD);
+z0mask = c1z - roiLz/2;
+[back,inc] = getRegionMasks(x,z,c1x,c1z,roiL,roiD,roiLz);
 
+%%
 groundTruthTargets = [0.97,0.95,0.95,0.55];
 
 % System of eq
@@ -52,16 +56,16 @@ tol = 1e-3;
 mask = ones(m,n,p);
 %% RSLD-TV
 
-%muB = 10.^(3:0.5:4);
-%muC = 10.^(0.5:0.5:2.5);
-switch iAcq
-    case 1
-        muB = 10^3; muC = 10^2.5;
-    case 2
-        muB = 10^3.5; muC = 10^2;
-    case 3
-        muB = 10^3; muC = 10^0.5;
-end
+muB = 10.^(3:0.5:4);
+muC = 10.^(0.5:0.5:2.5);
+% switch iAcq
+%     case 1
+%         muB = 10^3; muC = 10^2.5;
+%     case 2
+%         muB = 10^3.5; muC = 10^2;
+%     case 3
+%         muB = 10^3; muC = 10^0.5;
+% end
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -100,12 +104,14 @@ c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
 fontsize(gcf,8,'points')
 hold on 
-rectangle('Position',[x0mask z0mask roiL roiL], 'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiL],...
+rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
     'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiL],...
+rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
     'LineStyle','--', 'LineWidth',1)
 hold off
+
+
 %% British Columbia Approach
 
 envelope = abs(hilbert(sam1));
@@ -132,23 +138,25 @@ desvMin = 15;
 w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 
-% muB = 10.^(2.5:0.5:3.5);
-% muC = 10.^(1:0.5:3);
-switch iAcq
-    case 1
-        muB = 10^3; muC = 10^3;
-    case 2
-        muB = 10^3; muC = 10^2.5;
-    case 3
-        muB = 10^2.5; muC = 10^1;
-end
+%muB = 10.^(1.5:0.5:4.5);
+%muC = 10.^(1:0.5:3.5);
+muB = 10.^(2:0.5:3.5);
+muC = 10.^(1.5:0.5:2.5);
+% switch iAcq
+%     case 1
+%         muB = 10^3; muC = 10^3;
+%     case 2
+%         muB = 10^3; muC = 10^2.5;
+%     case 3
+%         muB = 10^2.5; muC = 10^1;
+% end
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
-        % tic
+        %tic
         [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muB(mmB),muC(mmC),...
         m,n,tol,mask(:),w);
-        % tic
+        %toc
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
 
@@ -158,6 +166,18 @@ for mmB = 1:length(muB)
         RmseBack = mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
             "omitnan");
         RMSE = sqrt((RmseInc + RmseBack)/2);
+        
+        % figure('Units','centimeters', 'Position',[5 5 5 4]);
+        % imagesc(x_ACS,z_ACS,BR, attRange)
+        % xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+        % colormap(turbo)
+        % axis image
+        % title('RSLD-SWTV')
+        % subtitle(['muB=',num2str(muB(mmB),2),', muC=',num2str(muC(mmC),2)])
+        % c = colorbar;
+        % c.Label.String = 'ACS [dB/cm/MHz]';
+        % fontsize(gcf,8,'points')
+        
         if RMSE<minRMSE
             minRMSE = RMSE;
             muBopt = muB(mmB);
@@ -167,7 +187,8 @@ for mmB = 1:length(muB)
         end
     end
 end
-
+%%
+% SWTV: muB = 10^2.5, muC= 10^2.0
 fprintf("SWTV: muB = 10^%.1f, muC= 10^%.1f\n",log10(muBopt),log10(muCopt))
 BRBC = BRopt;
 
@@ -181,10 +202,10 @@ c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
 fontsize(gcf,8,'points')
 hold on 
-rectangle('Position',[x0mask z0mask roiL roiL], 'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiL],...
+rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
     'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiL],...
+rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
     'LineStyle','--', 'LineWidth',1)
 hold off
 
@@ -237,10 +258,10 @@ c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
 fontsize(gcf,8,'points')
 hold on 
-rectangle('Position',[x0mask z0mask roiL roiL], 'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiL],...
+rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
     'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiL],...
+rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
     'LineStyle','--', 'LineWidth',1)
 hold off
 
@@ -290,7 +311,7 @@ for mmB = 1:length(muB)
         end
     end
 end
-
+%%
 fprintf("WFR: muB = 10^%.1f, muC= 10^%.1f\n",log10(muBopt),log10(muCopt))
 BRWTik = BRopt;
 
@@ -304,10 +325,10 @@ c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
 fontsize(gcf,8,'points')
 hold on 
-rectangle('Position',[x0mask z0mask roiL roiL], 'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiL],...
+rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
     'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiL],...
+rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
     'LineStyle','--', 'LineWidth',1)
 hold off
 

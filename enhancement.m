@@ -87,7 +87,7 @@ grid on
 
 
 %%
-fc = 5E6;
+fc = 6E6;
 [bFilt,aFilt] = butter(1,[fc-0.5E6 fc+0.5E6]/fs*2, "bandpass");
 samFilt = filtfilt(bFilt,aFilt,sam1);
 [pxx,fpxx] = pwelch(samFilt,300,250,512,fs);
@@ -126,7 +126,7 @@ xlabel('Lateral [cm]')
 title('Acoustic enhancement')
 %%
 underInclusion = mean(latProfile(x>1.4 & x <2.1))
-ousideInclusion = mean(latProfile(x>2.3))
+ousideInclusion = mean(latProfile(x>2.3 & x <3.2))
 acEnhancement = underInclusion - ousideInclusion
 % Inclusion in 0.85 cm long
 attDiff = acEnhancement/1.7/fc*1E6

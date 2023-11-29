@@ -4,6 +4,10 @@ close all
 addpath('./functions_v7');
 addpath('./AttUtils');
 
+% ======================================================================
+% ======================================================================
+% ======================================================================
+%% SIMULATION
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\Simulation\layeredNew'];
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
@@ -14,7 +18,7 @@ croppedFiles = dir([croppedDir,'\*.mat']);
 figDir = 'C:\Users\sebas\Pictures\ISBI2024\v3';
 mkdir(figDir)
 %%
-for iAcq = [1,2,3]
+for iAcq = [1,2,3,6]
 switch iAcq
     case 1                
         muTV = 10^3; mu2TV = 10^0.5;
@@ -215,7 +219,7 @@ ylim([z_ACS(1) z_ACS(end)]),
 xlabel('Lateral [cm]'), ylabel('Axial [cm]')
 axis image
 colormap(gray)
-title('Bmode')
+title('B-mode')
 subtitle(' ')
 c = colorbar;
 c.Label.String = 'dB';
@@ -327,35 +331,33 @@ switch iAcq
         muWTV = 10^3; mu2WTV = 10^3;
         muWTik = 10^3.5; mu2WTik = 10^2.5;
     case 2
+        % muTV = 10^3.5; mu2TV = 10^2;
+        % muWTV = 10^3; mu2WTV = 10^2.5;
+        % muWTik = 10^4; mu2WTik = 10^2;
         muTV = 10^3.5; mu2TV = 10^2;
-        muWTV = 10^3; mu2WTV = 10^2.5;
-        muWTik = 10^4; mu2WTik = 10^2;
+        muWTV = 10^2.5; mu2WTV = 10^2;
+        muWTik = 10^4; mu2WTik = 10^1.5;
     case 3
+        %muTV = 10^3; mu2TV = 10^0.5;
         muTV = 10^3; mu2TV = 10^0.5;
-        muWTV = 10^2.5; mu2WTV = 10^1;
-        muWTik = 10^4; mu2WTik = 10^2.5;
+        %muWTV = 10^2.5; mu2WTV = 10^1;
+        muWTV = 10^3; mu2WTV = 10^1.5;
+        muWTik = 10^3.5; mu2WTik = 10^1;
 end
 muB = 10^3; muC = 10^0.5;
+
+groundTruthTargets = [0.97,0.95,0.95,0.55];
+
 %% Plotting B-mode
 dynRange = [-50,0];
 attRange = [0.4,1.1];
 bsRange = [-2 2];
 
-figure('Units','centimeters', 'Position',[5 5 5 3.8]);
-imagesc(x,z,Bmode,dynRange)
-xlim([x_ACS(1) x_ACS(end)]),
-ylim([z_ACS(1) z_ACS(end)]),
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-axis image
-colormap(gray)
-title('Bmode')
-c = colorbar;
-c.Label.String = 'dB';
-fontsize(gcf,8,'points')
 
 %% ROI selection
 c1x = 1.95; c1z = 1.93;
 roiL = 1; roiD = 0.6;
+roiLz = 1.2;
 % roiL = 0.8; roiD = 0.6;
 
 [X,Z] = meshgrid(x_ACS,z_ACS);
@@ -367,7 +369,7 @@ rI = 0.6; rB = 1.2; % Both
 
 x0mask = c1x - roiL/2; 
 z0mask = c1z - roiL/2;
-[back,inc] = getRegionMasks(x,z,c1x,c1z,roiL,roiD);
+[back,inc] = getRegionMasks(x,z,c1x,c1z,roiL,roiD,roiLz);
 %figure, imagesc(x,z,inc|back)
 
 %% RSLD-TV
@@ -384,24 +386,13 @@ toc
 BR = (reshape(Bn*NptodB,m,n));
 CR = (reshape(Cn,m,n));
 
-figure('Units','centimeters', 'Position',[5 5 5 3.8]);
-%figure('Units','centimeters', 'Position',[5 5 5 4.4]);
-imagesc(x_ACS,z_ACS,BR, attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-colormap(turbo)
-axis image
-title('RSLD-TV')
-%subtitle({'MPE_T = 30%, CNR = 30%'})
-c = colorbar;
-c.Label.String = 'ACS [dB/cm/MHz]';
-fontsize(gcf,8,'points')
-hold on 
-rectangle('Position',[x0mask z0mask roiL roiL], 'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiL],...
-    'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiL],...
-    'LineStyle','--', 'LineWidth',1)
-hold off
+AttInterp = interp2(X,Z,BR,Xq,Zq);
+RmseInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") ;
+RmseBack = mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
+    "omitnan");
+rmseTV = sqrt((RmseInc + RmseBack)/2);
+
 %% British Columbia Approach
 
 % Weights
@@ -436,26 +427,17 @@ A2 = kron( ones(size(f)) , speye(m*n) );
 tol = 1e-3;
 tic
 [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muWTV,mu2WTV,m,n,tol,mask(:),w);
+%[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muTV,mu2TV,m,n,tol,mask(:),w);
 toc
 BRBC = (reshape(Bn*NptodB,m,n));
 CRBC = (reshape(Cn,m,n));
 
-figure('Units','centimeters', 'Position',[5 5 5 3.8]);
-imagesc(x_ACS,z_ACS,BRBC, attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-colormap(turbo)
-axis image
-title('RSLD-SWTV')
-c = colorbar;
-c.Label.String = 'ACS [dB/cm/MHz]';
-fontsize(gcf,8,'points')
-hold on 
-rectangle('Position',[x0mask z0mask roiL roiL], 'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiL],...
-    'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiL],...
-    'LineStyle','--', 'LineWidth',1)
-hold off
+AttInterp = interp2(X,Z,BRBC,Xq,Zq);
+RmseInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") ;
+RmseBack = mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
+    "omitnan");
+rmseSWTV = sqrt((RmseInc + RmseBack)/2);
 %% NEW WEIGHTS
 % Regularization: Au = b
 tol = 1e-3;
@@ -494,25 +476,14 @@ toc
 BRWTik = (reshape(Bn*NptodB,m,n));
 CRWTik = (reshape(Cn,m,n));
 
-figure('Units','centimeters', 'Position',[5 5 5 3.8]);
-imagesc(x_ACS,z_ACS,BRWTik, attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-colormap(turbo)
-axis image
-title('RSLD-WFR')
-c = colorbar;
-c.Label.String = 'ACS [dB/cm/MHz]';
-fontsize(gcf,8,'points')
-hold on 
-rectangle('Position',[x0mask z0mask roiL roiL], 'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiL],...
-    'LineStyle','--', 'LineWidth',1)
-rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiL],...
-    'LineStyle','--', 'LineWidth',1)
-hold off
 
+AttInterp = interp2(X,Z,BRWTik,Xq,Zq);
+RmseInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") ;
+RmseBack = mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
+    "omitnan");
+rmseWFR = sqrt((RmseInc + RmseBack)/2);
 %%
-groundTruthTargets = [0.97,0.95,0.95,0.55];
 AttInterp = interp2(X,Z,BR,Xq,Zq);
 r.meanInc = mean(AttInterp(inc),"omitnan");
 r.stdInc = std(AttInterp(inc),"omitnan");
@@ -550,7 +521,76 @@ r.MPEBack = mean( (AttInterp(back) - groundTruthTargets(end)) /...
     groundTruthTargets(end),"omitnan") * 100;
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 MetricsWFR(iAcq) = r;
+%%
 
+figure('Units','centimeters', 'Position',[5 5 5 3.8]);
+imagesc(x,z,Bmode,dynRange)
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+axis image
+colormap(gray)
+title('B-mode')
+%subtitle(' ')
+c = colorbar;
+c.Label.String = 'dB';
+fontsize(gcf,8,'points')
+
+figure('Units','centimeters', 'Position',[5 5 5 4.2]);
+imagesc(x_ACS,z_ACS,BR, attRange)
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+colormap(turbo)
+axis image
+title('RSLD-TV')
+subtitle(['RMSE:',num2str(rmseTV,2),', CNR:',num2str(MetricsTV(iAcq).cnr,2)])
+c = colorbar;
+c.Label.String = 'ACS [dB/cm/MHz]';
+fontsize(gcf,8,'points')
+hold on 
+rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
+    'LineStyle','--', 'LineWidth',1)
+rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
+    'LineStyle','--', 'LineWidth',1)
+hold off
+
+figure('Units','centimeters', 'Position',[5 5 5 4.2]);
+imagesc(x_ACS,z_ACS,BRBC, attRange)
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+colormap(turbo)
+axis image
+title('RSLD-SWTV')
+subtitle(['RMSE:',num2str(rmseSWTV,2),', CNR:',num2str(MetricsSWTV(iAcq).cnr,2)])
+c = colorbar;
+c.Label.String = 'ACS [dB/cm/MHz]';
+fontsize(gcf,8,'points')
+hold on 
+rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
+    'LineStyle','--', 'LineWidth',1)
+rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
+    'LineStyle','--', 'LineWidth',1)
+hold off
+
+
+figure('Units','centimeters', 'Position',[5 5 5 4.2]);
+imagesc(x_ACS,z_ACS,BRWTik, attRange)
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+colormap(turbo)
+axis image
+title('RSLD-WFR')
+subtitle(['RMSE:',num2str(rmseWFR,2),', CNR:',num2str(MetricsWFR(iAcq).cnr,2)])
+c = colorbar;
+c.Label.String = 'ACS [dB/cm/MHz]';
+fontsize(gcf,8,'points')
+hold on 
+rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
+    'LineStyle','--', 'LineWidth',1)
+rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
+    'LineStyle','--', 'LineWidth',1)
+hold off
+%%
 save_all_figures_to_directory(figDir,['phantom',num2str(iAcq),'fig']);
 close all
 end
@@ -873,8 +913,6 @@ hb2=colorbar; ylabel(hb2,'dB')
 xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 ylim([0.05 3])
 xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-title('B-mode')
-hb2.Label.String = 'ACS [dB/cm/MHz]';
 title('B-mode')
 fontsize(gcf,8,'points')
 

@@ -6,11 +6,13 @@ addpath('./AttUtils');
 %     '\Attenuation\DataQUS_4_Merino'];
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\DataQUS_4_Merino'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\ThyroidSelected\CUELLO#3'];
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\ThyroidSelected\CUELLO#3'];
+    'Attenuation\ThyroidSelected\CUELLO#2'];
 
 targetDir = [baseDir,'\raw'];
-refDir = [baseDir,'\references'];
+refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
 %% Convert .rf to .mat file (RUN ONCE)
 % convertRfFilesToMat(targetDir);
@@ -28,7 +30,9 @@ for iAcq = 1:length(targetFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 end 
 %% For looping
-iAcq = 8;
+% CASOS INTERESANTES CUELLO 2:  1,3
+% CASOS POR REVISAR: 9, 5
+iAcq = 9;
 
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
@@ -194,7 +198,8 @@ end
 %% RSLD and plotting
 dynRange = [-40,0];
 attRange = [0,1.7];
-bsRange = [-2 2];
+bsRange = [-15 15];
+NptodB = 20*log10(exp(1));
 
 %% Weighting equation and regularizations
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -206,22 +211,22 @@ A2 = kron( ones(size(f)) , speye(m*n) );
 tol = 1e-3;
 mask = ones(m,n,p);
 mu = logspace(2.5,3.5,3);
-mu2 = logspace(-1.5,0.5,3)*100;
+mu2 = logspace(-1.5,0.5,3)/10;
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
     for mm2 = 1:length(mu2)
         tic
-        [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),mu(mm),mu2(mm2),m,n,tol,mask(:));
+        [Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),mu(mm),mu2(mm2),m,n,tol,mask(:));
         toc
-        BR(:,:,mm2) = (reshape(Bn*8.686,m,n));
-        CR(:,:,mm2) = (reshape(Cn,m,n));
+        BR(:,:,mm2) = reshape(Bn*NptodB,m,n);
+        CR(:,:,mm2) = reshape(Cn*NptodB,m,n);
     end
     
     % Plotting
     figure('Units','centimeters', 'Position',[5 5 30 12]);
     tl = tiledlayout(2,size(BR,3)+1);
-    title(tl,{'TV, Tikhonov reg and weights',''})
+    title(tl,{'Tikhonov',''})
     %subtitle(tl,['Patient ',croppedFiles(iAcq).name(1:end-4)])
     t1 = nexttile;
     imagesc(x,z,Bmode,dynRange)
@@ -267,13 +272,19 @@ A2 = kron( ones(size(f)) , speye(m*n) );
 tol = 1e-3;
 mask = ones(m,n,p);
 mu = 1e3;
-mu2 = 1;
+mu2 = 10;
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),mu,mu2,m,n,tol,mask(:));
-bscMap = (reshape(Cn,m,n));
+bscMap = reshape(Cn,m,n)*NptodB;
 
-logBscRatio = bscMap*log10(exp(1))*20;
-w = 1./((logBscRatio/10).^2 + 1);
-
+% logBscRatio = bscMap*log10(exp(1))*20;
+% Weight function
+ratioCutOff = 10;
+order = 5;
+reject = 0.1;
+extension = 3;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+% w = movmin(w,extension);
+% imagesc(x_ACS,z_ACS,w)
 
 W = repmat(w,[1 1 p]);
 W = spdiags(W(:),0,m*n*p,m*n*p);
@@ -283,7 +294,7 @@ A1w = W*A1;
 A2w = W*A2;
 
 mu = logspace(2.5,3.5,3);
-mu2 = logspace(-1.5,0.5,3);
+mu2 = logspace(-0.5,1.5,3);
 BR = zeros(m,n,length(mu2));
 CR = zeros(m,n,length(mu2));
 for mm = 1:length(mu)
@@ -337,11 +348,15 @@ for mm = 1:length(mu)
     c.Label.String = 'BS log ratio (a.u.)';
 end
 %%
+dynRange = [-50,-10];
 figure,
 imOverlayInterp(BmodeFull,BR(:,:,2),dynRange,attRange,0.5,...
     x_ACS,z_ACS,roi,xFull,zFull);
+ylim([0.1;3])
 
-
+% CASO MUB MUC
+% CASO 2: 1e3 10^-0.5
+% CASO 3: 1e3 10^-0.5
 %% Saving data
 save(fullfile(croppedDir,targetFiles(iAcq).name),"Sd","Sp",...
     "compensation","z_ACS","x_ACS","nx","nz","x0","z0p","z0d","sam1",...
