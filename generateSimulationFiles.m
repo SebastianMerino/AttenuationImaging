@@ -10,12 +10,11 @@ addpath(genpath(pwd))
 DATA_CAST = 'single';     % set to 'single' or 'gpuArray-single' to speed up computations
 % DATA_CAST = 'gpuArray-single';     % set to 'single' or 'gpuArray-single' to speed up computations
 
-BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_11_11';
+BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_12_01';
 % folderNames = {'twoLayers1','twoLayers2','twoLayers3'};
 % folderNames = {'layerRef1','layerRef2'};
 % folderNames = {'twoLayers4','twoLayers5','twoLayers6'};
-folderNames = {'twoLayers1','twoLayers2','twoLayers3','twoLayers4',...
-    'twoLayers5','twoLayers6'};
+folderNames = {'twoLayers1','twoLayers2','targets'};
 
 %% For looping simulations
 
@@ -56,40 +55,37 @@ for iSim = 1:length(folderNames)
     rho0 = 1000;
 
     %maskLayer = rz > 15e-3 & rz < 30e-3;
-    maskLayer = rz > (20e-3 + offset*dx);
 
     % define properties of the layer
     switch iSim
         case 1
+            maskLayer = rz > (20e-3 + offset*dx);
             background_map_std = 0.005;
             layer_map_std = 0.02;
-            background_alpha = 0.6;       % [dB/(MHz^y cm)]
-            layer_alpha = 1.2;            % [dB/(MHz^y cm)]
+            layer_map_mean = 1;
+            background_alpha = 0.8;       % [dB/(MHz^y cm)]
+            layer_alpha = 0.8;            % [dB/(MHz^y cm)]
         case 2
+            maskLayer = rz > (20e-3 + offset*dx);
             background_map_std = 0.02;
             layer_map_std = 0.005;
-            background_alpha = 0.6;
-            layer_alpha = 1.2;
+            layer_map_mean = 1;
+            background_alpha = 0.8;
+            layer_alpha = 0.8;
         case 3
-            background_map_std = 0.005;
-            layer_map_std = 0.005;
-            background_alpha = 0.6;
-            layer_alpha = 1.2;
-        case 4
-            background_map_std = 0.005;
-            layer_map_std = 0.02;
-            background_alpha = 1.2;       % [dB/(MHz^y cm)]
-            layer_alpha = 0.6;            % [dB/(MHz^y cm)]
-        case 5
+            cz = 20e-3 + offset*dx; cx = 0;
+            r = 1e-3;
+            maskLayer = (rz-cz).^2 + (rx-cx).^2 < r^2;
+            maskLayer = maskLayer | (rz-cz+10e-3).^2 + (rx-cx).^2 < r^2;
+            maskLayer = maskLayer | (rz-cz-10e-3).^2 + (rx-cx).^2 < r^2;
+            maskLayer = maskLayer | (rz-cz).^2 + (rx-cx-10e-3).^2 < r^2;
+            maskLayer = maskLayer | (rz-cz).^2 + (rx-cx+10e-3).^2 < r^2;
+
             background_map_std = 0.02;
             layer_map_std = 0.005;
-            background_alpha = 1.2;
-            layer_alpha = 0.6;
-        case 6
-            background_map_std = 0.005;
-            layer_map_std = 0.005;
-            background_alpha = 1.2;
-            layer_alpha = 0.6;
+            layer_map_mean = 0.99;
+            background_alpha = 0.8;
+            layer_alpha = 0.8;
     end
 
     % Multiplicative maps for background and layer
@@ -102,7 +98,8 @@ for iSim = 1:length(folderNames)
     alpha_map = background_alpha + zeros(Nx,Ny);    
     
     sound_speed_layer = c0 * ones(Nx,Ny) .* (1 + layer_map_std * randn(Nx,Ny));
-    density_layer = rho0 * ones(Nx,Ny) .* (1 + layer_map_std * randn(Nx,Ny));
+    density_layer = rho0 * ones(Nx,Ny) .* (layer_map_mean + ...
+        layer_map_std * randn(Nx,Ny));
     alpha_layer = layer_alpha + zeros(Nx,Ny);      % [dB/(MHz^y cm)]
 
     % assign region
@@ -117,10 +114,10 @@ for iSim = 1:length(folderNames)
     
     medium.alpha_power = 1.05;
     medium.alpha_mode = 'no_dispersion';
-    save(fullfile(BaseDir,folderNames{iSim},['medium_',folderNames{iSim},'.mat']),...
-    'medium');
+    % save(fullfile(BaseDir,folderNames{iSim},['medium_',folderNames{iSim},'.mat']),...
+    % 'medium');
     
-    %%
+    
     figure('Units','centimeters', 'Position',[5 5 25 10]), 
     tiledlayout(1,3),
     nexttile,
