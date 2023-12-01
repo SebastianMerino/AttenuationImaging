@@ -8,9 +8,10 @@ addpath('./AttUtils');
 %     'Attenuation\DataQUS_4_Merino'];
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\ThyroidSelected\CUELLO#3'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\ThyroidSelected\CUELLO#2'];
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\ThyroidSelected\CUELLO#2'];
-
+    'Attenuation\ThyroidSelected\coloide'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
