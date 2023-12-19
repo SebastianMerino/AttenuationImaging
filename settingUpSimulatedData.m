@@ -2,15 +2,8 @@ clear,clc
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\layeredNew'];
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\layeredNew'];
-
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\layered_14_11_23'];
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\layered_14_11_23'];
+    'Attenuation\Simulation\Simulation_23_12_01'];
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
@@ -23,7 +16,7 @@ refFiles = dir([refDir,'\rf*.mat']);
 
 %% Generating cropped data
 % SETTING PARAMETERS
-blocksize = 15;     % Block size in wavelengths
+blocksize = 10;     % Block size in wavelengths
 %freq_L = 3.3e6; freq_H = 8.7e6;
 freq_L = 4e6; freq_H = 9e6;
 overlap_pc      = 0.8;
@@ -192,16 +185,16 @@ save(fullfile(croppedDir,targetFiles(iAcq).name),"Sd","Sp",...
     "m","n","p","Bmode","x","z","f","L")
 end
 %%
-diffraction_xz = mean(compensation,3);
-diffraction_zf = squeeze(mean(compensation,2));
-figure, tiledlayout(1,2)
-nexttile,
-imagesc(x_ACS,z_ACS,diffraction_xz, [-1 1]);
-title('Diffraction compensation'),
-xlabel('x [cm]'), ylabel('z [cm]'),
-colorbar
-nexttile,
-imagesc(f,z_ACS,diffraction_zf, [-1 1]);
-title('Diffraction compensation'),
-xlabel('f [MHz]'), ylabel('z [cm]'),
-colorbar
+% diffraction_xz = mean(compensation,3);
+% diffraction_zf = squeeze(mean(compensation,2));
+% figure, tiledlayout(1,2)
+% nexttile,
+% imagesc(x_ACS,z_ACS,diffraction_xz, [-1 1]);
+% title('Diffraction compensation'),
+% xlabel('x [cm]'), ylabel('z [cm]'),
+% colorbar
+% nexttile,
+% imagesc(f,z_ACS,diffraction_zf, [-1 1]);
+% title('Diffraction compensation'),
+% xlabel('f [MHz]'), ylabel('z [cm]'),
+% colorbar
