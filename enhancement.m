@@ -1,3 +1,7 @@
+% ====================================================================== %
+% Script to fin the acoustic enhancement posterior to a colloid nodule.
+% Used for ISBI 2024.
+% ====================================================================== %
 clear,
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\ThyroidSelected\CUELLO#3'];

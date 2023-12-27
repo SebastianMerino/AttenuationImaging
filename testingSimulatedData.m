@@ -10,15 +10,14 @@ addpath('./AttUtils');
 % baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\layered_14_11_23'];
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\layered_14_11_23'];
-
+    'Attenuation\Simulation\Simulation_23_12_18'];
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
 for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\23-11'];
+figDir = [baseDir,'\fig\12-19'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 % groundTruthTop = [0.5,1,1,0.5,1,1];
@@ -47,11 +46,16 @@ clear mask
 mask = ones(m,n,p);
 
 % Creating reference
-[~,Z] = meshgrid(x_ACS,z_ACS);
+% [~,Z] = meshgrid(x_ACS,z_ACS);
+% attIdeal = ones(size(Z));
+% attIdeal(Z<=2) = groundTruthTop(iAcq);
+% attIdeal(Z>2) = groundTruthBottom(iAcq);
+[X,Z] = meshgrid(x_ACS,z_ACS);
 attIdeal = ones(size(Z));
-attIdeal(Z<=2) = groundTruthTop(iAcq);
-attIdeal(Z>2) = groundTruthBottom(iAcq);
-
+rInc = 0.8;
+inclusion = (X.^2 + (Z-2).^2)<= rInc^2;
+attIdeal(~inclusion) = groundTruthTop(iAcq);
+attIdeal(inclusion) = groundTruthBottom(iAcq); %incl = bottom
 
 figure('Units','centimeters', 'Position',[5 5 9 6]);
 imagesc(x,z,Bmode,dynRange)
@@ -125,25 +129,8 @@ title('Ideal ACS')
 
 
 %% RSLD
-muB = 10.^(3.5:0.5:5);
-muC = 10.^(3.5:0.5:5);
-% switch iAcq
-%     case 1
-%         muB = 10^3; muC = 10^0.5;
-%     case 2
-%         muB = 10^4; muC = 10^2;
-%     case 3
-%         %muB = 10^3.5; muC = 10^2;
-%         muB = 10^4.5; muC = 10^3;
-%     case 4
-%         muB = 10^3.5; muC = 10^1;
-%     case 5
-%         muB = 10^3.5; muC = 10^1.5;
-%     case 6
-%         muB = 10^3.5; muC = 10^1;
-%     otherwise
-%         muB = 10^3.5; muC = 10^1.5;
-% end
+muB = 10.^(2.5:0.5:3.5);
+muC = 10.^(0:1:3);
 
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -185,6 +172,7 @@ title(['RSLD, \mu=',num2str(muCopt,2)])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
+axialTV = mean(BRopt,2);
 %%
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
@@ -218,7 +206,7 @@ for jj=1:n
         sub_block_p = envelope(zp:zp+nz/2-1,xw:xw+nx-1);
         sub_block_d = envelope(zd:zd+nz/2-1,xw:xw+nx-1);
         
-        temp = [sub_block_p(:) sub_block_d(:)];
+        temp = [sub_block_p(:);sub_block_d(:)];
         SNR(ii,jj) = mean(temp)/std(temp);
     end
 end
@@ -229,26 +217,9 @@ aSNR = 1; bSNR = 0.1;
 desvMin = 15;
 w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
-muB = 10.^(3:0.5:5);
-muC = 10.^(0:0.5:5);
-switch iAcq
-    case 1
-        muB = 10^2.5; muC = 10^0;
-    case 2
-        muB = 10^3.5; muC = 10^3;
-    case 3
-        %muB = 10^3; muC = 10^0;
-        % muB = 10^3; muC = 10^3.5; % optimal
-        % muB = 10^3; muC = 10^0;
-    case 4
-        muB = 10^3; muC = 10^0;
-    case 5
-        muB = 10^3; muC = 10^1.5;
-    case 6
-        muB = 10^3; muC = 10^0;
-    otherwise
-        muB = 10^3.5; muC = 10^1.5;
-end
+muB = 10.^(2.5:0.5:3.5);
+muC = 10.^(0.5:0.5:3);
+
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -269,7 +240,7 @@ for mmB = 1:length(muB)
         end
     end
 end
-
+%%
 figure('Units','centimeters', 'Position',[5 5 22 6]);
 tl = tiledlayout(1,3, "Padding","tight");
 title(tl,'RSLD - SWTV by British Columbia')
@@ -295,6 +266,8 @@ axis image
 title(['RSLD, \mu=',num2str(muCopt,2)])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
+
+axialSWTV = mean(BRopt,2);
 %%
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
@@ -311,24 +284,8 @@ r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsSWTV(iAcq) = r;
 
 %% Minimizing BS log ratio
-% muB = 10.^(3:0.5:4);
-% muC = 10.^(0:0.5:2);
-switch iAcq
-    case 1
-        muB = 10^3.5; muC = 10^1;
-    case 2
-        muB = 10^3.5; muC = 10^1.5;
-    case 3
-        muB = 10^4; muC = 10^2;
-    case 4
-        muB = 10^3.5; muC = 10^0;
-    case 5
-        muB = 10^3.5; muC = 10^0.5;
-    case 6
-        muB = 10^4; muC = 10^1.5;
-    otherwise
-        muB = 10^3.5; muC = 10^1.5;
-end
+muB = 10.^(3:0.5:4);
+muC = 10.^(0:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -369,6 +326,8 @@ title(['RSLD-TVL1, \mu=',num2str(muCopt,2)])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
+axialTVL1 = mean(BRopt,2);
+
 %%
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
@@ -385,24 +344,7 @@ r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsTVL1(iAcq) = r;
 
 %% Minimizing BS log ratio and WEIGHTS
-% First estimation
-% switch iAcq
-%     case 1
-%         muB = 10^3.5; muC = 10^1;
-%     case 2
-%         muB = 10^3.5; muC = 10^1;
-%     case 3
-%         muB = 10^4; muC = 10^1;
-%     case 4
-%         muB = 10^3.5; muC = 10^1;
-%     case 5
-%         muB = 10^3.5; muC = 10^1;
-%     case 6
-%         muB = 10^4; muC = 10^1;
-%     otherwise
-%         muB = 10^3.5; muC = 10^1;
-% end
-muB = 10^3.5; muC = 10^1;
+muB = 10^3; muC = 10^1;
 
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
@@ -420,9 +362,10 @@ W = spdiags(W(:),0,m*n*p,m*n*p);
 bw = W*b(:);        
 A1w = W*A1;
 A2w = W*A2;
-
+% 
 muB = 10.^(3.5:0.5:4.5);
 muC = 10.^(1:0.5:2);
+
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -471,6 +414,7 @@ title(['RSLD-WFR, \mu=',num2str(muCopt,2)])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
+axialWFR = mean(BRopt,2);
 
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
@@ -486,6 +430,21 @@ r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
 
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsWFR(iAcq) = r;
+
+%%
+figure('Units','centimeters', 'Position',[5 5 12 5])
+plot(z_ACS, axialTV, 'r:', 'LineWidth',1.5),
+hold on
+plot(z_ACS, axialSWTV, 'r', 'LineWidth',1),
+plot(z_ACS, axialTVL1, 'b:', 'LineWidth',1.5),
+plot(z_ACS, axialWFR, 'b', 'LineWidth',1),
+plot(z_ACS,mean(attIdeal,2), 'k--')
+hold off
+grid on
+ylim([0.4 1.4])
+xlim([z_ACS(1) z_ACS(end)])
+title('Axial profiles')
+legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
 
 %%
 save_all_figures_to_directory(figDir,['sim',num2str(iAcq),'Figure']);

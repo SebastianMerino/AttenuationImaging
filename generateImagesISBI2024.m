@@ -317,7 +317,7 @@ croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
 NptodB = log10(exp(1))*20;
 
-figDir = 'C:\Users\sebas\Pictures\ISBI2024\v2';
+figDir = 'C:\Users\sebas\Pictures\ISBI2024\v3';
 
 %% For looping each phantom
 

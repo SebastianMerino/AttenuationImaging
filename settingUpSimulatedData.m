@@ -3,8 +3,9 @@ addpath('./functions_v7');
 addpath('./AttUtils');
 
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\Simulation_23_12_01'];
-
+    'Attenuation\Simulation\Simulation_23_12_18'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\Timana\batch1'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
@@ -17,8 +18,8 @@ refFiles = dir([refDir,'\rf*.mat']);
 %% Generating cropped data
 % SETTING PARAMETERS
 blocksize = 10;     % Block size in wavelengths
-%freq_L = 3.3e6; freq_H = 8.7e6;
-freq_L = 4e6; freq_H = 9e6;
+freq_L = 3.3e6; freq_H = 8.7e6;
+%freq_L = 4e6; freq_H = 9e6;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
 
@@ -180,6 +181,9 @@ for jj=1:n
 end
 
 %% Saving data
+% save(fullfile(croppedDir,targetFiles(iAcq).name),"Sd","Sp",...
+%     "compensation","z_ACS","x_ACS","nx","nz","x0","z0p","z0d","sam1",...
+%     "m","n","p","Bmode","x","z","f","L", "alpha_coeff_mean")
 save(fullfile(croppedDir,targetFiles(iAcq).name),"Sd","Sp",...
     "compensation","z_ACS","x_ACS","nx","nz","x0","z0p","z0d","sam1",...
     "m","n","p","Bmode","x","z","f","L")
