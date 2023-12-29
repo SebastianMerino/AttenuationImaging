@@ -48,7 +48,7 @@ out = zeros(nl,ns);
 %fulAprSz = 2*hlfAprSz + 1;
 
 
-parfor i = 1:nl    % for each line/channel
+for i = 1:nl    % for each line/channel
     % disp(['scanline #', num2str(i)]);
     
     for j=1:ns  % find the value for each samples

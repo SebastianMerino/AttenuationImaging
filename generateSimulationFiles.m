@@ -33,13 +33,12 @@ for iSim = 1:length(folderNames)
     Nx = 2*810 - 2 * pml_x_size;      % [grid points]
     Ny = 2*540 - 2 * pml_y_size;      % [grid points]
 
-    PML_size = [pml_x_size pml_y_size];       % size of the PML in grid points TONY
+    PML_size = [pml_x_size pml_y_size];   % size of the PML in grid points TONY
 
     ratio = 8;
     dy = elem_pitch/ratio;          % grid point spacing in the y direction [m]
     dx = dy;
 
-    %kgrid = makeGrid(Nx, dx, Ny, dy);
     kgrid = kWaveGrid(Nx, dx, Ny, dy);
 
     offset = 5; % to prevent echo top
@@ -140,7 +139,6 @@ for iSim = 1:length(folderNames)
     nAperture = ratio*floor(nAperture/ratio);
     nApertureEle =  nAperture/ratio;
 
-    %nApertureEle = 32;
     nAperture = nApertureEle*ratio;
 
     nLines = floor(Ny/ratio); % vary slightly plm_y to get nLines=128
