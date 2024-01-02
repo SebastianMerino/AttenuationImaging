@@ -2,10 +2,12 @@ clear,clc
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\Simulation_23_12_18'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\Simulation_23_12_18'];
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\Simulation\Timana\batch1'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\process_simulation\23_12_31'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
@@ -18,11 +20,11 @@ refFiles = dir([refDir,'\rf*.mat']);
 %% Generating cropped data
 % SETTING PARAMETERS
 blocksize = 10;     % Block size in wavelengths
-freq_L = 3.3e6; freq_H = 8.7e6;
+freq_L = 3e6; freq_H = 8.5e6;
 %freq_L = 4e6; freq_H = 9e6;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
-
+referenceAtteanuation = 0.6;
 
 %% For looping
 for iAcq = 1:length(targetFiles)
@@ -38,8 +40,8 @@ sam1 = rf(:,:,1);
 dynRange = [-50,0];
 
 
-% [pxx,fpxx] = pwelch(sam1,500,400,500,fs);
-% figure,plot(fpxx/1e6,mean(pxx,2))
+[pxx,fpxx] = pwelch(sam1,500,400,500,fs);
+figure,plot(fpxx/1e6,mean(pxx,2))
 
 % Bmode = db(hilbert(sam1));
 % Bmode = Bmode - max(Bmode(:));
@@ -115,7 +117,7 @@ fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 %% Generating Diffraction compensation
 
 % Generating references
-att_ref = 0.7*(f.^1.05)/8.6858;
+att_ref = referenceAtteanuation*(f.^1.05)/(20*log10(exp(1)));
 att_ref_map = zeros(m,n,p);
 for jj=1:n
     for ii=1:m
@@ -189,16 +191,16 @@ save(fullfile(croppedDir,targetFiles(iAcq).name),"Sd","Sp",...
     "m","n","p","Bmode","x","z","f","L")
 end
 %%
-% diffraction_xz = mean(compensation,3);
-% diffraction_zf = squeeze(mean(compensation,2));
-% figure, tiledlayout(1,2)
-% nexttile,
-% imagesc(x_ACS,z_ACS,diffraction_xz, [-1 1]);
-% title('Diffraction compensation'),
-% xlabel('x [cm]'), ylabel('z [cm]'),
-% colorbar
-% nexttile,
-% imagesc(f,z_ACS,diffraction_zf, [-1 1]);
-% title('Diffraction compensation'),
-% xlabel('f [MHz]'), ylabel('z [cm]'),
-% colorbar
+diffraction_xz = mean(compensation,3);
+diffraction_zf = squeeze(mean(compensation,2));
+figure, tiledlayout(1,2)
+nexttile,
+imagesc(x_ACS,z_ACS,diffraction_xz, [-1 1]);
+title('Diffraction compensation'),
+xlabel('x [cm]'), ylabel('z [cm]'),
+colorbar
+nexttile,
+imagesc(f,z_ACS,diffraction_zf, [-1 1]);
+title('Diffraction compensation'),
+xlabel('f [MHz]'), ylabel('z [cm]'),
+colorbar

@@ -4,13 +4,10 @@ addpath('./functions_v7');
 addpath('./AttUtils');
 
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\layeredNew'];
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\layeredNew'];
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\layered_14_11_23'];
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\Simulation_23_12_18'];
+%     'Attenuation\Simulation\Simulation_23_12_18'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\process_simulation\23_12_31'];
+
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
 for iAcq = 1:length(croppedFiles)
@@ -72,38 +69,38 @@ c = colorbar('westoutside');
 c.Label.String = 'dB/cm/MHz';
 title('Ideal ACS')
 %% Standard SLD
-% [u,~] = cgs(A'*A,A'*b(:),1e-6,20);
-% % Standard SLD
-% % BS: Beta. Attenuation coefficient slopes of blocks.
-% % CS: Constants of blocks.
-% BS = u(1:end/2); CS = u(end/2+1:end);
-% BS = reshape(BS,m,n)*NptodB;
-% CS = reshape(CS,m,n)*NptodB;
-% 
-% figure('Units','centimeters', 'Position',[5 5 30 8]);
-% tl = tiledlayout(1,3);
-% t1 = nexttile;
-% imagesc(x,z,Bmode,dynRange)
-% axis image
-% colormap(t1,gray)
-% colorbar(t1,'westoutside')
-% title('Bmode')
-% 
-% t2 = nexttile; 
-% imagesc(x_ACS,z_ACS,BS, attRange)
-% colormap(t2,turbo)
-% axis image
-% title('SLD')
-% c = colorbar;
-% c.Label.String = 'Att. [db/cm/MHz]';
-% 
-% t3 = nexttile; 
-% imagesc(x_ACS,z_ACS,CS, bsRange)
-% colormap(t3,parula)
-% axis image
-% title('SLD')
-% c = colorbar;
-% c.Label.String = 'BS log ratio [dB]';
+[u,~] = cgs(A'*A,A'*b(:),1e-6,20);
+% Standard SLD
+% BS: Beta. Attenuation coefficient slopes of blocks.
+% CS: Constants of blocks.
+BS = u(1:end/2); CS = u(end/2+1:end);
+BS = reshape(BS,m,n)*NptodB;
+CS = reshape(CS,m,n)*NptodB;
+
+figure('Units','centimeters', 'Position',[5 5 30 8]);
+tl = tiledlayout(1,3);
+t1 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+axis image
+colormap(t1,gray)
+colorbar(t1,'westoutside')
+title('Bmode')
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,BS, attRange)
+colormap(t2,turbo)
+axis image
+title('SLD')
+c = colorbar;
+c.Label.String = 'Att. [db/cm/MHz]';
+
+t3 = nexttile; 
+imagesc(x_ACS,z_ACS,CS, bsRange)
+colormap(t3,parula)
+axis image
+title('SLD')
+c = colorbar;
+c.Label.String = 'BS log ratio [dB]';
 
 %% Spectrum
 % [~,Z] = meshgrid(x_ACS,z_ACS);
@@ -213,10 +210,11 @@ end
 
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
-aSNR = 1; bSNR = 0.1;
+% aSNR = 1; bSNR = 0.1;
+aSNR = 1; bSNR = 0.5;
 desvMin = 15;
 w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
-
+%%
 muB = 10.^(2.5:0.5:3.5);
 muC = 10.^(0.5:0.5:3);
 
@@ -294,6 +292,25 @@ for mmB = 1:length(muB)
         toc
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
+        figure('Units','centimeters', 'Position',[5 5 15 6]);
+        tl = tiledlayout(1,2, "Padding","tight");
+        title(tl,'RSLD with TV(B)+||C||_1')
+        
+        t2 = nexttile; 
+        imagesc(x_ACS,z_ACS,BR, attRange)
+        colormap(t2,turbo)
+        axis image
+        title(['RSLD-TVL1, \mu=',num2str(muB(mmB),2)])
+        c = colorbar;
+        c.Label.String = 'Att. [db/cm/MHz]';
+        
+        t3 = nexttile; 
+        imagesc(x_ACS,z_ACS,CR, bsRange)
+        colormap(t3,parula)
+        axis image
+        title(['RSLD-TVL1, \mu=',num2str(muC(mmC),2)])
+        c = colorbar;
+        c.Label.String = 'BS log ratio [dB]';
 
         RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         if RMSE<minRMSE
@@ -305,7 +322,7 @@ for mmB = 1:length(muB)
         end
     end
 end
-
+%%
 figure('Units','centimeters', 'Position',[5 5 15 6]);
 tl = tiledlayout(1,2, "Padding","tight");
 title(tl,'RSLD with TV(B)+||C||_1')

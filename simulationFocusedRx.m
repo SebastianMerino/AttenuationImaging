@@ -9,7 +9,7 @@ clear; close all; clc; rng shuffle;
 addpath(genpath(pwd))
 
 % save parameters
-BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_12_30';
+BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_12_31';
 folderNames = {'homogeneous1','homogeneous2','inclusion1','inclusion2'};
 
 % medium parameters
@@ -17,7 +17,7 @@ c0              = 1540;     % sound speed [m/s]
 rho0            = 1000;     % density [kg/m^3]
 
 % source parameters
-source_f0       = 6e6;      % source frequency [Hz]
+source_f0       = 6.66e6;   % source frequency [Hz]
 source_amp      = 1e6;      % source pressure [Pa]
 source_cycles   = 3.5;      % number of toneburst cycles
 source_focus    = 20e-3;    % focal length [m]
@@ -36,9 +36,9 @@ rotation        = 0;
 
 % computational parameters
 DATA_CAST       = 'single'; % set to 'single' or 'gpuArray-single'
-ppw             = 4;        % number of points per wavelength, 4 to 8
+ppw             = 6;        % number of points per wavelength, 4 to 8
 depth           = 40e-3;    % imaging depth [m]
-cfl             = 0.5;      % CFL number
+cfl             = 0.5;      % CFL number, could be 0.5
 
 %% For looping simulations
 
@@ -49,6 +49,7 @@ for iSim = 1:length(folderNames)
     if (~exist(fullfile(BaseDir,folderNames{iSim},"output"),"dir"))
         mkdir(fullfile(BaseDir,folderNames{iSim},"output"));
     end
+    load([BaseDir,'\',folderNames{iSim},'\medium_',folderNames{iSim}])
 
     %% GRID
 
@@ -107,7 +108,7 @@ for iSim = 1:length(folderNames)
             
         % get sensor data
         sensor_data = h5read(fullfile(BaseDir,folderNames{iSim},...
-            'output',[num2str(ii),'.h5']), '/p');
+            'output',[num2str(iLine),'.h5']), '/p');
 
         % combine sensor data
         combined_sensor_data = karray.combineSensorData(kgrid, sensor_data);
@@ -121,18 +122,20 @@ for iSim = 1:length(folderNames)
     end
 
     %% VISUALISATION
-    offset = 80;
+    offset = 60;
     
     axAxis = 0:size(bf_data_final,1)-1; axAxis = axAxis*kgrid.dt*c0/2;
-    latAxis = 0:element_num-1; latAxis = latAxis-mean(latAxis); latAxis = latAxis *element_pitch;
+    latAxis = 0:nLines-1; latAxis = latAxis-mean(latAxis); latAxis = latAxis *element_pitch;
+    
     rf = bf_data_final(offset:end,:);
-    axAxis = axAxis(offset:end);
+    z = axAxis(offset:end);
+    x = latAxis;
     Bmode = db(hilbert(rf));
     Bmode = Bmode - max(Bmode(:));
     
     % plot the pressure field 
     figure;
-    imagesc(1e3 * latAxis, 1e3 * axAxis, Bmode);
+    imagesc(1e3 * x, 1e3 * z, Bmode, [-50,-5]);
     xlabel('z-position [mm]');
     ylabel('x-position [mm]');
     axis image;
@@ -140,5 +143,8 @@ for iSim = 1:length(folderNames)
     cb = colorbar;
     title(cb, '[dB]');
     colormap gray
+
+    save(fullfile(BaseDir,['rf_',folderNames{iSim},'.mat']),...
+        'rf','x','z','fs','medium');
 
 end

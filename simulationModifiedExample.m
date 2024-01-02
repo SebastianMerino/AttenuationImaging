@@ -24,11 +24,10 @@ source_f0       = 6e6;      % source frequency [Hz]
 source_amp      = 1e6;      % source pressure [Pa]
 source_cycles   = 3.5;      % number of toneburst cycles
 source_focus    = 20e-3;    % focal length [m]
-% element_num     = 32;     % number of elements
 element_pitch   = 0.3e-3;   % pitch [m]
 element_width   = 0.25e-3;  % width [m]
 focal_number    = 2;
-nLines          = 64;
+nLines          = 96;
 
 % grid parameters
 grid_size_x     = 50e-3;    % [m]
@@ -39,6 +38,7 @@ translation     = [-20e-3, 0];
 rotation        = 0;
 
 % computational parameters
+DATA_CAST       = 'single'; % set to 'single' or 'gpuArray-single'
 ppw             = 4;        % number of points per wavelength, 4 to 8
 depth           = 40e-3;    % imaging depth [m]
 cfl             = 0.5;      % CFL number
@@ -174,12 +174,12 @@ for iLine = 1:nLines
     source.p_mask = karray.getArrayBinaryMask(kgrid);
     
     % plot the off-grid source mask
-    % figure, 
-    % imagesc(kgrid.y(1,:)*1000,kgrid.x(:,1)*1000,single(source.p_mask));
-    % xlabel('Axial[mm]')
-    % ylabel('Lateral[mm]')
-    % axis image
-    % title('Off-grid source mask');
+    figure, 
+    imagesc(kgrid.y(1,:)*1000,kgrid.x(:,1)*1000,single(source.p_mask));
+    xlabel('Axial[mm]')
+    ylabel('Lateral[mm]')
+    axis image
+    title('Off-grid source mask');
 
     % assign source signals
     source.p = karray.getDistributedSourceSignal(kgrid, source_sig);
@@ -241,10 +241,11 @@ end
 % =========================================================================
 % =========================================================================
 %% VISUALISATION
-offset = 80;
+offset = 60;
 
 axAxis = 0:size(bf_data_final,1)-1; axAxis = axAxis*kgrid.dt*c0/2;
-latAxis = 0:element_num-1; latAxis = latAxis-mean(latAxis); latAxis = latAxis *element_pitch;
+latAxis = 0:nLines-1; latAxis = latAxis-mean(latAxis); latAxis = latAxis *element_pitch;
+
 rf = bf_data_final(offset:end,:);
 axAxis = axAxis(offset:end);
 Bmode = db(hilbert(rf));
@@ -252,7 +253,7 @@ Bmode = Bmode - max(Bmode(:));
 
 % plot the pressure field 
 figure;
-imagesc(1e3 * latAxis, 1e3 * axAxis, Bmode);
+imagesc(1e3 * latAxis, 1e3 * axAxis, Bmode, [-50,-5]);
 xlabel('z-position [mm]');
 ylabel('x-position [mm]');
 axis image;

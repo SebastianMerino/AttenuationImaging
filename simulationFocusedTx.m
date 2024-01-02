@@ -9,7 +9,8 @@ clear; close all; clc; rng shuffle;
 addpath(genpath(pwd))
 
 % save parameters
-BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_12_30';
+BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_12_31';
+mkdir(BaseDir)
 folderNames = {'homogeneous1','homogeneous2','inclusion1','inclusion2'};
 
 % medium parameters
@@ -17,7 +18,7 @@ c0              = 1540;     % sound speed [m/s]
 rho0            = 1000;     % density [kg/m^3]
 
 % source parameters
-source_f0       = 6e6;      % source frequency [Hz]
+source_f0       = 6.66e6;   % source frequency [Hz]
 source_amp      = 1e6;      % source pressure [Pa]
 source_cycles   = 3.5;      % number of toneburst cycles
 source_focus    = 20e-3;    % focal length [m]
@@ -36,9 +37,9 @@ rotation        = 0;
 
 % computational parameters
 DATA_CAST       = 'single'; % set to 'single' or 'gpuArray-single'
-ppw             = 4;        % number of points per wavelength, 4 to 8
+ppw             = 6;        % number of points per wavelength, 4 to 8
 depth           = 40e-3;    % imaging depth [m]
-cfl             = 0.5;      % CFL number
+cfl             = 0.5;      % CFL number, could be 0.5
 
 %% For looping simulations
 
@@ -108,8 +109,8 @@ for iSim = 1:length(folderNames)
     medium.alpha_mode = 'no_dispersion';
     medium.sound_speed_ref = 1540;
 
-    % save(fullfile(BaseDir,folderNames{iSim},['medium_',folderNames{iSim},'.mat']),...
-    % 'medium');
+    save(fullfile(BaseDir,folderNames{iSim},['medium_',folderNames{iSim},'.mat']),...
+    'medium');
     
     figure('Units','centimeters', 'Position',[5 5 25 10]),
     tiledlayout(1,3),
@@ -167,26 +168,18 @@ for iSim = 1:length(folderNames)
     yCords = ( (0:nLines-1) - (nLines-1)/2 )* element_pitch; % Lateral cord of each element
     
     for iLine = 1:nLines
-        %% SOURCE
-        disp(['Line: ',num2str(iLine),' of ',num2str(nLines)]);
-  
+        %% SOURCE  
         % move the array
         translation(2) = yCords(iLine);
         karray.setArrayPosition(translation, rotation)
     
         % assign binary mask
         source.p_mask = karray.getArrayBinaryMask(kgrid);
-        
-        % plot the off-grid source mask
-        figure, 
-        imagesc(kgrid.y(1,:)*1000,kgrid.x(:,1)*1000,single(source.p_mask));
-        xlabel('Axial[mm]')
-        ylabel('Lateral[mm]')
-        axis image
-        title('Off-grid source mask');
-    
+            
         % assign source signals
         source.p = karray.getDistributedSourceSignal(kgrid, source_sig);
+        clc
+        disp(['Line: ',num2str(iLine),' of ',num2str(nLines)]);
     
         %% SENSOR
         
