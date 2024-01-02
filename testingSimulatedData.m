@@ -21,6 +21,8 @@ if (~exist(figDir,"dir")), mkdir(figDir); end
 % groundTruthBottom = [1,0.5,1,1,0.5,1];
 groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
 groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
+rInc = 0.8;
+
 %% Loading data
 for iAcq = 1:length(croppedFiles)
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
@@ -49,25 +51,27 @@ mask = ones(m,n,p);
 % attIdeal(Z>2) = groundTruthBottom(iAcq);
 [X,Z] = meshgrid(x_ACS,z_ACS);
 attIdeal = ones(size(Z));
-rInc = 0.8;
 inclusion = (X.^2 + (Z-2).^2)<= rInc^2;
 attIdeal(~inclusion) = groundTruthTop(iAcq);
 attIdeal(inclusion) = groundTruthBottom(iAcq); %incl = bottom
 
-figure('Units','centimeters', 'Position',[5 5 9 6]);
+figure('Units','centimeters', 'Position',[5 5 20 6]);
+tiledlayout(1,2)
+t1 = nexttile;
 imagesc(x,z,Bmode,dynRange)
 axis image
-colormap(gray)
+colormap(t1,gray)
 colorbar('westoutside')
 title('Bmode')
 
-figure('Units','centimeters', 'Position',[5 5 9 6]);
+t2 = nexttile;
 imagesc(x,z,attIdeal,attRange)
 axis image
-colormap(turbo)
+colormap(t2,turbo);
 c = colorbar('westoutside');
 c.Label.String = 'dB/cm/MHz';
 title('Ideal ACS')
+
 %% Standard SLD
 [u,~] = cgs(A'*A,A'*b(:),1e-6,20);
 % Standard SLD
@@ -103,26 +107,41 @@ c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
 %% Spectrum
-% [~,Z] = meshgrid(x_ACS,z_ACS);
-% topLayer = Z < 1.9;
-% bottomLayer = Z > 2.1;
-% NpTodB = 20*log10(exp(1));
-% 
-% topSLD = squeeze(sum(sum(b.*topLayer,1),2))/sum(topLayer(:));
-% slopeTop = f\topSLD;
-% fprintf('Attenuation is %.2f\n',slopeTop*NpTodB)
-% 
-% bottomSLD = squeeze(sum(sum(b.*bottomLayer,1),2))/sum(bottomLayer(:));
-% slopeBottom = f\bottomSLD;
-% fprintf('Attenuation is %.2f\n',slopeBottom*NpTodB)
-% plot(f,topSLD)
+% Homogeneous
+% lineSld = squeeze(mean(mean(b,2),1))*NptodB;
+% estAtt = f\lineSld;
+% figure,
+% plot(f,lineSld)
 % hold on
-% plot(f,bottomSLD)
-% plot(f,slopeTop*f, 'k--')
-% plot(f,slopeBottom*f, 'k--')
+% plot(f,estAtt*f, 'k--')
 % hold off
-% 
-% legend('Top','Bottom')
+% grid on,
+% xlim([0,max(f)]), ylim([0 7]),
+% xlabel('Frequency [MHz]')
+% title('Mean SLD')
+[X,Z] = meshgrid(x_ACS,z_ACS);
+region1 = (X.^2 + (Z-2).^2) <= 0.7^2;
+region2 = (X.^2 + (Z-2).^2) >= 0.9^2;
+NpTodB = 20*log10(exp(1));
+
+sld1 = squeeze(sum(sum(b.*region1,1),2))/sum(region1(:)) * NpTodB;
+acs1 = f\sld1;
+fprintf('Attenuation is %.2f\n',acs1)
+
+sld2 = squeeze(sum(sum(b.*region2,1),2))/sum(region2(:)) * NpTodB;
+acs2 = f\sld2;
+fprintf('Attenuation is %.2f\n',acs2)
+plot(f,sld1)
+hold on
+plot(f,sld2)
+plot(f,acs1*f, 'k--')
+plot(f,acs2*f, 'k--')
+hold off
+
+grid on,
+xlim([0,max(f)]), ylim([0 8]),
+
+legend('Inc','Back')
 
 
 %% RSLD

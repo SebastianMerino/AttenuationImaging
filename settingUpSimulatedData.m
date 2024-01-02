@@ -20,11 +20,12 @@ refFiles = dir([refDir,'\rf*.mat']);
 %% Generating cropped data
 % SETTING PARAMETERS
 blocksize = 10;     % Block size in wavelengths
-freq_L = 3e6; freq_H = 8.5e6;
+% freq_L = 3e6; freq_H = 8.5e6;
 %freq_L = 4e6; freq_H = 9e6;
+freq_L = 2e6; freq_H = 10e6;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
-referenceAtteanuation = 0.6;
+referenceAtt = 0.6;
 
 %% For looping
 for iAcq = 1:length(targetFiles)
@@ -40,8 +41,17 @@ sam1 = rf(:,:,1);
 dynRange = [-50,0];
 
 
-[pxx,fpxx] = pwelch(sam1,500,400,500,fs);
-figure,plot(fpxx/1e6,mean(pxx,2))
+ratio = db2mag(-40);
+
+% BW from spectrogram
+[pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
+meanSpectrum = mean(pxx,2);
+[freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
+figure,plot(fpxx/1e6,meanSpectrum)
+yline(max(meanSpectrum)*ratio)
+xline([freq_L,freq_H]/1e6)
+xlabel('Frequency [MHz]')
+ylabel('Magnitude')
 
 % Bmode = db(hilbert(sam1));
 % Bmode = Bmode - max(Bmode(:));
@@ -117,7 +127,7 @@ fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 %% Generating Diffraction compensation
 
 % Generating references
-att_ref = referenceAtteanuation*(f.^1.05)/(20*log10(exp(1)));
+att_ref = referenceAtt*(f.^1.05)/(20*log10(exp(1)));
 att_ref_map = zeros(m,n,p);
 for jj=1:n
     for ii=1:m
