@@ -8,7 +8,7 @@ close all
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-figDir = 'C:\Users\sebas\Pictures\UMB2024\21-12';
+figDir = 'C:\Users\sebas\Pictures\UMB2024\24-01-02';
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 % ========================================================================
@@ -777,7 +777,7 @@ A2 = kron( ones(size(f)) , speye(m*n) );
 tol = 1e-3;
 tic
 [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muWTV,mu2WTV,m,n,tol,mask(:),w);
-%[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muTV,mu2TV,m,n,tol,mask(:),w);
+% [Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muTV,mu2TV,m,n,tol,mask(:),w);
 toc
 BRBC = (reshape(Bn*NptodB,m,n));
 CRBC = (reshape(Cn,m,n));
@@ -852,6 +852,7 @@ tol = 1e-3;
 
 tic
 [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muWTik,mu2WTik,m,n,tol,mask(:),w);
+%[Bn,Cn] = optimAdmmWeightedTv(A1w,A2w,bw,muWTik,mu2WTik,m,n,tol,mask(:),w);
 toc
 BRWTik = (reshape(Bn*NptodB,m,n));
 CRWTik = (reshape(Cn,m,n));

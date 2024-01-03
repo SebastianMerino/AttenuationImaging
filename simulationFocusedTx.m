@@ -9,9 +9,9 @@ clear; close all; clc; rng shuffle;
 addpath(genpath(pwd))
 
 % save parameters
-BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_12_31';
+BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_24_01_03';
 mkdir(BaseDir)
-folderNames = {'homogeneous3','homogeneous4','homogeneous5'};
+folderNames = {'homogeneous1','homogeneous2'};
 
 % medium parameters
 c0              = 1540;     % sound speed [m/s]
@@ -73,40 +73,20 @@ for iSim = 1:length(folderNames)
     
     background_map_std = 0.008;
     % background_alpha = 0.6;       % [dB/(MHz^y cm)]
-
-    % Define background properties for each region
-    sound_speed_map = c0 * ones(Nx,Ny) .* (1 + background_map_std * randn(Nx,Ny));
-    density_map = rho0 * ones(Nx,Ny) .* (1 + background_map_std * randn(Nx,Ny));
     
     switch iSim
         case 1
             background_alpha = 1.2;       % [dB/(MHz^y cm)]
+            c0mean = 1.05;
         case 2
-            background_alpha = 0.5;
-        case 3
-            background_alpha = 0.6;
+            background_alpha = 1.2;
+            c0mean = 0.95;
     end
-%     if iSim>2
-%         cz = 20e-3; cx = 0;
-%         r = 8e-3;
-%         maskInc = (rz-cz).^2 + (rx-cx).^2 < r^2;
-%         
-%         if iSim == 3
-%             inclusion_map_std = background_map_std/4;
-%         else
-%             inclusion_map_std = background_map_std*4;
-%         end
-%         inclusion_alpha = 1.2;            % [dB/(MHz^y cm)]
-% 
-%         sound_speed_new = c0 * ones(Nx,Ny) .* (1 + inclusion_map_std * randn(Nx,Ny));
-%         density_new = rho0 * ones(Nx,Ny) .* (1 + inclusion_map_std * randn(Nx,Ny));
-%         alpha_new = inclusion_alpha + zeros(Nx,Ny);      % [dB/(MHz^y cm)]
-%         
-%         % assign region
-%         sound_speed_map(maskInc) = sound_speed_new(maskInc);
-%         density_map(maskInc) = density_new(maskInc);
-%         alpha_map(maskInc) = alpha_new(maskInc);
-%     end
+    % Define background properties for each region
+    sound_speed_map = c0 * ones(Nx,Ny) .* (c0mean + ...
+        background_map_std * randn(Nx,Ny));
+    density_map = rho0 * ones(Nx,Ny) .* (1 + background_map_std * randn(Nx,Ny));
+
     alpha_map = background_alpha + zeros(Nx,Ny);
 
 

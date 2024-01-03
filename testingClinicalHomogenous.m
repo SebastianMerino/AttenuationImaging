@@ -9,7 +9,7 @@ addpath('./AttUtils');
 
 %% Clinical case
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\ThyroidSelected\coloide'];
+    'Attenuation\ThyroidSelected\carcinoma'];
 
 
 targetDir = [baseDir,'\raw'];
@@ -27,7 +27,7 @@ overlap_pc      = 0.8;
 ratio_zx        = 1;
 
 %% Loading case FULL VERSION
-iAcq = 2;
+iAcq = 1;
 load(fullfile(targetDir,targetFiles(iAcq).name));
 fprintf("\n Selecting acq. no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 dx = x(2)-x(1);
@@ -104,7 +104,7 @@ ratio = db2mag(-30);
 [pxx,fpxx] = pwelch(sam1-mean(sam1),nz,nz-wz,nz,fs);
 meanSpectrum = mean(pxx,2);
 [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-% freq_L = 2e6; freq_H = 10e6;
+freq_L = 2e6; freq_H = 10e6;
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
 band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies

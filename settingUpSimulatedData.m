@@ -2,12 +2,10 @@ clear,clc
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\Simulation_23_12_18'];
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\Timana\batch1'];
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\process_simulation\23_12_31'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\Simulation_23_12_31'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\process_simulation\23_12_31'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
@@ -41,7 +39,7 @@ sam1 = rf(:,:,1);
 dynRange = [-50,0];
 
 
-ratio = db2mag(-40);
+ratio = db2mag(-30);
 
 % BW from spectrogram
 [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);

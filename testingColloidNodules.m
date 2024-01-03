@@ -15,7 +15,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 % croppedDir = [baseDir,'\cropped'];
-figDir = [baseDir,'\fig\12-20'];
+figDir = [baseDir,'\fig\23-01-02'];
 if (~exist("figDir","dir")), mkdir(figDir); end
 
 targetFiles = dir([targetDir,'\*.mat']);
@@ -24,9 +24,9 @@ for iAcq = 1:length(targetFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 end
 blocksize = 10;     % Block size in wavelengths
-freq_L = 3.5e6; freq_H = 7.5e6;
+% freq_L = 3e6; freq_H = 9e6;
 % blocksize = 15;               % ISBI
-% freq_L = 3.5e6; freq_H = 8e6; % ISBI
+freq_L = 3.5e6; freq_H = 8e6; % ISBI
 overlap_pc      = 0.8;
 ratio_zx        = 1;
 
@@ -68,25 +68,9 @@ close,
 % Carcinoma, caso 221778-01
 % rect = [0.0042    0.7270    3.1558    2.2486];
 % rect = [1.03; 0.49; 1.6; 1.69]; % Previous rectangle
+rect = [0.0119    0.2764    1.9230    1.9695];
 x_inf = rect(1); x_sup = rect(1)+rect(3);
 z_inf = rect(2); z_sup = rect(2)+rect(4);
-
-% Actual crop
-% switch iAcq
-%     case 1
-%         limitsX = [0.31    2.16];
-%         limitsZ = [0.38    2.26];
-%         % rect = [1.3611    0.7675    1.8377    0.8917]
-%     case 3
-%         limitsX = [0.64    2.59];
-%         limitsZ = [0.87    2.92];
-%         % rect = [2.1598    1.3335    0.7676    1.1631]
-%     case 9
-%         limitsX = [0.98    3.62];
-%         limitsZ = [1.42    3.01];
-% end
-% x_inf = limitsX(1); x_sup = limitsX(2);
-% z_inf = limitsZ(1); z_sup = limitsZ(2);
 
 % Limits for ACS estimation
 ind_x = x_inf <= xFull & xFull <= x_sup;
@@ -407,9 +391,9 @@ bscMap = reshape(Cn,m,n)*NptodB;
 % Weight function
 ratioCutOff = 20;
 order = 5;
-reject = 0.1;
+reject = 0.2;
 extension = 3; % 1 or 3
-w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1)) + reject;
 w = movmin(w,extension);
 
 % New equations
@@ -493,49 +477,10 @@ end
 % ======================================================================
 % ======================================================================
 %% ACUMULADO
-% Zona heterogenea
-% switch iAcq
-%     case 1
-%         muBtv = 10^3; muCtv = 10^1;
-%         muBswtv = 10^2.5; muCswtv = 10^1;
-%         muBtvl1 = 10^3; muCtvl1 = 10^0.5;
-%         muBwfr = 10^3.5; muCwfr = 10^0.5;
-%     case 3
-%         muBtv = 10^3; muCtv = 10^1;
-%         muBswtv = 10^2.5; muCswtv = 10^1;
-%         muBtvl1 = 10^3; muCtvl1 = 10^-0.5;
-%         muBwfr = 10^3.3; muCwfr = 10^-0.5;
-%     case 9
-%         muBtv = 10^3; muCtv = 10^1;
-%         muBswtv = 10^2.5; muCswtv = 10^1;
-%         muBtvl1 = 10^2.5; muCtvl1 = 10^-0.5;
-%         muBwfr = 10^3; muCwfr = 10^-0.5;
-% end
-
-
-% % Casos coloides cuello 3
-% switch iAcq
-%     case 3
-%         muBtv = 10^2.5; muCtv = 10^0;
-%         muBswtv = 10^2; muCswtv = 10^0;
-%         muBtvl1 = 10^2.5; muCtvl1 = 10^0.5;
-%         muBwfr = 10^2.5; muCwfr = 10^0.5;
-%     case 4
-%         muBtv = 10^3.5; muCtv = 10^0;
-%         muBswtv = 10^3; muCswtv = 10^0;
-%         muBtvl1 = 10^3.5; muCtvl1 = 10^0.5;
-%         muBwfr = 10^4; muCwfr = 10^0.5;
-%         % muBtv = 10^2.5; muCtv = 10^1;
-%         % muBswtv = 10^2; muCswtv = 10^1;
-%         % muBtvl1 = 10^2.5; muCtvl1 = 10^0.5;
-%         % muBwfr = 10^3; muCwfr = 10^1;
-% 
-% end
-
 muBtv = 10^3; muCtv = 10^1;
 muBswtv = 10^2.5; muCswtv = 10^1;
 muBtvl1 = 10^3; muCtvl1 = 10^0;
-muBwfr = 10^3.2; muCwfr = 10^0.5;
+muBwfr = 10^3; muCwfr = 10^0;
 
 % RSLD-TV
 [Bn,~] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
@@ -554,10 +499,10 @@ BRTVL1 = reshape(Bn*NptodB,m,n);
 [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 BRWFR = reshape(Bn*NptodB,m,n);
 
-%% Plots
-x0Tumor = 1.9; z0Tumor = 1;
+% Plots
+x0Tumor = 1.2; z0Tumor = 0.9;
 wTumor = 0.5; hTumor = 0.5;
-x0Sano = 3; z0Sano = 1;
+x0Sano = 0.3; z0Sano = 0.9;
 wSano = 0.5; hSano = 0.5; 
 
 % attRange = [0.4 1.4];
