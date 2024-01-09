@@ -1,5 +1,5 @@
 %% Spectra
-function [spect,psnr_Sp]=spectra(block,windowing,saran_layer,nw,NFFT)
+function [spect,psnr_Sp]=spectra(block,windowing,saran_layer,nw,NFFT,T)
 
 block = block - ones(nw,1)*mean(block);
 block = block.*windowing;
@@ -33,8 +33,9 @@ spect = mean(spect,2);   % Sp is the averaga of the parallel echoes in the ROI
 
 % Swaran-wrap correction factor for phantoms
 if saran_layer == 1
-T = saran_wrap(band);
+%T = saran_wrap(band);
 spect = spect./T;
+%disp("Done")
 end
 
 %psnr_Sp= 10*log10(max(Sp(:))/Sp(end/2)); 

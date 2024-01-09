@@ -3,7 +3,7 @@ addpath('./functions_v7');
 addpath('./AttUtils');
 
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\Simulation_23_12_31'];
+    'Attenuation\Simulation\Simulation_23_12_18'];
 % baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\process_simulation\23_12_31'];
 targetDir = [baseDir,'\raw'];
@@ -144,7 +144,8 @@ Nref = length(refFiles);
 Sp_ref = zeros(m,n,p,Nref);
 Sd_ref = zeros(m,n,p,Nref);
 for iRef = 1:Nref
-    load(fullfile(refDir,refFiles(iRef).name),"rf");
+    load(fullfile(refDir,refFiles(iRef).name),"rf","medium");
+    disp(mean(medium.alpha_coeff(:)))
     samRef = rf;
     samRef = samRef(ind_z,ind_x); % Cropping
     %figure,imagesc(db(hilbert(samRef)))

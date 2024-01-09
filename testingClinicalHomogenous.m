@@ -9,12 +9,12 @@ addpath('./AttUtils');
 
 %% Clinical case
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\ThyroidSelected\carcinoma'];
+    'Attenuation\ThyroidSelected\coloide2'];
 
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-figDir = [baseDir,'\fig\12-26'];
+figDir = [baseDir,'\fig\23-01-03'];
 if (~exist("figDir","dir")), mkdir(figDir); end
 
 targetFiles = dir([targetDir,'\*.mat']);
@@ -104,7 +104,7 @@ ratio = db2mag(-30);
 [pxx,fpxx] = pwelch(sam1-mean(sam1),nz,nz-wz,nz,fs);
 meanSpectrum = mean(pxx,2);
 [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-freq_L = 2e6; freq_H = 10e6;
+
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
 band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies
@@ -195,6 +195,40 @@ for jj=1:n
     end
 end
 
+%% Compensation
+sldNoComp = (log(Sp) - log(Sd));
+v = VideoWriter('diffraction', 'MPEG-4');
+v.FrameRate = 10;
+open(v);
+
+figure,
+tiledlayout(1,2),
+t1 = nexttile;
+t2 = nexttile;
+for iFreq = 1:p
+    imagesc(t1, x_ACS,z_ACS,compensation(:,:,iFreq), 2*[-1,1])
+    axis(t1,'image')
+    colorbar(t1)
+    title(t1,'Diffraction compensation')
+
+    imagesc(t2, x_ACS,z_ACS,sldNoComp(:,:,iFreq), 2*[-1,1])
+    axis(t2,'image')
+    colorbar(t2)
+    title(t2,'SLD, not compensated')
+
+    frame = getframe(gcf);
+    writeVideo(v,frame);
+end
+close(v)
+
+%%
+figure,
+imagesc(f,z_ACS,squeeze(mean(compensation,2)), [-2 2])
+colorbar
+title('Diffraction compensation')
+xlabel('Frequency [Hz]')
+ylabel('Depth [cm]')
+%%
 % System of eq
 A1 = kron( 4*L*f , speye(m*n) );
 A2 = kron( ones(size(f)) , speye(m*n) );
@@ -211,12 +245,47 @@ attRange = [0.3,1.7];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
+sldLine = squeeze(mean(mean(b,2),1))'/4/L*NptodB;
+fit1 = f\sldLine';
+fit2 = [f ones(length(f),1)]\sldLine';
 figure,
-plot(f,squeeze(mean(mean(b,2),1))'),
+plot(f,sldLine),
+hold on,
+plot(f,fit1*f, '--')
+plot(f,fit2(1)*f + fit2(2), '--')
+hold off,
 grid on,
-xlim([0,freq_H]/1e6),ylim([0 1]),
+xlim([0,freq_H]/1e6),
+ylim([0 12]),
 xlabel('Frequency [MHz]')
 title('Mean SLD')
+legend({'SLD','Fit 1', 'Fit 2'})
+%%
+b = (log(Sp) - log(Sd));
+
+sldLine = squeeze(mean(mean(b,2),1))'/4/L*NptodB;
+figure('Units','centimeters', 'Position',[5 5 12 6]),
+plot(f,sldLine),
+grid on,
+xlim([0,freq_H]/1e6),
+ylim([-2 10]),
+xlabel('Frequency [MHz]')
+ylabel('Att. [dB/cm]')
+title('Mean SLD, not compensated')
+
+b = (log(Sp) - log(Sd)) - compensation;
+
+sldLine = squeeze(mean(mean(b,2),1))'/4/L*NptodB;
+figure('Units','centimeters', 'Position',[5 5 12 6]),
+plot(f,sldLine),
+grid on,
+xlim([0,freq_H]/1e6),
+ylim([-2 10]),
+xlabel('Frequency [MHz]')
+ylabel('Att. [dB/cm]')
+title('Mean SLD, compensated')
+
+
 %% RSLD
 
 %muB = 10.^(2.5:0.5:3.5);
@@ -231,10 +300,10 @@ for mmB = 1:length(muB)
         BR = reshape(Bn*NptodB,m,n);
         disp(mean(BR(:)))
         CR = reshape(Cn*NptodB,m,n);
-        % figure('Units','centimeters', 'Position',[5 5 20 8]);
-        % tl = tiledlayout(1,3);
-        figure('Units','centimeters', 'Position',[5 5 15 15]);
-        tl = tiledlayout(3,1);
+        figure('Units','centimeters', 'Position',[5 5 20 8]);
+        tl = tiledlayout(1,3);
+        % figure('Units','centimeters', 'Position',[5 5 15 15]);
+        % tl = tiledlayout(3,1);
 
         title(tl,'RSLD-TV')
         subtitle(tl,{['Patient ',targetFiles(iAcq).name(1:end-4)],''})
@@ -270,7 +339,7 @@ end
 
 %muB = 10.^(2.5:0.5:3.5)*10;
 muB = 10^4;
-muC = 10.^(0:0.5:1)*10;
+muC = 10.^(-0.5:1:2.5);
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
         tic
@@ -279,10 +348,10 @@ for mmB = 1:length(muB)
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
         disp(mean(BR(:)))
-        %figure('Units','centimeters', 'Position',[5 5 20 8]);
-        %tl = tiledlayout(1,3);
-        figure('Units','centimeters', 'Position',[5 5 15 15]);
-        tl = tiledlayout(3,1);
+        figure('Units','centimeters', 'Position',[5 5 20 8]);
+        tl = tiledlayout(1,3);
+        % figure('Units','centimeters', 'Position',[5 5 15 15]);
+        % tl = tiledlayout(3,1);
         title(tl,'TV-L1')
         subtitle(tl,{['Patient ',targetFiles(iAcq).name(1:end-4)],''})
         t1 = nexttile;

@@ -24,9 +24,10 @@ for iAcq = 1:length(targetFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 end
 blocksize = 10;     % Block size in wavelengths
-% freq_L = 3e6; freq_H = 9e6;
+freq_L = 3e6; freq_H = 9e6;
+
 % blocksize = 15;               % ISBI
-freq_L = 3.5e6; freq_H = 8e6; % ISBI
+% freq_L = 3.5e6; freq_H = 8e6; % ISBI
 overlap_pc      = 0.8;
 ratio_zx        = 1;
 
@@ -67,8 +68,7 @@ close,
 %%
 % Carcinoma, caso 221778-01
 % rect = [0.0042    0.7270    3.1558    2.2486];
-% rect = [1.03; 0.49; 1.6; 1.69]; % Previous rectangle
-rect = [0.0119    0.2764    1.9230    1.9695];
+% rect = [0.0119    0.2764    1.9230    1.9695];
 x_inf = rect(1); x_sup = rect(1)+rect(3);
 z_inf = rect(2); z_sup = rect(2)+rect(4);
 
@@ -100,7 +100,15 @@ z0d = z0p + nz/2;
 z_ACS = z(z0p+ nz/2);
 m  = length(z0p);
 
-% Frequency samples
+%% BW from spectrogram
+% ratio = db2mag(-30);
+% 
+% % BW from spectrogram
+% [pxx,fpxx] = pwelch(sam1-mean(sam1),nz,nz-wz,nz,fs);
+% meanSpectrum = mean(pxx,2);
+% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
+freq_L = 3e6; freq_H = 9e6;
+
 NFFT = 2^(nextpow2(nz/2)+2);
 band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies
 rang = band > freq_L & band < freq_H ;   % useful frequency range
@@ -135,7 +143,7 @@ windowing = windowing*ones(1,nx);
 % For looping
 refFiles = dir([refDir,'\*.mat']);
 Nref = length(refFiles);
-
+swrap = saran_wrap(band);
 % Memory allocation
 Sp_ref = zeros(m,n,p,Nref);
 Sd_ref = zeros(m,n,p,Nref);
@@ -152,8 +160,8 @@ for iRef = 1:Nref
 
             sub_block_p = samRef(zp:zp+nz/2-1,xw:xw+nx-1);
             sub_block_d = samRef(zd:zd+nz/2-1,xw:xw+nx-1);
-            [tempSp,~] = spectra(sub_block_p,windowing,0,nz/2,NFFT);
-            [tempSd,~] = spectra(sub_block_d,windowing,0,nz/2,NFFT);
+            [tempSp,~] = spectra(sub_block_p,windowing,1,nz/2,NFFT,swrap);
+            [tempSd,~] = spectra(sub_block_d,windowing,1,nz/2,NFFT,swrap);
 
             Sp_ref(ii,jj,:,iRef) = (tempSp(rang));
             Sd_ref(ii,jj,:,iRef) = (tempSd(rang));
@@ -391,7 +399,7 @@ bscMap = reshape(Cn,m,n)*NptodB;
 % Weight function
 ratioCutOff = 20;
 order = 5;
-reject = 0.2;
+reject = 0.1;
 extension = 3; % 1 or 3
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1)) + reject;
 w = movmin(w,extension);
@@ -431,13 +439,22 @@ axis image
 title('Weights')
 
 %% Weighting equation and regularizations
+% New equations
+W = repmat(w,[1 1 p]);
+W = spdiags(W(:),0,m*n*p,m*n*p);
+bw = W*b(:);
+A1w = W*A1;
+A2w = W*A2;
+
 muB = 10.^(3:0.5:4);
 muC = 10.^(0:0.5:1);
 
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
         tic
-        [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,...
+        % [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,...
+        %   muB(mmB),muC(mmC),m,n,tol,mask(:),w);
+        [Bn,Cn] = optimAdmmWeightedTv(A1w,A2w,bw,...
           muB(mmB),muC(mmC),m,n,tol,mask(:),w);
         toc
         BR = reshape(Bn*NptodB,m,n);
@@ -476,11 +493,108 @@ end
 % ======================================================================
 % ======================================================================
 % ======================================================================
+%% weights
+% First estimation
+muB0 = 1e3; muC0 = 10^0;
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB0,muC0,m,n,tol,mask(:));
+bscMap = reshape(Cn,m,n)*NptodB;
+
+% Weight function
+ratioCutOff = 20;
+order = 5;
+reject = 0.1;
+extension = 3; % 1 or 3
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1)) + reject;
+w = movmin(w,extension);
+
+
+figure('Units','centimeters', 'Position',[5 5 30 8]),
+tl = tiledlayout(1,3);
+title(tl,{'New Weights',''});
+t1 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+colormap(t1,gray)
+colorbar
+axis equal
+xlim([x_ACS(1) x_ACS(end)]), ylim([z_ACS(1) z_ACS(end)]);
+% axis image
+title('B-mode')
+
+
+t3 = nexttile;
+imagesc(x_ACS,z_ACS,w)
+colormap(t3,parula)
+colorbar;
+axis image
+title('Weights')
+
+[X,Z] = meshgrid(x_ACS,z_ACS);
+w(X<1) = 1;
+
+t3 = nexttile;
+imagesc(x_ACS,z_ACS,w)
+colormap(t3,parula)
+colorbar;
+axis image
+title('Weights v2')
+%% COMPARISON WTV vs WTVL1
+muBwfr = 10^3.5; muCwfr = 10^0.5;
+W = repmat(w,[1 1 p]);
+W = spdiags(W(:),0,m*n*p,m*n*p);
+bw = W*b(:);
+A1w = W*A1;
+A2w = W*A2;
+
+[Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
+BRWFR = reshape(Bn*NptodB,m,n);
+fprintf("Tumor: \n%.2f\n",mean(BRWFR(maskTumor)))
+fprintf("Sano: \n%.2f\n",mean(BRWFR(maskSano)))
+
+% Plots
+x0Tumor = 1.2; z0Tumor = 0.9;
+wTumor = 0.5; hTumor = 0.5;
+x0Sano = 0.3; z0Sano = 0.9;
+wSano = 0.5; hSano = 0.5; 
+
+% attRange = [0.4 1.4];
+attRange = [0.2 1.7];
+figure('Units','centimeters', 'Position',[5 5 20 15]);
+tl = tiledlayout(2,2);
+title(tl,{'Comparison'})
+subtitle(tl,{['Patient ',targetFiles(iAcq).name(1:end-4)],''})
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,BRWFR, attRange)
+colormap(t2,turbo)
+axis equal tight
+title('WTV + WL1')
+subtitle(['\mu_b=',num2str(muBwfr,2),', \mu_c=',num2str(muCwfr,2)])
+c = colorbar;
+c.Label.String = 'Att. [db/cm/MHz]';
+rectangle('Position',[x0Tumor z0Tumor wTumor hTumor], 'LineStyle','--', 'EdgeColor','w')
+rectangle('Position',[x0Sano z0Sano wSano hSano], 'LineStyle','--', 'EdgeColor','k')
+
+[Bn,~] = optimAdmmWeightedTv(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
+BRWFR = reshape(Bn*NptodB,m,n);
+fprintf("Tumor: \n%.2f\n",mean(BRWFR(maskTumor)))
+fprintf("Sano: \n%.2f\n",mean(BRWFR(maskSano)))
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,BRWFR, attRange)
+colormap(t2,turbo)
+axis equal tight
+title('WTV + WTV')
+subtitle(['\mu_b=',num2str(muBwfr,2),', \mu_c=',num2str(muCwfr,2)])
+c = colorbar;
+c.Label.String = 'Att. [db/cm/MHz]';
+rectangle('Position',[x0Tumor z0Tumor wTumor hTumor], 'LineStyle','--', 'EdgeColor','w')
+rectangle('Position',[x0Sano z0Sano wSano hSano], 'LineStyle','--', 'EdgeColor','k')
+
 %% ACUMULADO
-muBtv = 10^3; muCtv = 10^1;
-muBswtv = 10^2.5; muCswtv = 10^1;
-muBtvl1 = 10^3; muCtvl1 = 10^0;
-muBwfr = 10^3; muCwfr = 10^0;
+muBtv = 10^3.5; muCtv = 10^1;
+muBswtv = 10^3; muCswtv = 10^1;
+muBtvl1 = 10^3.5; muCtvl1 = 10^0;
+muBwfr = 10^3.5; muCwfr = 10^0;
 
 % RSLD-TV
 [Bn,~] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
@@ -496,14 +610,19 @@ BRSWTV = reshape(Bn*NptodB,m,n);
 BRTVL1 = reshape(Bn*NptodB,m,n);
 
 % WFR   
+W = repmat(w,[1 1 p]);
+W = spdiags(W(:),0,m*n*p,m*n*p);
+bw = W*b(:);
+A1w = W*A1;
+A2w = W*A2;
 [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 BRWFR = reshape(Bn*NptodB,m,n);
 
-% Plots
+%% Plots
 x0Tumor = 1.2; z0Tumor = 0.9;
 wTumor = 0.5; hTumor = 0.5;
 x0Sano = 0.3; z0Sano = 0.9;
-wSano = 0.5; hSano = 0.5; 
+wSano = 0.5; hSano = 0.5;
 
 % attRange = [0.4 1.4];
 attRange = [0.2 1.7];
@@ -596,7 +715,18 @@ rectangle('Position',[x0Sano z0Sano wSano hSano], 'LineStyle','--', 'EdgeColor',
 % x0Sano = 0.3; z0Sano = 0.9;
 % wSano = 0.5; hSano = 0.5; 
 
+
+% 134135
+% rect = [0.0817    0.2298    1.9850    2.1091];
+% 3 to 9 MHz
+% cutoff = 20;
+% x0Tumor = 1.2; z0Tumor = 0.9;
+% wTumor = 0.5; hTumor = 0.5;
+% x0Sano = 0.3; z0Sano = 0.9;
+% wSano = 0.5; hSano = 0.5;
+
 % 199031
+% rect = [0.4074    0.9199    2.5200    1.9230];
 % cutoff = 20;
 % x0Tumor = 2.1; z0Tumor = 1.6;
 % wTumor = 0.6; hTumor = 0.6;
