@@ -143,7 +143,8 @@ windowing = windowing*ones(1,nx);
 % For looping
 refFiles = dir([refDir,'\*.mat']);
 Nref = length(refFiles);
-swrap = saran_wrap(band);
+swrap = saran_wrap(band); % Correction factor for phantom data
+
 % Memory allocation
 Sp_ref = zeros(m,n,p,Nref);
 Sd_ref = zeros(m,n,p,Nref);
@@ -160,8 +161,8 @@ for iRef = 1:Nref
 
             sub_block_p = samRef(zp:zp+nz/2-1,xw:xw+nx-1);
             sub_block_d = samRef(zd:zd+nz/2-1,xw:xw+nx-1);
-            [tempSp,~] = spectra(sub_block_p,windowing,1,nz/2,NFFT,swrap);
-            [tempSd,~] = spectra(sub_block_d,windowing,1,nz/2,NFFT,swrap);
+            [tempSp,~] = spectra(sub_block_p,windowing,swrap,nz/2,NFFT);
+            [tempSd,~] = spectra(sub_block_d,windowing,swrap,nz/2,NFFT);
 
             Sp_ref(ii,jj,:,iRef) = (tempSp(rang));
             Sd_ref(ii,jj,:,iRef) = (tempSd(rang));

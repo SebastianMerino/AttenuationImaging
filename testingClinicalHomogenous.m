@@ -14,7 +14,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-figDir = [baseDir,'\fig\23-01-03'];
+figDir = [baseDir,'\fig\23-01-15'];
 if (~exist("figDir","dir")), mkdir(figDir); end
 
 targetFiles = dir([targetDir,'\*.mat']);
@@ -25,6 +25,7 @@ end
 blocksize = 10;     % Block size in wavelengths
 overlap_pc      = 0.8;
 ratio_zx        = 1;
+c0 = 1540; freqC = 5.5e6;
 
 %% Loading case FULL VERSION
 iAcq = 1;
@@ -35,9 +36,7 @@ dz = z(2)-z(1);
 xFull = x*1e2; % [cm]
 zFull = z*1e2; % [cm]
 
-sam1 = RF(:,:,1);
-
-BmodeFull = db(hilbert(sam1));
+BmodeFull = db(hilbert(RF(:,:,1)));
 BmodeFull = BmodeFull - max(BmodeFull(:));
 
 
@@ -60,7 +59,7 @@ while ~strcmp(confirmation,'Yes')
     end
 end
 close,
-%%
+%% Cropping
 x_inf = rect(1); x_sup = rect(1)+rect(3);
 z_inf = rect(2); z_sup = rect(2)+rect(4);
 
@@ -71,10 +70,9 @@ ind_z = z_inf <= zFull & zFull <= z_sup;
 roi = ind_x.*ind_z';
 x = xFull(ind_x);
 z = zFull(ind_z);
-sam1 = sam1(ind_z,ind_x);
+sam1 = RF(ind_z,ind_x,1);
 
 % Wavelength size
-c0 = 1540; freqC = 5.5e6;
 wl = c0/mean(freqC);   % Wavelength (m)
 
 % Lateral samples
@@ -104,9 +102,10 @@ ratio = db2mag(-30);
 [pxx,fpxx] = pwelch(sam1-mean(sam1),nz,nz-wz,nz,fs);
 meanSpectrum = mean(pxx,2);
 [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
+freq_L = 3e6; freq_H = 9e6;
 
 % Frequency samples
-NFFT = 2^(nextpow2(nz/2)+2);
+NFFT = 2^(nextpow2(nz)+1);
 band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies
 rang = band > freq_L & band < freq_H ;   % useful frequency range
 f  = band(rang)*1e-6; % [MHz]
@@ -127,8 +126,7 @@ fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 
 %% Generating Diffraction compensation
 
-% Generating references
-att_ref = attenuation_phantoms_Np(f, 3, []);
+att_ref = attenuation_phantoms_Np(f, 4, []);
 att_ref_map = zeros(m,n,p);
 for jj=1:n
     for ii=1:m
@@ -138,7 +136,9 @@ end
 
 % Windows for spectrum
 windowing = tukeywin(nz/2,0.25);
-windowing = windowing*ones(1,nx);
+% windowing = hamming(nz/2);
+% windowing = windowing*ones(1,nx);
+swrap = saran_wrap(band); % saran wrap correction
 
 % For looping
 refFiles = dir([refDir,'\*.mat']);
@@ -160,6 +160,8 @@ for iRef = 1:Nref
 
             sub_block_p = samRef(zp:zp+nz/2-1,xw:xw+nx-1);
             sub_block_d = samRef(zd:zd+nz/2-1,xw:xw+nx-1);
+            % [tempSp,~] = spectra(sub_block_p,windowing,swrap,nz/2,NFFT);
+            % [tempSd,~] = spectra(sub_block_d,windowing,swrap,nz/2,NFFT);
             [tempSp,~] = spectra(sub_block_p,windowing,0,nz/2,NFFT);
             [tempSd,~] = spectra(sub_block_d,windowing,0,nz/2,NFFT);
 
@@ -174,6 +176,15 @@ compensation = ( log(Sp) - log(Sd) ) - 4*L*att_ref_map;
 
 % Liberating memory to avoid killing my RAM
 clear Sp_ref Sd_ref
+
+% Checking spectrum
+% figure,
+% for iFreq = 1:p
+%     imagesc(x_ACS,z_ACS, log(Sp(:,:,iFreq)))
+%     axis image
+%     title(['f =',num2str(f(iFreq))])
+%     pause(0.1)
+% end
 
 %% Setting up
 % Spectrum
@@ -195,39 +206,6 @@ for jj=1:n
     end
 end
 
-%% Compensation
-sldNoComp = (log(Sp) - log(Sd));
-v = VideoWriter('diffraction', 'MPEG-4');
-v.FrameRate = 10;
-open(v);
-
-figure,
-tiledlayout(1,2),
-t1 = nexttile;
-t2 = nexttile;
-for iFreq = 1:p
-    imagesc(t1, x_ACS,z_ACS,compensation(:,:,iFreq), 2*[-1,1])
-    axis(t1,'image')
-    colorbar(t1)
-    title(t1,'Diffraction compensation')
-
-    imagesc(t2, x_ACS,z_ACS,sldNoComp(:,:,iFreq), 2*[-1,1])
-    axis(t2,'image')
-    colorbar(t2)
-    title(t2,'SLD, not compensated')
-
-    frame = getframe(gcf);
-    writeVideo(v,frame);
-end
-close(v)
-
-%%
-figure,
-imagesc(f,z_ACS,squeeze(mean(compensation,2)), [-2 2])
-colorbar
-title('Diffraction compensation')
-xlabel('Frequency [Hz]')
-ylabel('Depth [cm]')
 %%
 % System of eq
 A1 = kron( 4*L*f , speye(m*n) );
@@ -241,14 +219,14 @@ mask = ones(m,n,p);
 
 % Plotting constants
 dynRange = [-40,-5];
-attRange = [0.3,1.7];
+attRange = [0.5,1.9];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
-
+%%
 sldLine = squeeze(mean(mean(b,2),1))'/4/L*NptodB;
 fit1 = f\sldLine';
 fit2 = [f ones(length(f),1)]\sldLine';
-figure,
+figure('Units','centimeters', 'Position',[5 5 10 10]),
 plot(f,sldLine),
 hold on,
 plot(f,fit1*f, '--')
@@ -256,41 +234,17 @@ plot(f,fit2(1)*f + fit2(2), '--')
 hold off,
 grid on,
 xlim([0,freq_H]/1e6),
-ylim([0 12]),
+ylim([0 16]),
 xlabel('Frequency [MHz]')
 title('Mean SLD')
-legend({'SLD','Fit 1', 'Fit 2'})
-%%
-b = (log(Sp) - log(Sd));
-
-sldLine = squeeze(mean(mean(b,2),1))'/4/L*NptodB;
-figure('Units','centimeters', 'Position',[5 5 12 6]),
-plot(f,sldLine),
-grid on,
-xlim([0,freq_H]/1e6),
-ylim([-2 10]),
-xlabel('Frequency [MHz]')
-ylabel('Att. [dB/cm]')
-title('Mean SLD, not compensated')
-
-b = (log(Sp) - log(Sd)) - compensation;
-
-sldLine = squeeze(mean(mean(b,2),1))'/4/L*NptodB;
-figure('Units','centimeters', 'Position',[5 5 12 6]),
-plot(f,sldLine),
-grid on,
-xlim([0,freq_H]/1e6),
-ylim([-2 10]),
-xlabel('Frequency [MHz]')
-ylabel('Att. [dB/cm]')
-title('Mean SLD, compensated')
-
+legend({'SLD','Fit 1', 'Fit 2'}, 'Location','northwest')
+% axis equal
 
 %% RSLD
 
 %muB = 10.^(2.5:0.5:3.5);
-muC = 10.^(0:1:2)*10;
-muB = 10^4;
+muC = 10.^(0:1:2);
+muB = 10^3.5;
 
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -330,16 +284,16 @@ for mmB = 1:length(muB)
         axis image
         title(['RSLD, \mu=',num2str(muC(mmC),2)])
         c = colorbar;
-        c.Label.String = 'BS log ratio (a.u.)';
+        c.Label.String = 'BS change [dB/cm]';
     end
 end
 
 
 %% Minimizing BS log ratio
 
-%muB = 10.^(2.5:0.5:3.5)*10;
-muB = 10^4;
-muC = 10.^(-0.5:1:2.5);
+%muB = 10.^(2.5:0.5:3.5);
+muB = 10^3.5;
+muC = 10.^(0:1:2);
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
         tic
@@ -377,7 +331,7 @@ for mmB = 1:length(muB)
         axis image
         title(['RSLD, \mu=',num2str(muC(mmC),2)])
         c = colorbar;
-        c.Label.String = 'BS log ratio (a.u.)';
+        c.Label.String = 'BS change [dB/cm]';
     end
 end
 
@@ -469,7 +423,7 @@ for mmB = 1:length(muB)
         axis image
         title(['RSLD, \mu=',num2str(muC(mmC),2)])
         c = colorbar;
-        c.Label.String = 'BS log ratio (a.u.)';
+        c.Label.String = 'BS change [dB/cm]';
     end
 end
 
@@ -478,8 +432,8 @@ end
 % ======================================================================
 %% ACUMULADO
 
-muBtv = 10^4; muCtv = 10^3;
-muBtvl1 = 10^4; muCtvl1 = 10^2;
+muBtv = 10^3.5; muCtv = 10^0;
+muBtvl1 = 10^3.5; muCtvl1 = 10^0;
 
 % RSLD-TV
 [Bn,~] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));

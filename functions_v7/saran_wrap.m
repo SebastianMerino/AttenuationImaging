@@ -15,7 +15,8 @@ t=abs(2*z_p./( 2*z_p*cos((2*pi/c_sw*(band)-1j*alpha_sw)*L_saran) + ...
     1j*(z_sw+z_p^2/z_sw)*sin((2*pi/c_sw*(band)-1j*alpha_sw)*L_saran) )).^2;
 T=t.^2; % Intensity correction for Intensity of Spectrum
 
-figure (50); plot(band*1e-6, T); 
-title('Correction factor T(f) for phantom'); xlabel('Frequency [MHz]'); ylabel('Coefficient Factor');
+% figure (50); plot(band*1e-6, T); 
+% title('Correction factor T(f) for phantom'); 
+% xlabel('Frequency [MHz]'); ylabel('Coefficient Factor');
 
 end
