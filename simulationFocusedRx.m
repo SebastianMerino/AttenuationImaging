@@ -9,7 +9,7 @@ clear; close all; clc; rng shuffle;
 addpath(genpath(pwd))
 
 % save parameters
-BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_23_12_31';
+BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_24_01_04';
 folderNames = {'homogeneous3'};
 
 % medium parameters
@@ -38,8 +38,7 @@ rotation        = 0;
 DATA_CAST       = 'single'; % set to 'single' or 'gpuArray-single'
 ppw             = 6;        % number of points per wavelength, 4 to 8
 depth           = 40e-3;    % imaging depth [m]
-cfl             = 0.5;      % CFL number, could be 0.5
-
+cfl             = 0.1;      % CFL number, could be 0.3 or 0.5
 %% For looping simulations
 
 for iSim = 1:length(folderNames)
@@ -122,7 +121,8 @@ for iSim = 1:length(folderNames)
     end
 
     %% VISUALISATION
-    offset = 60;
+    % offset = 60;
+    offset = 400;
     
     axAxis = 0:size(bf_data_final,1)-1; axAxis = axAxis*kgrid.dt*c0/2;
     latAxis = 0:nLines-1; latAxis = latAxis-mean(latAxis); latAxis = latAxis *element_pitch;

@@ -9,9 +9,9 @@ clear; close all; clc; rng shuffle;
 addpath(genpath(pwd))
 
 % save parameters
-BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_24_01_03';
+BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_24_01_04';
 mkdir(BaseDir)
-folderNames = {'homogeneous1','homogeneous2'};
+folderNames = {'homogeneous1','homogeneous2','homogeneous3'};
 
 % medium parameters
 c0              = 1540;     % sound speed [m/s]
@@ -39,7 +39,7 @@ rotation        = 0;
 DATA_CAST       = 'single'; % set to 'single' or 'gpuArray-single'
 ppw             = 6;        % number of points per wavelength, 4 to 8
 depth           = 40e-3;    % imaging depth [m]
-cfl             = 0.5;      % CFL number, could be 0.5
+cfl             = 0.1;      % CFL number, could be 0.3 or 0.5
 
 %% For looping simulations
 
@@ -72,27 +72,47 @@ for iSim = 1:length(folderNames)
     rx = kgrid.y;
     
     background_map_std = 0.008;
-    % background_alpha = 0.6;       % [dB/(MHz^y cm)]
+    background_alpha = 0.6;       % [dB/(MHz^y cm)]
+    c0mean = 1;
     
-    switch iSim
-        case 1
-            background_alpha = 1.2;       % [dB/(MHz^y cm)]
-            c0mean = 1.05;
-        case 2
-            background_alpha = 1.2;
-            c0mean = 0.95;
-    end
-    % Define background properties for each region
-    sound_speed_map = c0 * ones(Nx,Ny) .* (c0mean + ...
-        background_map_std * randn(Nx,Ny));
-    density_map = rho0 * ones(Nx,Ny) .* (1 + background_map_std * randn(Nx,Ny));
+%     cz = 20e-3; cx = 0;
+%     r = 8e-3;
+%     maskRegion = (rz-cz).^2 + (rx-cx).^2 < r^2;
 
+    % define properties of the layer
+%     switch iSim
+%         case 1
+%             background_map_std = 0.008;
+%             inclusion_map_std = background_map_std/4;
+%             background_alpha = 0.6;       % [dB/(MHz^y cm)]
+%             inclusion_alpha = 1.2;            % [dB/(MHz^y cm)]
+%         case 2
+%             background_map_std = 0.008;
+%             inclusion_map_std = background_map_std*4;
+%             background_alpha = 0.6;
+%             inclusion_alpha = 1.2;
+% 
+%     end
+
+    % Define background properties for background
+    sound_speed_map = c0 .* (c0mean + ...
+        background_map_std * randn(Nx,Ny));
+    density_map = rho0 .* (1 + background_map_std * randn(Nx,Ny));
     alpha_map = background_alpha + zeros(Nx,Ny);
 
+    % Define ROI properties for each region
+%     sound_speed_region = c0 * ones(Nx,Ny) .* (c0mean + ...
+%         inclusion_map_std * randn(Nx,Ny));
+%     density_region = rho0 .* (1 + inclusion_map_std * randn(Nx,Ny));
+%     alpha_region = inclusion_alpha + zeros(Nx,Ny);
 
     medium.sound_speed = sound_speed_map;
     medium.density = density_map;
     medium.alpha_coeff = alpha_map;
+
+%     medium.sound_speed(maskRegion) = sound_speed_region(maskRegion);
+%     medium.density(maskRegion) = density_region(maskRegion);
+%     medium.alpha_coeff(maskRegion) = alpha_region(maskRegion);
 
     medium.alpha_power = 1.05;
     medium.alpha_mode = 'no_dispersion';

@@ -1,0 +1,220 @@
+
+Patient 129424-1 
+TV + TV
+Nodulo:
+ 1.05
+Tiroides:
+ 1.32
+TV + L1
+Nodulo:
+ 1.02
+Tiroides:
+ 1.31
+WTV + WTV
+Nodulo:
+ 1.15
+Tiroides:
+ 1.38
+WTV + WL1
+Nodulo:
+ 1.12
+Tiroides:
+ 1.36
+
+Patient 134135 
+TV + TV
+Nodulo:
+ 1.01
+Tiroides:
+ 1.50
+TV + L1
+Nodulo:
+ 1.02
+Tiroides:
+ 1.50
+WTV + WTV
+Nodulo:
+ 0.73
+Tiroides:
+ 1.41
+WTV + WL1
+Nodulo:
+ 0.75
+Tiroides:
+ 1.42
+
+Patient 135418-07 
+TV + TV
+Nodulo:
+ 0.94
+Tiroides:
+ 1.35
+TV + L1
+Nodulo:
+ 0.95
+Tiroides:
+ 1.35
+WTV + WTV
+Nodulo:
+ 0.60
+Tiroides:
+ 1.29
+WTV + WL1
+Nodulo:
+ 0.62
+Tiroides:
+ 1.30
+
+Patient 189260-01 
+TV + TV
+Nodulo:
+ 0.93
+Tiroides:
+ 1.11
+TV + L1
+Nodulo:
+ 0.92
+Tiroides:
+ 1.09
+WTV + WTV
+Nodulo:
+ 0.89
+Tiroides:
+ 1.07
+WTV + WL1
+Nodulo:
+ 0.88
+Tiroides:
+ 1.05
+
+Patient 190029 
+TV + TV
+Nodulo:
+ 0.88
+Tiroides:
+ 1.38
+TV + L1
+Nodulo:
+ 0.88
+Tiroides:
+ 1.34
+WTV + WTV
+Nodulo:
+ 0.87
+Tiroides:
+ 1.55
+WTV + WL1
+Nodulo:
+ 0.87
+Tiroides:
+ 1.51
+
+Patient 199031 
+TV + TV
+Nodulo:
+ 0.74
+Tiroides:
+ 1.39
+TV + L1
+Nodulo:
+ 0.73
+Tiroides:
+ 1.37
+WTV + WTV
+Nodulo:
+ 0.77
+Tiroides:
+ 1.28
+WTV + WL1
+Nodulo:
+ 0.77
+Tiroides:
+ 1.27
+
+Patient 203704-03 
+TV + TV
+Nodulo:
+ 1.27
+Tiroides:
+ 1.33
+TV + L1
+Nodulo:
+ 1.26
+Tiroides:
+ 1.31
+WTV + WTV
+Nodulo:
+ 1.21
+Tiroides:
+ 1.31
+WTV + WL1
+Nodulo:
+ 1.20
+Tiroides:
+ 1.29
+
+Patient 213712-4 
+TV + TV
+Nodulo:
+ 0.80
+Tiroides:
+ 0.81
+TV + L1
+Nodulo:
+ 0.82
+Tiroides:
+ 0.83
+WTV + WTV
+Nodulo:
+ 0.73
+Tiroides:
+ 0.85
+WTV + WL1
+Nodulo:
+ 0.76
+Tiroides:
+ 0.87
+
+Patient 254581-1 
+TV + TV
+Nodulo:
+ 0.42
+Tiroides:
+ 0.84
+TV + L1
+Nodulo:
+ 0.46
+Tiroides:
+ 0.87
+WTV + WTV
+Nodulo:
+ 0.59
+Tiroides:
+ 1.04
+WTV + WL1
+Nodulo:
+ 0.62
+Tiroides:
+ 1.06
+
+Patient 265002 
+TV + TV
+Nodulo:
+ 1.51
+Tiroides:
+ 1.56
+TV + L1
+Nodulo:
+ 1.49
+Tiroides:
+ 1.55
+WTV + WTV
+Nodulo:
+ 1.29
+Tiroides:
+ 1.52
+WTV + WL1
+Nodulo:
+ 1.29
+Tiroides:
+ 1.52

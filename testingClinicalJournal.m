@@ -4,16 +4,18 @@
 % ====================================================================== %
 clear,clc
 close all
-addpath('./functions_v7');
+    addpath('./functions_v7');
 addpath('./AttUtils');
 
 %% Clinical case
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Thyroid_Journal'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
     'Attenuation\Thyroid_Journal'];
 
 targetDir = [baseDir,'\raw'];
 targetFiles = dir(fullfile(targetDir,'*.mat'));
-figDir = [baseDir,'\fig\23-01-16'];
+figDir = [baseDir,'\fig\23-01-16-newW2-moreReg'];
 if (~exist("figDir","dir")), mkdir(figDir); end
 refs     =  [3,2,2,2, 2,3, 2,3, 2,2, 3, 3, 3, 3, 2,3,2,2];
 for iAcq = 1:length(targetFiles)
@@ -22,8 +24,9 @@ for iAcq = 1:length(targetFiles)
 end
 
 %%
+% 4,10 no sirve
 % Selecting patient
-iAcq = 3;
+for iAcq =  [1,2,3,5,6,7,8,9,11,12]
 patient = targetFiles(iAcq).name(1:end-4);
 ref     = refs(iAcq);
 refDir = [baseDir,'\ref',num2str(2)];
@@ -33,17 +36,24 @@ blocksize       = 10;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
 c0              = 1540;
-freqC           = 5.5e6;
+ratioCutOff     = 10;
+
+% Weight function
+order = 5;
+reject = 0.5;
+extension = 1; % 1 or 3
+
 %spectrumCut     = db2mag(-30);
 % freq_L = 3.5e6; freq_H = 8e6;
 freq_L = 3e6; freq_H = 9e6;
+freqC           = mean([freq_L, freq_H]);
 
 %%
 rect = [];
+selectROIs = false;
 switch patient
     case '135418-07'
         rect = [1.5162    0.3772    2.2564    1.5740];
-        ratioCutOff = 10;
         x0Tumor = 1.9; z0Tumor = 1;
         wTumor = 0.5; hTumor = 0.5;
         x0Sano = 3; z0Sano = 1;
@@ -51,7 +61,6 @@ switch patient
 
     case '190029'
         rect = [1.3689    0.5865    1.1088    1.4267];
-        ratioCutOff = 10;
         x0Tumor = 1.7; z0Tumor = 0.9;
         wTumor = 0.5; hTumor = 0.5;
         x0Sano = 1.7; z0Sano = 1.6;
@@ -59,7 +68,6 @@ switch patient
 
     case '203704-03'
         rect = [1.1518    0.4857    2.6131    1.9927];
-        ratioCutOff = 10;
         x0Tumor = 1.8; z0Tumor = 1;
         wTumor = 0.5; hTumor = 0.5;
         x0Sano = 1.8; z0Sano = 1.7;
@@ -75,7 +83,6 @@ switch patient
     case '134135'
         rect = [0.0119    0.2764    1.9230    1.9695]; % 3.5-8 MHz
         % rect = [0.0817    0.2298    1.9850    2.1091]; % 3-9MHz
-        ratioCutOff = 20;
         x0Tumor = 1.3; z0Tumor = 0.8;
         wTumor = 0.4; hTumor = 0.6;
         x0Sano = 0.4; z0Sano = 0.8;
@@ -83,18 +90,40 @@ switch patient
 
     case '199031'
         rect = [0.4074    0.9199    2.5200    1.9230];
-        ratioCutOff = 20;
         x0Tumor = 2.1; z0Tumor = 1.6;
         wTumor = 0.6; hTumor = 0.6;
         x0Sano = 0.5; z0Sano = 1.6;
         wSano = 0.6; hSano = 0.6; 
+    case '129424-1'
+        rect = [1.669 0.837 1.625 1.654];
+        x0Tumor = 1.8; z0Tumor = 1.4;
+        wTumor = 0.5; hTumor = 0.5;
+        x0Sano = 2.6; z0Sano = 1.4;
+        wSano = 0.5; hSano = 0.5; 
+        
+    case '189260-01'
+        rect = [0.923 0.741 1.656 0.929];
+        x0Tumor = 1.8; z0Tumor = 0.9;
+        wTumor = 0.5; hTumor = 0.5;
+        x0Sano = 1.1; z0Sano = 0.9;
+        wSano = 0.5; hSano = 0.5; 
+        
+    case '213712-4'
+        rect = [1.683 0.488 1.298 0.9960];
+        x0Tumor = 1.8; z0Tumor = 0.6;
+        wTumor = 0.45; hTumor = 0.35;
+        x0Sano = 2.4; z0Sano = 1;
+        wSano = 0.45; hSano = 0.35; 
+        
+    case '265002'
+        rect = [1.6240    0.9431    2.0236    1.4136];
+        x0Tumor = 1.9; z0Tumor = 1.6;
+        wTumor = 0.5; hTumor = 0.5;
+        x0Sano = 2.8; z0Sano = 1.6;
+        wSano = 0.5; hSano = 0.5; 
     otherwise
         rect = [];
-        ratioCutOff = 20;
-        x0Tumor = 2.1; z0Tumor = 1.6;
-        wTumor = 0.6; hTumor = 0.6;
-        x0Sano = 0.5; z0Sano = 1.6;
-        wSano = 0.6; hSano = 0.6; 
+        selectROIs = true;
 end
 
 %% Loading and cropping
@@ -272,14 +301,10 @@ muB0 = 1e3; muC0 = 10^0;
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB0,muC0,m,n,tol,mask(:));
 bscMap = reshape(Cn,m,n)*NptodB;
 
-% Weight function
-order = 5;
-% gain = 1;
-reject = 0.1;
-extension = 3; % 1 or 3
-w = (1-reject)* (1./((bscMap/20).^(2*order) + 1)) + reject;
-w = movmin(w,extension);
-%w = db2mag(-abs(bscMap)*0.5);
+
+% w = (1-reject)* (1./((bscMap/ratioCutOff).^(2*order) + 1)) + reject;
+% w = movmin(w,extension);
+w = db2mag(-0.5*abs(bscMap));
 %%
 figure('Units','centimeters', 'Position',[5 5 30 8]),
 tl = tiledlayout(1,3);
@@ -349,8 +374,14 @@ muBtv = 10^3.5; muCtv = 10^1.5;
 muBtvl1 = 10^3.5; muCtvl1 = 10^0.5;
 muBwfr2 = 10^3.5; muCwfr2 = 10^1.5;
 muBwfr = 10^3.5; muCwfr = 10^0.5;
+% muBtv = 10^3; muCtv = 10^1;
+% muBtvl1 = 10^3; muCtvl1 = 10^0;
 % muBwfr2 = 10^3; muCwfr2 = 10^1;
 % muBwfr = 10^3; muCwfr = 10^0;
+% muBtv = 10^3.5; muCtv = 10^1;
+% muBtvl1 = 10^3.5; muCtvl1 = 10^0;
+% muBwfr2 = 10^3.5; muCwfr2 = 10^1;
+% muBwfr = 10^3.5; muCwfr = 10^0;
 
 % RSLD-TV
 [Bn,~] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
@@ -379,6 +410,7 @@ BRWFR2 = reshape(Bn*NptodB,m,n);
 BRWFR = reshape(Bn*NptodB,m,n);
 
 %%
+if (selectROIs), pause(); end
 
 figure('Units','centimeters', 'Position',[5 5 20 15]);
 tl = tiledlayout(2,2);
@@ -434,7 +466,7 @@ rectangle('Position',[x0Sano z0Sano wSano hSano], 'LineStyle','--', 'EdgeColor',
 maskTumor = X>x0Tumor & X<x0Tumor+wTumor & Z>z0Tumor & Z<z0Tumor + hTumor;
 maskSano = X>x0Sano & X<x0Sano+wSano & Z>z0Sano & Z<z0Sano + hSano;
 
-fileID = fopen('casos.txt','a');
+fileID = fopen('newW2-moreReg.txt','a');
 fprintf(fileID,"\nPatient %s \n",patient);
 fprintf(fileID, "TV + TV\n");
 fprintf(fileID, "Nodulo:\n %.2f\n", mean(BRTV(maskTumor)));
@@ -486,3 +518,5 @@ colormap(t2,gray)
 %%
 save_all_figures_to_directory(figDir,['pat',patient,'fig']);
 close all
+
+end
