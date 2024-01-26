@@ -622,7 +622,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\ThyroidSelected\CUELLO#3'];
 
 targetDir = [baseDir,'\raw'];
-refDir = [baseDir,'\references'];
+refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
 figDir = 'C:\Users\sebas\Pictures\ISBI2024\v2';
 
@@ -726,7 +726,7 @@ fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 %% Generating Diffraction compensation
 
 % Generating references
-att_ref = attenuation_phantoms_Np(f, 3, []);
+att_ref = attenuation_phantoms_Np(f, 4, []); % CAMBIAESTO
 att_ref_map = zeros(m,n,p);
 for jj=1:n
     for ii=1:m
@@ -866,7 +866,7 @@ extension = 3;
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 w = movmin(w,extension);
 
-% figure, imagesc(w)
+figure, imagesc(w)
 
 % Weighting equation and regularizations
 b = (log(Sp) - log(Sd)) - (compensation);

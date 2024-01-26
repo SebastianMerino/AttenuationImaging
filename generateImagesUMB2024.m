@@ -8,7 +8,7 @@ close all
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-figDir = 'C:\Users\sebas\Pictures\UMB2024\24-01-02';
+figDir = 'C:\Users\sebas\Pictures\UMB2024\24-01-25';
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 % ========================================================================
@@ -145,12 +145,15 @@ MetricsTVL1(iAcq) = r;
 
 %% WFR
 % Computing weights
-ratioCutOff = 6;
-order = 5;
-reject = 0.1;
-extension = 3;
-w = (1-reject)*(1./((CRTVL1/ratioCutOff).^(2*order) + 1))+reject;
-w = movmin(w,extension);
+% ratioCutOff = 6;
+% order = 5;
+% reject = 0.1;
+% extension = 3;
+% w = (1-reject)*(1./((CRTVL1/ratioCutOff).^(2*order) + 1))+reject;
+% w = movmin(w,extension);
+dBgain = 0.5;
+w = db2mag(-dBgain*abs(CRTVL1));
+
 
 % Setting up new system
 W = repmat(w,[1 1 p]);
@@ -481,7 +484,10 @@ MetricsTVL1(iAcq) = r;
 % extension = 3;
 % w = (1-reject)*(1./((CRTVL1/ratioCutOff).^(2*order) + 1))+reject;
 % w = movmin(w,extension);
-w = db2mag(-sqrt(CRTVL1.^2 + 1));
+%w = db2mag(-sqrt(CRTVL1.^2 + 1));
+dBgain = 0.5;
+w = db2mag(-dBgain*abs(CRTVL1));
+
 
 % Setting up new system
 W = repmat(w,[1 1 p]);
@@ -579,36 +585,36 @@ title('Weights')
 c = colorbar;
 c.Label.String = '[a.u.]';
 
-%% Axial profiles
-figure('Units','centimeters', 'Position',[5 5 12 12])
-tiledlayout(2,1)
-nexttile,
-plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
-hold on
-plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
-plot(z_ACS,mean(attIdeal(:,20:27),2), 'k--')
-hold off
-grid on
-ylim([0.4 1.4])
-xlim([z_ACS(1) z_ACS(end)])
-title('Axial profiles')
-legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
-
-nexttile,
-plot(z_ACS, axialTV{3}, 'r:', 'LineWidth',1.5),
-hold on
-plot(z_ACS, axialSWTV{3}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{3}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{3}, 'b', 'LineWidth',1),
-plot(z_ACS,mean(attIdeal(:,20:27),2), 'k--')
-hold off
-grid on
-ylim([0.4 1.4])
-xlim([z_ACS(1) z_ACS(end)])
-title('Axial profiles')
-legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+% %% Axial profiles
+% figure('Units','centimeters', 'Position',[5 5 12 12])
+% tiledlayout(2,1)
+% nexttile,
+% plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
+% hold on
+% plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
+% plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
+% plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
+% plot(z_ACS,mean(attIdeal(:,20:27),2), 'k--')
+% hold off
+% grid on
+% ylim([0.4 1.4])
+% xlim([z_ACS(1) z_ACS(end)])
+% title('Axial profiles')
+% legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+% 
+% nexttile,
+% plot(z_ACS, axialTV{3}, 'r:', 'LineWidth',1.5),
+% hold on
+% plot(z_ACS, axialSWTV{3}, 'r', 'LineWidth',1),
+% plot(z_ACS, axialTVL1{3}, 'b:', 'LineWidth',1.5),
+% plot(z_ACS, axialWFR{3}, 'b', 'LineWidth',1),
+% plot(z_ACS,mean(attIdeal(:,20:27),2), 'k--')
+% hold off
+% grid on
+% ylim([0.4 1.4])
+% xlim([z_ACS(1) z_ACS(end)])
+% title('Axial profiles')
+% legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
 
 %%
 save_all_figures_to_directory(figDir,['simInc',num2str(iAcq),'Figure']);
@@ -825,12 +831,15 @@ mask = ones(m,n,p);
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB,muC,m,n,tol,mask(:));
 bscMap = reshape(Cn,m,n)*NptodB;
 
-ratioCutOff = 6;
-order = 5;
-reject = 0.1;
-extension = 3;
-w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
-w = movmin(w,extension);
+% ratioCutOff = 6;
+% order = 5;
+% reject = 0.1;
+% extension = 3;
+% w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+% w = movmin(w,extension);
+dBgain = 0.5;
+w = db2mag(-dBgain*abs(bscMap));
+
 
 % Weighting equation and regularizations
 b = (log(Sp) - log(Sd)) - (compensation);
