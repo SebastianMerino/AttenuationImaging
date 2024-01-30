@@ -2,10 +2,8 @@ clear,clc
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\Simulation_23_12_18'];
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\process_simulation\23_12_31'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\' ...
+    'simulations_processed\24_01_26'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
@@ -20,7 +18,7 @@ refFiles = dir([refDir,'\rf*.mat']);
 blocksize = 10;     % Block size in wavelengths
 % freq_L = 3e6; freq_H = 8.5e6;
 %freq_L = 4e6; freq_H = 9e6;
-freq_L = 2e6; freq_H = 10e6;
+freq_L = 3e6; freq_H = 9e6;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
 referenceAtt = 0.6;
@@ -44,7 +42,7 @@ ratio = db2mag(-30);
 % BW from spectrogram
 [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
 meanSpectrum = mean(pxx,2);
-[freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
+% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
 figure,plot(fpxx/1e6,meanSpectrum)
 yline(max(meanSpectrum)*ratio)
 xline([freq_L,freq_H]/1e6)
@@ -148,7 +146,6 @@ for iRef = 1:Nref
     disp(mean(medium.alpha_coeff(:)))
     samRef = rf;
     samRef = samRef(ind_z,ind_x); % Cropping
-    %figure,imagesc(db(hilbert(samRef)))
     for jj=1:n
         for ii=1:m
             xw = x0(jj) ;   % x window
@@ -164,6 +161,8 @@ for iRef = 1:Nref
             Sd_ref(ii,jj,:,iRef) = (tempSd(rang));
         end
     end
+    figure,imagesc(Sd_ref(:,:,40,iRef))
+
 end
 
 Sp = mean(Sp_ref,4); Sd = mean(Sd_ref,4);

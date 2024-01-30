@@ -9,9 +9,10 @@ clear; close all; clc; rng shuffle;
 addpath(genpath(pwd))
 
 % save parameters
-BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_24_01_04';
+BaseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulation_h5files\Simulation_24_01_26'];
 mkdir(BaseDir)
-folderNames = {'homogeneous1','homogeneous2','homogeneous3'};
+folderNames = {'homogeneous1','homogeneous2'};
 
 % medium parameters
 c0              = 1540;     % sound speed [m/s]
@@ -39,7 +40,7 @@ rotation        = 0;
 DATA_CAST       = 'single'; % set to 'single' or 'gpuArray-single'
 ppw             = 6;        % number of points per wavelength, 4 to 8
 depth           = 40e-3;    % imaging depth [m]
-cfl             = 0.1;      % CFL number, could be 0.3 or 0.5
+cfl             = 0.3;      % CFL number, could be 0.3 or 0.5
 
 %% For looping simulations
 
@@ -70,56 +71,41 @@ for iSim = 1:length(folderNames)
     %% MEDIUM
     rz = kgrid.x - translation(1);
     rx = kgrid.y;
-    
-    background_map_std = 0.008;
+
+    background_std = 0.008;
     background_alpha = 0.6;       % [dB/(MHz^y cm)]
-    c0mean = 1;
-    
+    medium = addRegionSimu([],c0,rho0,background_std,...
+        background_alpha,ones(Nx,Ny));
+
 %     cz = 20e-3; cx = 0;
-%     r = 8e-3;
-%     maskRegion = (rz-cz).^2 + (rx-cx).^2 < r^2;
-
-    % define properties of the layer
-%     switch iSim
-%         case 1
-%             background_map_std = 0.008;
-%             inclusion_map_std = background_map_std/4;
-%             background_alpha = 0.6;       % [dB/(MHz^y cm)]
-%             inclusion_alpha = 1.2;            % [dB/(MHz^y cm)]
-%         case 2
-%             background_map_std = 0.008;
-%             inclusion_map_std = background_map_std*4;
-%             background_alpha = 0.6;
-%             inclusion_alpha = 1.2;
+%     r = 7e-3;
+%     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
+%     inclusion_std = background_std/4;
+%     inclusion_alpha = 0.8;
+%     medium = addRegionSimu(medium,c0,rho0,inclusion_std,...
+%         inclusion_alpha,maskNodule);
 % 
+%     if iSim >=2
+%         maskMuscle = rz<5e-3;
+%         muscle_alpha = 1;
+%         muscle_std = background_std/2;
+%         medium = addRegionSimu(medium,1580,1041,muscle_std,...
+%             muscle_alpha,maskMuscle);
+%         if iSim ==3
+%             maskSkin = rz<2e-3;
+%             skin_alpha = 2;
+%             skin_std = background_std*4;
+%             medium = addRegionSimu(medium,c0,rho0,skin_std,...
+%                 skin_alpha,maskSkin);
+%         end
 %     end
-
-    % Define background properties for background
-    sound_speed_map = c0 .* (c0mean + ...
-        background_map_std * randn(Nx,Ny));
-    density_map = rho0 .* (1 + background_map_std * randn(Nx,Ny));
-    alpha_map = background_alpha + zeros(Nx,Ny);
-
-    % Define ROI properties for each region
-%     sound_speed_region = c0 * ones(Nx,Ny) .* (c0mean + ...
-%         inclusion_map_std * randn(Nx,Ny));
-%     density_region = rho0 .* (1 + inclusion_map_std * randn(Nx,Ny));
-%     alpha_region = inclusion_alpha + zeros(Nx,Ny);
-
-    medium.sound_speed = sound_speed_map;
-    medium.density = density_map;
-    medium.alpha_coeff = alpha_map;
-
-%     medium.sound_speed(maskRegion) = sound_speed_region(maskRegion);
-%     medium.density(maskRegion) = density_region(maskRegion);
-%     medium.alpha_coeff(maskRegion) = alpha_region(maskRegion);
 
     medium.alpha_power = 1.05;
     medium.alpha_mode = 'no_dispersion';
     medium.sound_speed_ref = 1540;
 
     save(fullfile(BaseDir,folderNames{iSim},['medium_',folderNames{iSim},'.mat']),...
-    'medium');
+    'medium','rx','rz');
     
     figure('Units','centimeters', 'Position',[5 5 25 10]),
     tiledlayout(1,3),
@@ -138,13 +124,15 @@ for iSim = 1:length(folderNames)
     colorbar,
     axis image
     
-    nexttile,
-    imagesc(100*rx(1,:),100*rz(:,1),medium.alpha_coeff)
+    t3 = nexttile;
+    imagesc(100*rx(1,:),100*rz(:,1),medium.alpha_coeff, [0.5 1.8])
     xlabel('x [cm]'), ylabel('z [cm]')
     title('Absorption')
     c = colorbar; ylabel(c,'dB/cm/MHz')
     axis image
-    
+    colormap(t3,"turbo")
+
+
     %% SOURCE
     aperture = source_focus/focal_number;
     element_num = floor(aperture/element_pitch);

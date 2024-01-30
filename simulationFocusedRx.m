@@ -9,8 +9,9 @@ clear; close all; clc; rng shuffle;
 addpath(genpath(pwd))
 
 % save parameters
-BaseDir = 'C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\Simulation_24_01_04';
-folderNames = {'homogeneous3'};
+BaseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulation_h5files\Simulation_24_01_26'];
+folderNames = {'homogeneous1','homogeneous2'};
 
 % medium parameters
 c0              = 1540;     % sound speed [m/s]
@@ -38,7 +39,7 @@ rotation        = 0;
 DATA_CAST       = 'single'; % set to 'single' or 'gpuArray-single'
 ppw             = 6;        % number of points per wavelength, 4 to 8
 depth           = 40e-3;    % imaging depth [m]
-cfl             = 0.1;      % CFL number, could be 0.3 or 0.5
+cfl             = 0.3;      % CFL number, could be 0.3 or 0.5
 %% For looping simulations
 
 for iSim = 1:length(folderNames)
