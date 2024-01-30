@@ -145,15 +145,12 @@ MetricsTVL1(iAcq) = r;
 
 %% WFR
 % Computing weights
-% ratioCutOff = 6;
-% order = 5;
-% reject = 0.1;
-% extension = 3;
-% w = (1-reject)*(1./((CRTVL1/ratioCutOff).^(2*order) + 1))+reject;
-% w = movmin(w,extension);
-dBgain = 0.5;
-w = db2mag(-dBgain*abs(CRTVL1));
-
+ratioCutOff = 6;
+order = 5;
+reject = 0.3;
+extension = 3;
+w = (1-reject)*(1./((CRTVL1/ratioCutOff).^(2*order) + 1))+reject;
+w = movmin(w,extension);
 
 % Setting up new system
 W = repmat(w,[1 1 p]);
@@ -667,6 +664,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
 NptodB = log10(exp(1))*20;
+figDir = 'C:\Users\sebas\Pictures\UMB2024\24-01-25';
 
 %% For looping each phantom
 figure('Units','centimeters', 'Position',[5 5 25 12]);
@@ -831,14 +829,12 @@ mask = ones(m,n,p);
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB,muC,m,n,tol,mask(:));
 bscMap = reshape(Cn,m,n)*NptodB;
 
-% ratioCutOff = 6;
-% order = 5;
-% reject = 0.1;
-% extension = 3;
-% w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
-% w = movmin(w,extension);
-dBgain = 0.5;
-w = db2mag(-dBgain*abs(bscMap));
+ratioCutOff = 6;
+order = 5;
+reject = 0.3;
+extension = 3;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+w = movmin(w,extension);
 
 
 % Weighting equation and regularizations
