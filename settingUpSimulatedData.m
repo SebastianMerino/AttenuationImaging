@@ -2,8 +2,8 @@ clear,clc
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\' ...
-    'simulations_processed\24_01_26'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\24_01_26'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
@@ -15,13 +15,13 @@ refFiles = dir([refDir,'\rf*.mat']);
 
 %% Generating cropped data
 % SETTING PARAMETERS
-blocksize = 10;     % Block size in wavelengths
+blocksize = 12;     % Block size in wavelengths
 % freq_L = 3e6; freq_H = 8.5e6;
 %freq_L = 4e6; freq_H = 9e6;
-freq_L = 3e6; freq_H = 9e6;
+freq_L = 3e6; freq_H = 8e6;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
-referenceAtt = 0.6;
+referenceAtt    = 0.6;
 
 %% For looping
 for iAcq = 1:length(targetFiles)
@@ -37,17 +37,6 @@ sam1 = rf(:,:,1);
 dynRange = [-50,0];
 
 
-ratio = db2mag(-30);
-
-% BW from spectrogram
-[pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
-meanSpectrum = mean(pxx,2);
-% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-figure,plot(fpxx/1e6,meanSpectrum)
-yline(max(meanSpectrum)*ratio)
-xline([freq_L,freq_H]/1e6)
-xlabel('Frequency [MHz]')
-ylabel('Magnitude')
 
 % Bmode = db(hilbert(sam1));
 % Bmode = Bmode - max(Bmode(:));
@@ -96,6 +85,19 @@ z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
 z_ACS = z(z0p+ nz/2);
 m  = length(z0p);
+
+%%
+
+% BW from spectrogram
+[pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
+meanSpectrum = mean(pxx,2);
+% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
+figure,plot(fpxx/1e6,meanSpectrum)
+xline([freq_L,freq_H]/1e6)
+xlabel('Frequency [MHz]')
+ylabel('Magnitude')
+xlim([0 15])
+
 
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
@@ -161,7 +163,7 @@ for iRef = 1:Nref
             Sd_ref(ii,jj,:,iRef) = (tempSd(rang));
         end
     end
-    figure,imagesc(Sd_ref(:,:,40,iRef))
+%     figure,imagesc(Sd_ref(:,:,40,iRef))
 
 end
 

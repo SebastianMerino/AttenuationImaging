@@ -3,10 +3,8 @@ close all
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\Simulation_24_01_03'];
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\process_simulation\23_12_31'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\24_01_26'];
 
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
@@ -14,24 +12,31 @@ for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\12-19'];
+figDir = [baseDir,'\fig\24-01-30'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 % groundTruthTop = [0.5,1,1,0.5,1,1];
 % groundTruthBottom = [1,0.5,1,1,0.5,1];
-groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
-groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
-rInc = 0.8;
+% groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
+% groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
 
+% Thyroid
+groundTruthTop = [1.5,1.3,1.5,1.5,1.5];
+groundTruthBottom = [0.8,0.8,1,0.8,0.8];
+
+rInc = 0.7; % 0.8 for other inclusions
+
+%     cz = 20e-3; cx = 0;
+%     r = 7e-3;
 %% Loading data
-for iAcq = 1:length(croppedFiles)
+for iAcq = 1:1 % length(croppedFiles)
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load(fullfile(baseDir,'raw',croppedFiles(iAcq).name),"medium");
 
 % Plotting
 dynRange = [-40,0];
-attRange = [0.4,1.4];
+attRange = [0.5,1.8];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
@@ -54,10 +59,6 @@ attIdeal = ones(size(Z));
 inclusion = (X.^2 + (Z-2).^2)<= rInc^2;
 attIdeal(~inclusion) = groundTruthTop(iAcq);
 attIdeal(inclusion) = groundTruthBottom(iAcq); %incl = bottom
-
-if iAcq ==1 || iAcq==2
-    attIdeal = 1.2;
-end
 
 figure('Units','centimeters', 'Position',[5 5 20 6]);
 tiledlayout(1,2)
@@ -114,50 +115,50 @@ c.Label.String = 'BS log ratio [dB]';
 
 %% Spectrum
 % Homogeneous
-sldLine = squeeze(mean(mean(b(25:40,:,:),2),1))'/4/L*NptodB;
-fit1 = f\sldLine';
-fit2 = [f ones(length(f),1)]\sldLine';
-figure,
-plot(f,sldLine),
-hold on,
-plot(f,fit1*f, '--')
-plot(f,fit2(1)*f + fit2(2), '--')
-hold off,
-grid on,
-xlim([0,max(f)]),
-ylim([0 12]),
-xlabel('Frequency [MHz]')
-title('Mean SLD')
-legend({'SLD','Fit 1', 'Fit 2'})
+% sldLine = squeeze(mean(mean(b(25:40,:,:),2),1))'/4/L*NptodB;
+% fit1 = f\sldLine';
+% fit2 = [f ones(length(f),1)]\sldLine';
+% figure,
+% plot(f,sldLine),
+% hold on,
+% plot(f,fit1*f, '--')
+% plot(f,fit2(1)*f + fit2(2), '--')
+% hold off,
+% grid on,
+% xlim([0,max(f)]),
+% ylim([0 12]),
+% xlabel('Frequency [MHz]')
+% title('Mean SLD')
+% legend({'SLD','Fit 1', 'Fit 2'})
 
 % Heterogeneous
-% [X,Z] = meshgrid(x_ACS,z_ACS);
-% region1 = (X.^2 + (Z-2).^2) <= 0.8^2;
-% region2 = (X.^2 + (Z-2).^2) >= 0.8^2;
-% sld1 = squeeze(sum(sum(b.*region1,1),2))/sum(region1(:)) * NptodB /4/L;
-% acs1 = f\sld1;
-% fprintf('Attenuation is %.2f\n',acs1)
-% sld2 = squeeze(sum(sum(b.*region2,1),2))/sum(region2(:)) * NptodB /4/L;
-% acs2 = f\sld2;
-% fprintf('Attenuation is %.2f\n',acs2)
-% figure, plot(f,sld1)
-% hold on
-% plot(f,sld2)
-% plot(f,acs1*f, 'k--')
-% plot(f,acs2*f, 'k--')
-% hold off
-% grid on,
-% xlim([0,max(f)]), ylim([0 15]),
-% xlabel('Frequency [MHz]')
-% ylabel('Att. [dB/cm]')
-% title('Mean SLD')
-% legend('Inc','Back')
+[X,Z] = meshgrid(x_ACS,z_ACS);
+region1 = (X.^2 + (Z-2).^2) <= rInc^2;
+region2 = (X.^2 + (Z-2).^2) >= rInc^2;
+sld1 = squeeze(sum(sum(b.*region1,1),2))/sum(region1(:)) * NptodB /4/L;
+acs1 = f\sld1;
+fprintf('Attenuation is %.2f\n',acs1)
+sld2 = squeeze(sum(sum(b.*region2,1),2))/sum(region2(:)) * NptodB /4/L;
+acs2 = f\sld2;
+fprintf('Attenuation is %.2f\n',acs2)
+figure, plot(f,sld1)
+hold on
+plot(f,sld2)
+plot(f,acs1*f, 'k--')
+plot(f,acs2*f, 'k--')
+hold off
+grid on,
+xlim([0,max(f)]), ylim([0 15]),
+xlabel('Frequency [MHz]')
+ylabel('Att. [dB/cm]')
+title('Mean SLD')
+legend('Inc','Back')
 
 
 %% RSLD
-% muB = 10.^(2.5:0.5:3.5);
+muB = 10.^(2.5:0.5:3.5);
 muC = 10.^(0:1:2);
-muB = 10^ 3.5;
+% muB = 10^ 3.5;
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -168,25 +169,25 @@ for mmB = 1:length(muB)
         CR = reshape(Cn*NptodB,m,n);
         disp(mean(BR(:)))
 
-        figure('Units','centimeters', 'Position',[5 5 15 6]);
-        tl = tiledlayout(1,2, "Padding","tight");
-        title(tl,'RSLD with TV(B)+TV(C)')
-
-        t2 = nexttile; 
-        imagesc(x_ACS,z_ACS,BR, attRange)
-        colormap(t2,turbo)
-        axis image
-        title(['RSLD-TV, \mu=',num2str(muB(mmB),2)])
-        c = colorbar;
-        c.Label.String = 'Att. [db/cm/MHz]';
-
-        t3 = nexttile; 
-        imagesc(x_ACS,z_ACS,CR, bsRange)
-        colormap(t3,parula)
-        axis image
-        title(['RSLD-TV, \mu=',num2str(muC(mmC),2)])
-        c = colorbar;
-        c.Label.String = 'BS log ratio [dB]';
+%         figure('Units','centimeters', 'Position',[5 5 15 6]);
+%         tl = tiledlayout(1,2, "Padding","tight");
+%         title(tl,'RSLD with TV(B)+TV(C)')
+% 
+%         t2 = nexttile; 
+%         imagesc(x_ACS,z_ACS,BR, attRange)
+%         colormap(t2,turbo)
+%         axis image
+%         title(['RSLD-TV, \mu=',num2str(muB(mmB),2)])
+%         c = colorbar;
+%         c.Label.String = 'Att. [db/cm/MHz]';
+% 
+%         t3 = nexttile; 
+%         imagesc(x_ACS,z_ACS,CR, bsRange)
+%         colormap(t3,parula)
+%         axis image
+%         title(['RSLD-TV, \mu=',num2str(muC(mmC),2)])
+%         c = colorbar;
+%         c.Label.String = 'BS log ratio [dB]';
 
         RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         if RMSE<minRMSE
@@ -331,9 +332,9 @@ r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsSWTV(iAcq) = r;
 
 %% Minimizing BS log ratio
-% muB = 10.^(3:0.5:4);
-muB = 10^4;
-% muC = 10.^(0.5:0.5:1.5);
+muB = 10.^(2.5:0.5:4);
+% muB = 10^4;
+% muC = 10.^(0:0.5:1.5);
 muC = 10.^(0:1:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -343,26 +344,26 @@ for mmB = 1:length(muB)
         toc
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
-        figure('Units','centimeters', 'Position',[5 5 15 6]);
-        tl = tiledlayout(1,2, "Padding","tight");
-        title(tl,'RSLD with TV(B)+||C||_1')
-        disp(mean(BR(:)))
-
-        t2 = nexttile; 
-        imagesc(x_ACS,z_ACS,BR, attRange)
-        colormap(t2,turbo)
-        axis image
-        title(['RSLD-TVL1, \mu=',num2str(muB(mmB),2)])
-        c = colorbar;
-        c.Label.String = 'Att. [db/cm/MHz]';
-
-        t3 = nexttile; 
-        imagesc(x_ACS,z_ACS,CR, bsRange)
-        colormap(t3,parula)
-        axis image
-        title(['RSLD-TVL1, \mu=',num2str(muC(mmC),2)])
-        c = colorbar;
-        c.Label.String = 'BS log ratio [dB]';
+%         figure('Units','centimeters', 'Position',[5 5 15 6]);
+%         tl = tiledlayout(1,2, "Padding","tight");
+%         title(tl,'RSLD with TV(B)+||C||_1')
+%         disp(mean(BR(:)))
+% 
+%         t2 = nexttile; 
+%         imagesc(x_ACS,z_ACS,BR, attRange)
+%         colormap(t2,turbo)
+%         axis image
+%         title(['RSLD-TVL1, \mu=',num2str(muB(mmB),2)])
+%         c = colorbar;
+%         c.Label.String = 'Att. [db/cm/MHz]';
+% 
+%         t3 = nexttile; 
+%         imagesc(x_ACS,z_ACS,CR, bsRange)
+%         colormap(t3,parula)
+%         axis image
+%         title(['RSLD-TVL1, \mu=',num2str(muC(mmC),2)])
+%         c = colorbar;
+%         c.Label.String = 'BS log ratio [dB]';
 
         RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         if RMSE<minRMSE
@@ -432,8 +433,8 @@ bw = W*b(:);
 A1w = W*A1;
 A2w = W*A2;
 % 
-muB = 10.^(3.5:0.5:4.5);
-muC = 10.^(1:0.5:2);
+muB = 10.^(3:0.5:4.5);
+muC = 10.^(0:0.5:2);
 
 minRMSE = 100;
 for mmB = 1:length(muB)
