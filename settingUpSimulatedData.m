@@ -2,8 +2,10 @@ clear,clc
 addpath('./functions_v7');
 addpath('./AttUtils');
 
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\24_01_26'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\simulations_processed\24_01_26'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\layered_14_11_23'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
@@ -15,13 +17,11 @@ refFiles = dir([refDir,'\rf*.mat']);
 
 %% Generating cropped data
 % SETTING PARAMETERS
-blocksize = 12;     % Block size in wavelengths
-% freq_L = 3e6; freq_H = 8.5e6;
-%freq_L = 4e6; freq_H = 9e6;
-freq_L = 3e6; freq_H = 8e6;
+blocksize = 10;     % Block size in wavelengths
+freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
 ratio_zx        = 1;
-referenceAtt    = 0.6;
+referenceAtt    = 0.7;
 
 %% For looping
 for iAcq = 1:length(targetFiles)
@@ -54,8 +54,6 @@ dynRange = [-50,0];
 
 %% Cropping and finding sample sizes
 % Region for attenuation imaging
-% x_inf = rect(1); x_sup = rect(1)+rect(3);
-% z_inf = rect(2); z_sup = rect(2)+rect(4);
 x_inf = -1.5; x_sup = 1.5;
 z_inf = 0.5; z_sup = 3.5;
 

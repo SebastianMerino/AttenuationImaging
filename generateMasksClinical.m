@@ -87,8 +87,9 @@ switch patient
         wSano = 0.5; hSano = 0.5; 
         
     case '189260'
-        rect = [0.923 0.741 1.656 0.929];
+        % rect = [0.923 0.741 1.656 0.929];
         % rect = [0.723 0.741 2.056 1.129];
+        rect = [1.023 0.741 1.756 0.929];
         x0Tumor = 1.8; z0Tumor = 0.9;
         wTumor = 0.5; hTumor = 0.4;
         x0Sano = 1.1; z0Sano = 0.9;
@@ -102,7 +103,9 @@ switch patient
         wSano = 0.45; hSano = 0.35; 
         
     case '265002'
-        rect = [1.6240    0.9431    2.0236    1.4136];
+        %rect = [1.6240    0.9431    2.0236    1.4136];
+        % rect = [1.6240    1.1431    2.0236    1.2136];
+        rect = [1.6240    1.0431    2.0236    1.3136];
         x0Tumor = 1.9; z0Tumor = 1.6;
         wTumor = 0.5; hTumor = 0.5;
         x0Sano = 2.8; z0Sano = 1.6;
@@ -315,5 +318,5 @@ close,
 % 
 maskThyroid = mask;
 %%
-save(fullfile('newMasks',patient), 'maskNodule', 'maskThyroid','-mat');
+save([fullfile('newMasks',patient),'.mat'], 'maskNodule', 'maskThyroid','-mat');
 end

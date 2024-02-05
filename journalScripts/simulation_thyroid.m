@@ -1,13 +1,23 @@
+% ====================================================================== %
+% Script for plotting figures and results for simulation on circular
+% inclusions, one resembling thyroid tissue
+% Created on Jan 31, 2024
+% ====================================================================== %
+
 clear,clc
 addpath('./functions_v7');
 addpath('./AttUtils');
 addpath('./journalScripts/');
 
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\24_01_26'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\simulations_processed\24_01_26'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\24_01_30'];
+
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-figDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL';
+
+figDir = 'C:\Users\sebas\Pictures\Journal2024\24-01-31';
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -23,21 +33,24 @@ freq_L = 3e6; freq_H = 8e6; % GOOD
 
 overlap_pc      = 0.8;
 ratio_zx        = 1;
-referenceAtt    = 0.7;
+referenceAtt    = 0.6;
 
-muBtv = 10^3; muCtv = 10^1;
-muBswtv = 10^3.5; muCswtv = 10^0.5;
-muBtvl1 = 10^3; muCtvl1 = 10^0;
-muBwfr = 10^3.5; muCwfr = 10^0.5;
+% Weights SWTV
+aSNR = 1; bSNR = 0.1;
+desvMin = 15;
 
-groundTruthThyroid = [1.5,1.3,1.5,1.5,1.5];
-groundTruthNodule = [0.8,0.8,1,0.8,0.8];
-% groundTruthThyroid = [1.5,1.5,1.5];
-% groundTruthNodule = [0.8,0.8,0.8];
+% Weight parameters
+muB = 10^3; muC = 10^0;
+ratioCutOff = 10;
+order = 5;
+reject = 0.1;
+extension = 3;
+
+groundTruthThyroid = [0.6,1.5];
+groundTruthNodule = [1.2,0.8];
 
 % Plotting
 dynRange = [-40,0];
-attRange = [0.4,1.9];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
@@ -45,8 +58,26 @@ NptodB = log10(exp(1))*20;
 % figure('Units','centimeters', 'Position',[5 5 25 8]);
 % tl = tiledlayout(2,5, "Padding","tight");
 
-for iAcq = 1:1
+for iAcq = 1:2
+
 load(fullfile(targetDir,targetFiles(iAcq).name));
+
+% Regularization
+switch iAcq
+    case 1
+        muBtv = 10^3; muCtv = 10^1;
+        muBswtv = 10^2.5; muCswtv = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^0;
+        muBwfr = 10^3.5; muCwfr = 10^1;
+        attRange = [0.4 1.4];
+    case 2
+        muBtv = 10^3; muCtv = 10^1;
+        muBswtv = 10^2.5; muCswtv = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^0;
+        % muBwfr = 10^2.5; muCwfr = 10^-0.5;
+        muBwfr = 10^3; muCwfr = 10^0;
+        attRange = [0.6 1.7];
+end
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 dx = x(2)-x(1);
@@ -216,11 +247,17 @@ CRTV = reshape(Cn*NptodB,m,n);
 
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
-
 cz = 2; cx = 0;
 rInc = 0.7;
-noduleMask = (Zq-cz).^2 + (Xq-cx).^2 < (rInc-1)^2;
-thyroidMask = (Zq-cz).^2 + (Xq-cx).^2 < (rInc+1)^2;
+noduleMask = (Zq-cz).^2 + (Xq-cx).^2 <= rInc^2;
+thyroidMask = ~noduleMask;
+
+c1x = 0; c1z = 2;
+roiL = 0.7; roiD = 0.5;
+roiLz = 1.2;
+x0mask = c1x - roiL/2; 
+z0mask = c1z - roiLz/2;
+% [thyroidMask,noduleMask] = getRegionMasks(x,z,c1x,c1z,roiL,roiD,roiLz);
 
 AttInterp = interp2(X,Z,BRTV,Xq,Zq);
 r.meanTop = mean(AttInterp(thyroidMask),"omitnan");
@@ -256,8 +293,6 @@ end
 % Calculating weights
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
-aSNR = 1; bSNR = 0.1;
-desvMin = 15;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Method
@@ -296,33 +331,22 @@ r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsTVL1(iAcq) = r;
 
 %% WFR
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
+bscMap = reshape(Cn*NptodB,m,n);
+
 % Computing weights
-ratioCutOff = 10;
-order = 5;
-reject = 0.1;
-extension = 3;
-w = (1-reject)*(1./((CRTVL1/ratioCutOff).^(2*order) + 1))+reject;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 w = movmin(w,extension);
 
-% figure('Units','centimeters', 'Position',[5 5 15 5])
-% tiledlayout(1,2)
-% 
-% t2 = nexttile; 
-% imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
-% colormap(t2,parula)
-% axis image
-% title('TVL1')
-% c = colorbar;
-% c.Label.String = 'BS log ratio [dB]';
-% 
-% t3 = nexttile; 
-% imagesc(x_ACS,z_ACS,w, [0 1])
-% colormap(t3,parula)
-% axis image
-% title('Weights')
-% c = colorbar;
-% c.Label.String = '[a.u.]';
+%%
+w = ones(size(BRWFR));
+borderMask = (Z-cz).^2 + (X-cx).^2 <= (rInc-0.1)^2 | ...
+    (Z-cz).^2 + (X-cx).^2 >= (rInc+0.1)^2 ;
+w(borderMask) = 1;
+w(~borderMask) = 0.1;
 
+figure, imagesc(w)
+%% -------
 % Setting up new system
 W = repmat(w,[1 1 p]);
 W = spdiags(W(:),0,m*n*p,m*n*p);
@@ -331,30 +355,11 @@ A1w = W*A1;
 A2w = W*A2;
 
 % Method
-[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr*3,muCwfr*10,m,n,tol,mask(:),w);
+% [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
+[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr*3,muCwfr,m,n,tol,mask(:),w);
 BRWFR = reshape(Bn*NptodB,m,n);
 CRWFR = reshape(Cn*NptodB,m,n);
 
-figure('Units','centimeters', 'Position',[5 5 15 5])
-tiledlayout(1,2);
-t1 = nexttile; 
-imagesc(x_ACS,z_ACS,BRTVL1, attRange)
-colormap(t1,turbo)
-axis image
-title('TVL1')
-%c = colorbar;
-%c.Label.String = 'Att. [db/cm/MHz]';
-
-t4 = nexttile; 
-imagesc(x_ACS,z_ACS,BRWFR, attRange)
-colormap(t4,turbo)
-axis image
-title('WFR')
-c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
-
-
-%%
 
 AttInterp = interp2(X,Z,BRWFR,Xq,Zq);
 r.meanTop = mean(AttInterp(thyroidMask),"omitnan");
@@ -386,24 +391,39 @@ imagesc(x_ACS,z_ACS,BRTV, attRange)
 colormap(t1,turbo)
 axis image
 title('TV')
-%c = colorbar;
-%c.Label.String = 'Att. [db/cm/MHz]';
+% hold on 
+% rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+% rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
+%     'LineStyle','--', 'LineWidth',1)
+% rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
+%     'LineStyle','--', 'LineWidth',1)
+% hold off
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRSWTV, attRange)
 colormap(t1,turbo)
 axis image
 title('SWTV')
-%c = colorbar;
-%c.Label.String = 'Att. [db/cm/MHz]';
+% hold on 
+% rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+% rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
+%     'LineStyle','--', 'LineWidth',1)
+% rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
+%     'LineStyle','--', 'LineWidth',1)
+% hold off
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRTVL1, attRange)
 colormap(t1,turbo)
 axis image
 title('TVL1')
-%c = colorbar;
-%c.Label.String = 'Att. [db/cm/MHz]';
+% hold on 
+% rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+% rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
+%     'LineStyle','--', 'LineWidth',1)
+% rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
+%     'LineStyle','--', 'LineWidth',1)
+% hold off
 
 t4 = nexttile; 
 imagesc(x_ACS,z_ACS,BRWFR, attRange)
@@ -412,6 +432,47 @@ axis image
 title('WFR')
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
+% hold on 
+% rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
+% rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
+%     'LineStyle','--', 'LineWidth',1)
+% rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
+%     'LineStyle','--', 'LineWidth',1)
+% hold off
+%%
+figure('Units','centimeters', 'Position',[5 5 20 5])
+tiledlayout(1,3)
+t1 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+axis equal
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+colormap(t1,gray)
+colorbar(t1, 'westoutside')
+title('Bmode')
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
+colormap(t2,parula)
+axis image
+title('TVL1')
+c = colorbar;
+c.Label.String = 'BS log ratio [dB]';
+
+t3 = nexttile; 
+imagesc(x_ACS,z_ACS,w, [0 1])
+colormap(t3,parula)
+axis image
+title('Weights')
+c = colorbar;
+c.Label.String = '[a.u.]';
+
+%%
+figure,
+[~,hB,hColor] = imOverlayInterp(Bmode,w,[-50 0],[0 1],0.2,...
+    x_ACS,z_ACS,ones(size(Bmode)),x,z);
+colormap(hot)
+
 
 end
 

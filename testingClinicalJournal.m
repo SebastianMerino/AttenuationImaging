@@ -24,14 +24,14 @@ freq_L = 3.5e6; freq_H = 8e6;
 overlap_pc      = 0.8;
 ratio_zx        = 1;
 
-% weightMap = 1;
-% ratioCutOff     = 10;
-% order = 5;
-% reject = 0.3;
-% extension = 3; % 1 or 3
+weightMap = 1;
+ratioCutOff     = 10;
+order = 5;
+reject = 0.2;
+extension = 3; % 1 or 3
 
-weightMap = 2;
-dBgain = 0.5;
+% weightMap = 2;
+% dBgain = 0.5;
 
 muBtv = 10^3; muCtv = 10^1;
 muBtvl1 = 10^3; muCtvl1 = 10^0;
@@ -73,8 +73,9 @@ switch patient
         rect = [1.03; 0.49; 1.6; 1.69];
 
     case '134135'
-        rect = [0.0119    0.2764    1.9230    1.9695]; % 3.5-8 MHz
+        % rect = [0.0119    0.2764    1.9230    1.9695]; % 3.5-8 MHz
         % rect = [0.0817    0.2298    1.9850    2.1091]; % 3-9MHz
+        rect = [0.0817    0.2298    1.9850    1.9091]; 
 
     case '199031'
         rect = [0.4074    0.9199    2.5200    1.9230];
@@ -82,14 +83,17 @@ switch patient
         rect = [1.669 0.837 1.625 1.654];
         
     case '189260'
-        rect = [0.923 0.741 1.656 0.929];
+        % rect = [0.923 0.741 1.656 0.929]; % BUENO
+        % rect = [0.923 0.741 1.656 1.029];
         % rect = [0.723 0.741 2.056 1.129];
+        rect = [1.023 0.741 1.756 0.929];
         
     case '213712'
         rect = [1.683 0.488 1.298 0.9960];
         
     case '265002'
-        rect = [1.6240    0.9431    2.0236    1.4136];
+        %rect = [1.6240    0.9431    2.0236    1.4136];
+        rect = [1.6240    1.0431    2.0236    1.3136];
 
     case '266844'
         % rect = [0.3531 0.6098 2.6286 2.1788];
@@ -174,13 +178,13 @@ z_ACS = z(z0p+ nz/2);
 m  = length(z0p);
 
 %% BW from spectrogram
-ratio = db2mag(-25);
+ratio = db2mag(-30);
 
 [pxx,fpxx] = pwelch(sam1-mean(sam1),nz,nz-wz,nz,fs);
 meanSpectrum = mean(pxx,2);
 meanSpectrum(1) = 0;
 [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-% % freq_L = 3e6; freq_H = 9e6;
+% freq_L = 3e6; freq_H = 9e6;
 % 
 % Plotting BW
 figure,plot(fpxx/1e6,meanSpectrum)
@@ -446,8 +450,8 @@ ylim([0.1, 3.5])
 c = colorbar;
 c.Label.String = 'dB';
 hold on
-contour(xFull,zFull,roi,1,'w--')
-contour(x,z,maskThyroid,1,'w--')
+% contour(xFull,zFull,roi,1,'w--')
+% contour(x,z,maskThyroid,1,'w--')
 hold off
 
 nexttile,
@@ -457,8 +461,8 @@ title('B-mode and attenuation map')
 hColor.Label.String = 'dB/cm/MHz';
 ylim([0.1, 3.5])
 hold on
-contour(xFull,zFull,roi,1,'w--')
-contour(x,z,maskThyroid,1,'w--')
+% contour(xFull,zFull,roi,1,'w--')
+% contour(x,z,maskThyroid,1,'w--')
 hold off
 
 colormap(t2,gray)

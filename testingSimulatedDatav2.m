@@ -1,5 +1,6 @@
 % ====================================================================== %
-% Script for testing Simulation_23_12_01 
+% Script for testing simulated 2-layer data
+% CORRECTIONS NEED TO BE MADE
 % Created on Dec, 2023
 % ====================================================================== %
 clear,clc
@@ -8,7 +9,7 @@ addpath('./functions_v7');
 addpath('./AttUtils');
 
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\Simulation_23_12_01'];
+    'Attenuation\Simulation\layered_14_11_23'];
 
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
@@ -16,23 +17,32 @@ for iAcq = 1:length(croppedFiles)
     fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 end 
 
-figDir = [baseDir,'\fig\12-19'];
+figDir = [baseDir,'\fig\24-01-31'];
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
-groundTruth = 0.8;
+groundTruthTop = [0.6,0.6,0.6];
+groundTruthBottom = [1.2,1.2,1.2];
+
+dynRange = [-40,0];
+attRange = [0.4,1.4];
+bsRange = [-15 15];
+NptodB = log10(exp(1))*20;
+
+
+muB = 10^3; muC = 10^0;
+ratioCutOff = 10;
+order = 5;
+reject = 0.1;
+extension = 3;
 
 %% Loading data
 %for iAcq = 1:length(croppedFiles)
-for iAcq = 1:4
+for iAcq = 1:2
 fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
 load(fullfile(croppedDir,croppedFiles(iAcq).name));
 load(fullfile(baseDir,'raw',croppedFiles(iAcq).name),"medium");
 
 % Plotting
-dynRange = [-40,0];
-attRange = [0.4,1.2];
-bsRange = [-15 15];
-NptodB = log10(exp(1))*20;
 
 % System of equations
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -45,55 +55,25 @@ mask = ones(m,n,p);
 
 % Creating reference
 [~,Z] = meshgrid(x_ACS,z_ACS);
-attIdeal = ones(size(Z))*groundTruth;
+attIdeal = ones(size(Z))*groundTruthTop(iAcq);
+attIdeal(Z>2) = groundTruthBottom(iAcq);
 
-figure('Units','centimeters', 'Position',[5 5 9 6]);
-imagesc(x,z,Bmode,dynRange)
-axis image
-colormap(gray)
-colorbar('westoutside')
-title('Bmode')
-
-figure('Units','centimeters', 'Position',[5 5 9 6]);
-imagesc(x,z,attIdeal,attRange)
-axis image
-colormap(turbo)
-c = colorbar('westoutside');
-c.Label.String = 'dB/cm/MHz';
-title('Ideal ACS')
-%% Standard SLD
-[u,~] = cgs(A'*A,A'*b(:),1e-6,20);
-% Standard SLD
-% BS: Beta. Attenuation coefficient slopes of blocks.
-% CS: Constants of blocks.
-BS = u(1:end/2); CS = u(end/2+1:end);
-BS = reshape(BS,m,n)*NptodB;
-CS = reshape(CS,m,n)*NptodB;
-
-figure('Units','centimeters', 'Position',[5 5 30 8]);
-tl = tiledlayout(1,3);
+figure('Units','centimeters', 'Position',[5 5 18 6]);
+tiledlayout(1,2)
 t1 = nexttile;
 imagesc(x,z,Bmode,dynRange)
 axis image
 colormap(t1,gray)
-colorbar(t1,'westoutside')
+colorbar('westoutside')
 title('Bmode')
 
 t2 = nexttile; 
-imagesc(x_ACS,z_ACS,BS, attRange)
+imagesc(x,z,attIdeal,attRange)
+axis image
 colormap(t2,turbo)
-axis image
-title('SLD')
-c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
-
-t3 = nexttile; 
-imagesc(x_ACS,z_ACS,CS, bsRange)
-colormap(t3,parula)
-axis image
-title('SLD')
-c = colorbar;
-c.Label.String = 'BS log ratio [dB]';
+c = colorbar('westoutside');
+c.Label.String = 'dB/cm/MHz';
+title('Ideal ACS')
 
 %% Spectrum
 [~,Z] = meshgrid(x_ACS,z_ACS);
@@ -108,43 +88,24 @@ fprintf('Attenuation is %.2f\n',slopeTop*NpTodB)
 bottomSLD = squeeze(sum(sum(b.*bottomLayer,1),2))/sum(bottomLayer(:));
 slopeBottom = f\bottomSLD;
 fprintf('Attenuation is %.2f\n',slopeBottom*NpTodB)
+figure,
 plot(f,topSLD)
 hold on
 plot(f,bottomSLD)
 plot(f,slopeTop*f, 'k--')
 plot(f,slopeBottom*f, 'k--')
 hold off
-
+grid on
 legend('Top','Bottom')
 
-
 %% RSLD
-muB = 10.^(1:0.5:4);
-muC = 1;
-%muC = 10.^(0:1:2);
-% switch iAcq
-%     case 1
-%         muB = 10^3; muC = 10^0.5;
-%     case 2
-%         muB = 10^4; muC = 10^2;
-%     case 3
-%         %muB = 10^3.5; muC = 10^2;
-%         muB = 10^4.5; muC = 10^3;
-%     case 4
-%         muB = 10^3.5; muC = 10^1;
-%     case 5
-%         muB = 10^3.5; muC = 10^1.5;
-%     case 6
-%         muB = 10^3.5; muC = 10^1;
-%     otherwise
-%         muB = 10^3.5; muC = 10^1.5;
-% end
-
+muB = 10.^(2:0.5:3);
+muC = 10.^(1:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
         tic
-        [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muB(mmB),muB(mmB),m,n,tol,mask(:));
+        [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
         toc
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
@@ -159,7 +120,7 @@ for mmB = 1:length(muB)
         end
     end
 end
-%%
+
 figure('Units','centimeters', 'Position',[5 5 15 6]);
 tl = tiledlayout(1,2, "Padding","tight");
 title(tl,'Isotropic RSLD')
@@ -186,11 +147,11 @@ c.Label.String = 'BS log ratio [dB]';
 top = Zq < 1.9;
 bottom = Zq > 2.1;
 
-AttInterp = interp2(X,Z,BRopt,Xq,Zq);
-r.mean = mean(AttInterp(:),"omitnan");
-r.std = std(AttInterp(:),"omitnan");
-r.bias = mean( AttInterp(:) - groundTruth,"omitnan")/groundTruth *100;
-MetricsTV(iAcq) = r;
+% AttInterp = interp2(X,Z,BRopt,Xq,Zq);
+% r.mean = mean(AttInterp(:),"omitnan");
+% r.std = std(AttInterp(:),"omitnan");
+% r.bias = mean( AttInterp(:) - groundTruth,"omitnan")/groundTruth *100;
+% MetricsTV(iAcq) = r;
 
 %% British Columbia Approach
 envelope = abs(hilbert(sam1));
@@ -220,26 +181,8 @@ figure,
 imagesc(w)
 colorbar
 %%
-muB = 10.^(3:0.5:4);
-muC = 10.^(1:1:3);
-% switch iAcq
-%     case 1
-%         muB = 10^2.5; muC = 10^0;
-%     case 2
-%         muB = 10^3.5; muC = 10^3;
-%     case 3
-%         %muB = 10^3; muC = 10^0;
-%         % muB = 10^3; muC = 10^3.5; % optimal
-%         % muB = 10^3; muC = 10^0;
-%     case 4
-%         muB = 10^3; muC = 10^0;
-%     case 5
-%         muB = 10^3; muC = 10^1.5;
-%     case 6
-%         muB = 10^3; muC = 10^0;
-%     otherwise
-%         muB = 10^3.5; muC = 10^1.5;
-% end
+muB = 10.^(2:0.5:3);
+muC = 10.^(1:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -249,33 +192,6 @@ for mmB = 1:length(muB)
         toc
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
-        
-        figure('Units','centimeters', 'Position',[5 5 22 6]);
-        tl = tiledlayout(1,3, "Padding","tight");
-        title(tl,'RSLD - SWTV by British Columbia')
-        t1 = nexttile;
-        imagesc(x_ACS,z_ACS,w, [0 1])
-        colormap(t1,parula)
-        axis image
-        title('Weights')
-        c = colorbar;
-
-        t2 = nexttile;
-        imagesc(x_ACS,z_ACS,BR, attRange)
-        colormap(t2,turbo)
-        axis image
-        title(['RSLD, \mu=',num2str(muB(mmB),2)])
-        c = colorbar;
-        c.Label.String = 'Att. [db/cm/MHz]';
-
-        t3 = nexttile;
-        imagesc(x_ACS,z_ACS,CR, bsRange)
-        colormap(t3,parula)
-        axis image
-        title(['RSLD, \mu=',num2str(muC(mmC),2)])
-        c = colorbar;
-        c.Label.String = 'BS log ratio [dB]';
-
         RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         if RMSE<minRMSE
             minRMSE = RMSE;
@@ -313,31 +229,15 @@ title(['RSLD, \mu=',num2str(muCopt,2)])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 %%
-AttInterp = interp2(X,Z,BRopt,Xq,Zq);
-r.mean = mean(AttInterp(:),"omitnan");
-r.std = std(AttInterp(:),"omitnan");
-r.bias = mean( AttInterp(:) - groundTruth,"omitnan")/groundTruth *100;
-MetricsSWTV(iAcq) = r;
+% AttInterp = interp2(X,Z,BRopt,Xq,Zq);
+% r.mean = mean(AttInterp(:),"omitnan");
+% r.std = std(AttInterp(:),"omitnan");
+% r.bias = mean( AttInterp(:) - groundTruth,"omitnan")/groundTruth *100;
+% MetricsSWTV(iAcq) = r;
 
 %% Minimizing BS log ratio
 muB = 10.^(2.5:0.5:3.5);
-muC = 10.^(-1:1:1);
-% switch iAcq
-%     case 1
-%         muB = 10^3.5; muC = 10^1;
-%     case 2
-%         muB = 10^3.5; muC = 10^1.5;
-%     case 3
-%         muB = 10^4; muC = 10^2;
-%     case 4
-%         muB = 10^3.5; muC = 10^0;
-%     case 5
-%         muB = 10^3.5; muC = 10^0.5;
-%     case 6
-%         muB = 10^4; muC = 10^1.5;
-%     otherwise
-%         muB = 10^3.5; muC = 10^1.5;
-% end
+muC = 10.^(0.5:0.5:1.5);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -378,41 +278,16 @@ title(['RSLD-TVL1, \mu=',num2str(muC(mmC),2)])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
-AttInterp = interp2(X,Z,BRopt,Xq,Zq);
-r.mean = mean(AttInterp(:),"omitnan");
-r.std = std(AttInterp(:),"omitnan");
-r.bias = mean( AttInterp(:) - groundTruth,"omitnan")/groundTruth *100;
-
-
-MetricsTVL1(iAcq) = r;
+% AttInterp = interp2(X,Z,BRopt,Xq,Zq);
+% r.mean = mean(AttInterp(:),"omitnan");
+% r.std = std(AttInterp(:),"omitnan");
+% r.bias = mean( AttInterp(:) - groundTruth,"omitnan")/groundTruth *100;
+% MetricsTVL1(iAcq) = r;
 
 %% Minimizing BS log ratio and WEIGHTS
-% First estimation
-% switch iAcq
-%     case 1
-%         muB = 10^3.5; muC = 10^1;
-%     case 2
-%         muB = 10^3.5; muC = 10^1;
-%     case 3
-%         muB = 10^4; muC = 10^1;
-%     case 4
-%         muB = 10^3.5; muC = 10^1;
-%     case 5
-%         muB = 10^3.5; muC = 10^1;
-%     case 6
-%         muB = 10^4; muC = 10^1;
-%     otherwise
-%         muB = 10^3.5; muC = 10^1;
-% end
-muB = 10^3; muC = 10^1;
 
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
-
-ratioCutOff = 6;
-order = 5;
-reject = 0.1;
-extension = 3;
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 w = movmin(w,extension);
 
@@ -423,8 +298,8 @@ bw = W*b(:);
 A1w = W*A1;
 A2w = W*A2;
 
-muB = 10.^(2.5:0.5:3.5);
-muC = 10.^(-1:1:1);
+muB = 10.^(3:0.5:4);
+muC = 10.^(1:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -474,12 +349,12 @@ c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
 
-AttInterp = interp2(X,Z,BRopt,Xq,Zq);
-r.mean = mean(AttInterp(:),"omitnan");
-r.std = std(AttInterp(:),"omitnan");
-r.bias = mean( AttInterp(:) - groundTruth,"omitnan")/groundTruth *100;
-
-MetricsWFR(iAcq) = r;
+% AttInterp = interp2(X,Z,BRopt,Xq,Zq);
+% r.mean = mean(AttInterp(:),"omitnan");
+% r.std = std(AttInterp(:),"omitnan");
+% r.bias = mean( AttInterp(:) - groundTruth,"omitnan")/groundTruth *100;
+% 
+% MetricsWFR(iAcq) = r;
 
 %%
 save_all_figures_to_directory(figDir,['sim',num2str(iAcq),'Figure']);
@@ -491,16 +366,16 @@ end
 
 %% Attenuation 
 
-results1 = struct2table(MetricsTV);
-results2 = struct2table(MetricsSWTV);
-results3 = struct2table(MetricsTVL1);
-results4 = struct2table(MetricsWFR);
-
-disp('Bias')
-disp(results1.bias)
-disp(results2.bias)
-disp(results3.bias)
-disp(results4.bias)
+% results1 = struct2table(MetricsTV);
+% results2 = struct2table(MetricsSWTV);
+% results3 = struct2table(MetricsTVL1);
+% results4 = struct2table(MetricsWFR);
+% 
+% disp('Bias')
+% disp(results1.bias)
+% disp(results2.bias)
+% disp(results3.bias)
+% disp(results4.bias)
 
 
 % 

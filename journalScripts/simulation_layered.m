@@ -3,11 +3,14 @@ addpath('./functions_v7');
 addpath('./AttUtils');
 addpath('./journalScripts/');
 
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\layered_14_11_23'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\simulations_processed\layered_14_11_23'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\layered_14_11_23'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-figDir = [baseDir,'\fig\23-01-30\BW-4to9_5'];
+figDir = 'C:\Users\sebas\Pictures\Journal2024\24-01-31';
+
 if (~exist(figDir,"dir")), mkdir(figDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -16,12 +19,44 @@ if (~exist(figDir,"dir")), mkdir(figDir); end
 
 %% Generating cropped data
 % SETTING PARAMETERS
-blocksize = 10;     % Block size in wavelengths
-% freq_L = 3.3e6; freq_H = 8.7e6;
-freq_L = 4e6; freq_H = 9.5e6;
+blocksize = 12;     % Block size in wavelengths
+freq_L = 3e6; freq_H = 8e6; % freq_L = 3.3e6; freq_H = 8.7e6;
+
 overlap_pc      = 0.8;
 ratio_zx        = 1;
 referenceAtt    = 0.7;
+
+% Weight parameters
+muB = 10^3; muC = 10^0;
+ratioCutOff = 10;
+order = 5;
+reject = 0.1;
+extension = 3;
+
+% SWTV
+aSNR = 1; bSNR = 0.1;
+desvMin = 15;
+
+% Plotting
+dynRange = [-40,0];
+attRange = [0.4,1.4];
+bsRange = [-15 15];
+NptodB = log10(exp(1))*20;
+
+% Regularization
+muBtv = 10^3; muCtv = 10^1.5;
+muBswtv = 10^2.5; muCswtv = 10^1;
+muBtvl1 = 10^3.5; muCtvl1 = 10^1.5;
+muBwfr = 10^4.5; muCwfr = 10^2;
+
+% GT
+groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
+groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
+
+% Region for attenuation imaging
+x_inf = -1.5; x_sup = 1.5;
+z_inf = 0.5; z_sup = 3.5;
+
 
 %% For looping
 % figure('Units','centimeters', 'Position',[5 5 25 8]);
@@ -37,12 +72,8 @@ x = x*1e2; % [cm]
 z = z*1e2; % [cm]
 
 sam1 = rf(:,:,1);
-dynRange = [-50,0];
 
 %% Cropping and finding sample sizes
-% Region for attenuation imaging
-x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.5; z_sup = 3.5;
 
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
@@ -72,14 +103,14 @@ z_ACS = z(z0p+ nz/2);
 m  = length(z0p);
 
 %% BW and spectrogram
-[pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
-meanSpectrum = mean(pxx,2);
-figure,plot(fpxx/1e6,meanSpectrum)
-xline([freq_L,freq_H]/1e6)
-xlim([0 15])
-xlabel('Frequency [MHz]')
-ylabel('Magnitude')
-grid on
+% [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
+% meanSpectrum = mean(pxx,2);
+% figure,plot(fpxx/1e6,meanSpectrum)
+% xline([freq_L,freq_H]/1e6)
+% xlim([0 15])
+% xlabel('Frequency [MHz]')
+% ylabel('Magnitude')
+% grid on
 
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
@@ -92,10 +123,10 @@ p = length(f);
 % dynRange = [-40 -10];
 Bmode = db(hilbert(sam1));
 Bmode = Bmode - max(Bmode(:));
-figure, imagesc(x,z,Bmode);
-axis image; colormap gray; clim(dynRange);
-hb2=colorbar; ylabel(hb2,'dB')
-xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
+% figure, imagesc(x,z,Bmode);
+% axis image; colormap gray; clim(dynRange);
+% hb2=colorbar; ylabel(hb2,'dB')
+% xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 
 
 fprintf('\nFrequency range: %.2f - %.2f MHz\n',freq_L*1e-6,freq_H*1e-6)
@@ -153,20 +184,20 @@ compensation = ( log(Sp) - log(Sd) ) - 4*L*att_ref_map;
 % Liberating memory to avoid killing my RAM
 clear Sp_ref Sd_ref
 
-%% Checking compensation
-diffraction_xz = mean(compensation,3);
-diffraction_zf = squeeze(mean(compensation,2));
-figure, tiledlayout(1,2)
-nexttile,
-imagesc(x_ACS,z_ACS,diffraction_xz, [-1 1]);
-title('Diffraction compensation'),
-xlabel('x [cm]'), ylabel('z [cm]'),
-colorbar
-nexttile,
-imagesc(f,z_ACS,diffraction_zf, [-1 1]);
-title('Diffraction compensation'),
-xlabel('f [MHz]'), ylabel('z [cm]'),
-colorbar
+% %% Checking compensation
+% diffraction_xz = mean(compensation,3);
+% diffraction_zf = squeeze(mean(compensation,2));
+% figure, tiledlayout(1,2)
+% nexttile,
+% imagesc(x_ACS,z_ACS,diffraction_xz, [-1 1]);
+% title('Diffraction compensation'),
+% xlabel('x [cm]'), ylabel('z [cm]'),
+% colorbar
+% nexttile,
+% imagesc(f,z_ACS,diffraction_zf, [-1 1]);
+% title('Diffraction compensation'),
+% xlabel('f [MHz]'), ylabel('z [cm]'),
+% colorbar
 
 
 %% Spectrum
@@ -189,14 +220,6 @@ for jj=1:n
 end
 
 %% Setting Up
-groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];
-groundTruthBottom = [1.2,1.2,1.2,0.6,0.6,0.6];
-
-% Plotting
-dynRange = [-40,0];
-attRange = [0.4,1.4];
-bsRange = [-15 15];
-NptodB = log10(exp(1))*20;
 
 % System of equations
 b = (log(Sp) - log(Sd)) - (compensation);
@@ -214,8 +237,7 @@ attIdeal(Z<=2) = groundTruthTop(iAcq);
 attIdeal(Z>2) = groundTruthBottom(iAcq);
 
 %% TV
-muB = 10^3; muC = 10^0.5;
-[Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muB,muC,m,n,tol,mask(:));
+[Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
 BRTV = reshape(Bn*NptodB,m,n);
 CRTV = reshape(Cn*NptodB,m,n);
 
@@ -256,13 +278,10 @@ end
 % Calculating weights
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
-aSNR = 1; bSNR = 0.1;
-desvMin = 15;
 wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % Method
-muB = 10^2.5; muC = 10^0;
-[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muB,muC,...
+[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv,...
 m,n,tol,mask(:),wSNR);
 BRSWTV = reshape(Bn*NptodB,m,n);
 CRSWTV = reshape(Cn*NptodB,m,n);
@@ -281,8 +300,7 @@ r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsSWTV(iAcq) = r;
 
 %% TVL1
-muB = 10^3.5; muC = 10^1.25;
-[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB,muC,m,n,tol,mask(:));
+[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBtvl1,muCtvl1,m,n,tol,mask(:));
 BRTVL1 = reshape(Bn*NptodB,m,n);
 CRTVL1 = reshape(Cn*NptodB,m,n);
 
@@ -300,12 +318,11 @@ r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsTVL1(iAcq) = r;
 
 %% WFR
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
+bscMap = reshape(Cn*NptodB,m,n);
+
 % Computing weights
-ratioCutOff = 6;
-order = 5;
-reject = 0.3;
-extension = 3;
-w = (1-reject)*(1./((CRTVL1/ratioCutOff).^(2*order) + 1))+reject;
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 w = movmin(w,extension);
 
 % Setting up new system
@@ -316,8 +333,7 @@ A1w = W*A1;
 A2w = W*A2;
 
 % Method
-muB = 10^4.5; muC = 10^2;
-[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muB,muC,m,n,tol,mask(:),w);
+[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 BRWFR = reshape(Bn*NptodB,m,n);
 CRWFR = reshape(Cn*NptodB,m,n);
 
