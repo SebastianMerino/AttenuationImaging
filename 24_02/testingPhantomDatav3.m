@@ -4,14 +4,19 @@
 % ======================================================================
 %% PHANTOMSSS
 clear, clc
-addpath('./functions_v7');
-addpath('./AttUtils');
+close all
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
+
 rawFiles = dir([targetDir,'\*.rf']);
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
 targetFiles = dir([targetDir,'\*.mat']);
 
 resultsDir = fullfile(targetDir,'results','24-02-12','TEST');
@@ -20,15 +25,17 @@ tableName = 'phantoms.xlsx';
 
 %% Constants
 blocksize = 8;     % Block size in wavelengths
-freq_L = 3e6; freq_H = 8e6;
+ratio_zx        = 2;
+
+% freq_L = 2.7e6; freq_H = 7.7e6;
+% freq_L = 3e6; freq_H = 6e6;
 % freq_C = mean([freq_L freq_H]);
 freq_C = 4.5e6;
 overlap_pc      = 0.8;
-ratio_zx        = 2;
 x_inf = 0.1; x_sup = 3.8;
 z_inf = 0.2; z_sup = 3.5;
 NptodB = log10(exp(1))*20;
-freqCutOff = db2mag(-15); % 13 is ok
+freqCutOff = db2mag(-20); % 15 is VERY GOOD
 
 % Weights SWTV
 aSNR = 1; bSNR = 0.1;
@@ -76,19 +83,15 @@ switch mod(iAcq,3)
 
 end
 
-%%
+%% Setting up
+% Loading data
 fprintf("Phantom no. %i, %s\n",iAcq,targetFiles(iAcq).name);
 load(fullfile(targetDir,targetFiles(iAcq).name));
-
-fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 dx = x(2)-x(1);
 dz = z(2)-z(1);
 x = x*1e2; % [cm]
 z = z*1e2; % [cm]
-
 sam1 = RF(:,:,1);
-
-%% Cropping and finding sample sizes
 
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
@@ -121,7 +124,6 @@ m  = length(z0p);
 % Selecting BW 
 windowing = tukeywin(nz/2,0.25);
 NFFT = 2^(nextpow2(nz/2)+2);
-% [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs); % round(nz*overlap_pc)
 [pxx,fpxx] = pwelch(sam1-mean(sam1),windowing,round(nz/4),NFFT,fs);
 meanSpectrum = mean(pxx,2);
 meanSpectrum = meanSpectrum./max(meanSpectrum);
@@ -250,16 +252,6 @@ backAcs = (X - c1x).^2 + (Z - c1z).^2 >= (rInc+0.1)^2;
 meanSpect = db(( abs(Sp) + abs(Sd) )/ 2);
 meanSpect = meanSpect - max(meanSpect(:));
 
-% %% Spectrum Animation
-% figure,
-% for iFreq = 1:size(Sp,3)
-%     % imagesc(x_ACS,z_ACS,incAcs.*meanSpect(:,:,iFreq), [-70 0])
-%     imagesc(x_ACS,z_ACS,backAcs.*meanSpect(:,:,iFreq), [-70 0])
-%     axis image
-%     colorbar
-%     title(num2str(f(iFreq)))
-%     pause(0.1)
-% end
 %% Spectrum
 test = reshape(meanSpect(repmat(incAcs,1,1,p)),sum(incAcs(:)),p);
 spectInc = mean(test);
@@ -282,6 +274,7 @@ plot(f,spectBack)
 ylim([-20 0])
 grid on
 title('Spectrum at background')
+
 
 %% SLD
 
@@ -526,17 +519,16 @@ rectangle('Position',[x0mask+roiL+roiD z0mask roiL/2 roiLz],...
     'LineStyle','--', 'LineWidth',1)
 hold off
 %%
-save_all_figures_to_directory(resultsDir,['phantom',num2str(iAcq),'fig']);
-close all
+% save_all_figures_to_directory(resultsDir,['phantom',num2str(iAcq),'fig']);
+% close all
 
 
-%%
-results1 = struct2table(MetricsTV);
-results2 = struct2table(MetricsTVL1);
-results3 = struct2table(MetricsWFR);
-
-T = [results1;results2;results3];
-writetable(T,fullfile(resultsDir,tableName),...
-     'WriteRowNames',true);
+% results1 = struct2table(MetricsTV);
+% results2 = struct2table(MetricsTVL1);
+% results3 = struct2table(MetricsWFR);
+% 
+% T = [results1;results2;results3];
+% writetable(T,fullfile(resultsDir,tableName),...
+%      'WriteRowNames',true);
 
 %%

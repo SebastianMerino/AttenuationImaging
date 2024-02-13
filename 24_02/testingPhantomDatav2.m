@@ -3,22 +3,28 @@
 % ======================================================================
 %% PHANTOMSSS
 clear, clc
-addpath('./functions_v7');
-addpath('./AttUtils');
+close all
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+
 rawFiles = dir([targetDir,'\*.rf']);
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
 targetFiles = dir([targetDir,'\*.mat']);
 
-resultsDir = fullfile(targetDir,'results','24-02-13','BS_8_12-BW_3_6');
+resultsDir = fullfile(targetDir,'results','24-02-13','BS_8_12-BW_2o9_7o8');
 if ~exist("resultsDir","dir"); mkdir(resultsDir); end
 tableName = 'phantoms.xlsx';
 
 %% Constants
 blocksize = 8;     % Block size in wavelengths
+ratio_zx        = 12/8;
+
 % freq_L = 2.6e6; freq_H = 7.7e6;
 freq_L = 3e6; freq_H = 6e6;
 % freq_C = mean([freq_L freq_H]);
@@ -26,7 +32,6 @@ freq_C = 4.5e6;
 freqCutOff = db2mag(-15);
 
 overlap_pc      = 0.8;
-ratio_zx        = 12/8;
 x_inf = 0.1; x_sup = 3.8;
 z_inf = 0.2; z_sup = 3.5;
 NptodB = log10(exp(1))*20;
@@ -126,7 +131,7 @@ NFFT = 2^(nextpow2(nz/2)+2);
 meanSpectrum = mean(pxx,2);
 meanSpectrum = meanSpectrum./max(meanSpectrum);
 figure,plot(fpxx/1e6,db(meanSpectrum))
-% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, freqCutOff);
+[freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, freqCutOff);
 xline([freq_L,freq_H]/1e6)
 xline(freq_C/1e6, 'k--')
 xlim([0 10])
