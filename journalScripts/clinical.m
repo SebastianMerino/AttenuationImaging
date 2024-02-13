@@ -12,35 +12,46 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\REFERENCES'];
 
-resultsDir = '.\24-01-31';
-if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
-tableName = 'journal-fixedBW-BS10.xlsx';
+tableName = 'clinical.xlsx';
 
-figDir = 'C:\Users\sebas\Pictures\Journal2024\24-01-31\fixedBW-BS10';
-if (~exist(figDir,"dir")), mkdir(figDir); end
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-13\BS_8_12';
+if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 T = readtable('params.xlsx');
 %%
-blocksize = 10;     % Block size in wavelengths
+blocksize = 8;     % Block size in wavelengths
 fixedBW = true;
 ratio = db2mag(-30);
 freq_L = 3.5e6; freq_H = 8e6;
 % freq_L = 3e6; freq_H = 9e6;
 overlap_pc      = 0.8;
-ratio_zx        = 1;
+ratio_zx        = 12/8;
 
 % weights
-muB0 = 1e3; muC0 = 10^0;
-ratioCutOff     = 10;
-order = 5;
-reject = 0.2;
-extension = 3; % 1 or 3
+% muB0 = 1e3; muC0 = 10^0;
+% ratioCutOff     = 10;
+% order = 5;
+% reject = 0.2;
+% extension = 3; % 1 or 3
 
 % reg
 muBtv = 10^3; muCtv = 10^1;
 muBswtv = 10^2.5; muCswtv = 10^0.5;
 muBtvl1 = 10^3; muCtvl1 = 10^0;
 muBwfr = 10^3; muCwfr = 10^0;
+
+% ================= NEW THINGS  BS 6X12 ==============
+% muBtv = 10^3.5; muCtv = 10^1.5;
+% muBswtv = 10^3; muCswtv = 10^1;
+% muBtvl1 = 10^3.5; muCtvl1 = 10^0.5;
+% muBwfr = 10^3.5; muCwfr = 10^0.5;
+
+muB0 = 10^3; muC0 = 10^0;
+ratioCutOff     = 10;
+order = 5;
+reject = 0.2;
+extension = 3; % 1 or 3
+% =============================================
 
 % swtv weights
 aSNR = 1; bSNR = 0.1;
@@ -92,7 +103,9 @@ switch patient
     case '189260'
         % rect = [0.923 0.741 1.656 0.929];
         % rect = [0.723 0.741 2.056 1.129];
-        rect = [1.023 0.741 1.756 0.929];
+        % rect = [1.023 0.741 1.756 0.929]; % EL BUENO 31-01
+        rect = [0.923 0.741 2.056 0.929]; 
+
 
     case '213712'
         rect = [1.683 0.488 1.298 0.9960];
@@ -177,7 +190,7 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -352,6 +365,39 @@ A2w = W*A2;
 BRWFR = reshape(Bn*NptodB,m,n);
 
 %%
+figure('Units','centimeters', 'Position',[5 5 30 8]);
+tl = tiledlayout(1,3, 'TileSpacing','tight');
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,bscMap, [-20 20])
+colormap(t2,parula)
+axis equal tight
+title('TV')
+% subtitle(['\mu_b=',num2str(muBtv,2),', \mu_c=',num2str(muCtv,2)])
+c = colorbar;
+c.Label.String = '\Delta BSC [db/cm]';
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,w, [0 1])
+colormap(t2,parula)
+axis equal tight
+title('SWTV')
+% subtitle(['\mu_b=',num2str(muBwfr,2),', \mu_c=',num2str(muCwfr,2)])
+c = colorbar;
+c.Label.String = '[a.u.]';
+
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,BRWFR, attRange)
+colormap(t2,turbo)
+axis equal tight
+title('WFR')
+% subtitle(['\mu_b=',num2str(muBtvl1,2),', \mu_c=',num2str(muCtvl1,2)])
+c = colorbar;
+c.Label.String = 'ACS [db/cm/MHz]';
+
+
+%%
 figure('Units','centimeters', 'Position',[5 5 12 12]);
 tl = tiledlayout(2,2);
 title(tl,{'Comparison'})
@@ -465,7 +511,7 @@ ylabel('z [cm]')
 
 
 %%
-save_all_figures_to_directory(figDir,['pat',patient,'fig']);
+save_all_figures_to_directory(resultsDir,['pat',patient,'fig']);
 close all
 
 end

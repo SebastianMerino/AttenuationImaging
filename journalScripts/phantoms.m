@@ -2,7 +2,6 @@
 % ======================================================================
 %% PHANTOMSSS
 clear, clc
-figDir = 'C:\Users\sebas\Pictures\Journal2024\24-01-31';
 targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID316V2\06-08-2023-Generic'];
 rawFiles = dir([targetDir,'\*.rf']);
@@ -10,11 +9,17 @@ refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID544V2\06-08-2023-Generic'];
 targetFiles = dir([targetDir,'\*.mat']);
 
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-13\BS_8_12-BW-2.6-7.7';
+if ~exist("resultsDir","dir"); mkdir(resultsDir); end
+tableName = 'phantoms.xlsx';
+
 %% Constants
-blocksize = 12;     % Block size in wavelengths
-freq_L = 3e6; freq_H = 8e6;
+blocksize = 8;     % Block size in wavelengths
+freq_L = 2.6e6; freq_H = 7.7e6;
+freq_C = 5e6;
+
 overlap_pc      = 0.8;
-ratio_zx        = 1;
+ratio_zx        = 12/8;
 x_inf = 0.1; x_sup = 3.8;
 z_inf = 0.2; z_sup = 3.5;
 NptodB = log10(exp(1))*20;
@@ -35,30 +40,33 @@ groundTruthTargets = [0.97,0.95,0.95,0.55];
 % Plotting constants
 dynRange = [-50,0];
 attRange = [0.4,1.1];
-bsRange = [-2 2];
 
 tol = 1e-3;
 
+c1x = 1.95; c1z = 1.93;
+roiL = 1; roiD = 0.6;
+roiLz = 1.5;
 %% For looping each phantom
 
 for iAcq = 1:3
 switch iAcq
+    % Optimal reg for BS 8x12
     case 1
-        muTV = 10^3; mu2TV = 10^2.5;
-        muWTV = 10^3; mu2WTV = 10^3;
-        muTik = 10^3; mu2Tik = 10^1.5;
-        muWTik = 10^3.5; mu2WTik = 10^2.5;
+        muTV = 10^3.5; mu2TV = 10^3;
+        muWTV = 10^3; mu2WTV = 10^2;
+        muTik = 10^3.5; mu2Tik = 10^2;
+        muWTik = 10^3.5; mu2WTik = 10^2;
     case 2
         muTV = 10^3.5; mu2TV = 10^2;
-        muWTV = 10^2.5; mu2WTV = 10^2;
-        muTik = 10^3; mu2Tik = 10^0.5;
-        % muWTik = 10^4; mu2WTik = 10^1.5;
-        muWTik = 10^3.5; mu2WTik = 10^1;
+        muWTV = 10^3; mu2WTV = 10^0;
+        muTik = 10^3.5; mu2Tik = 10^1;
+        muWTik = 10^4; mu2WTik = 10^1;
     case 3
-        muTV = 10^3; mu2TV = 10^0.5;
-        muWTV = 10^3; mu2WTV = 10^1.5;
-        muWTik = 10^3.5; mu2WTik = 10^1;
+        muTV = 10^3; mu2TV = 10^1;
+        muWTV = 10^2.5; mu2WTV = 10^0;
         muTik = 10^3; mu2Tik = 10^0;
+        muWTik = 10^3.5; mu2WTik = 10^1;
+
 end
 
 %%
@@ -85,7 +93,7 @@ sam1 = sam1(ind_z,ind_x);
 
 % Wavelength size
 c0 = 1540;
-wl = c0/mean([freq_L freq_H]);   % Wavelength (m)
+wl = c0/mean(freq_C);   % Wavelength (m)
 
 % Lateral samples
 wx = round(blocksize*wl*(1-overlap_pc)/dx);  % Between windows
@@ -96,12 +104,22 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
 z_ACS = z(z0p+ nz/2);
 m  = length(z0p);
+
+% [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
+% meanSpectrum = mean(pxx,2);
+% figure,plot(fpxx/1e6,meanSpectrum)
+% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, 0.1);
+% xline([freq_L,freq_H]/1e6)
+% xlim([0 15])
+% xlabel('Frequency [MHz]')
+% ylabel('Magnitude')
+% grid on
 
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
@@ -123,7 +141,7 @@ fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 
 
 %% Generating Diffraction compensation
-if iAcq == 1
+if true %iAcq == 1
     % Generating references
     att_ref = 0.53*f/8.686; % From phantom especifications
     att_ref_map = zeros(m,n,p);
@@ -193,16 +211,13 @@ for jj=1:n
 end
 
 %% ROI selection
-c1x = 1.95; c1z = 1.93;
-roiL = 1; roiD = 0.6;
-roiLz = 1.2;
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
 % rI = 0.6; rB = 1.2; % Both
 % inc = (Xq - c1x).^2 + (Zq - c1z).^2 < rI^2;
 % back = (Xq - c1x).^2 + (Zq - c1z).^2 > rB^2;
 x0mask = c1x - roiL/2; 
-z0mask = c1z - roiL/2;
+z0mask = c1z - roiLz/2;
 [back,inc] = getRegionMasks(x,z,c1x,c1z,roiL,roiD,roiLz);
 
 % Setting up
@@ -224,10 +239,10 @@ r.meanInc = mean(AttInterp(inc),"omitnan");
 r.stdInc = std(AttInterp(inc),"omitnan");
 r.meanBack = mean(AttInterp(back),"omitnan");
 r.stdBack = std(AttInterp(back),"omitnan");
-r.rmseInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
-    "omitnan") ;
-r.rmseBack = mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
-    "omitnan");
+r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") );
+r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
+    "omitnan") );
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
@@ -267,10 +282,10 @@ r.meanInc = mean(AttInterp(inc),"omitnan");
 r.stdInc = std(AttInterp(inc),"omitnan");
 r.meanBack = mean(AttInterp(back),"omitnan");
 r.stdBack = std(AttInterp(back),"omitnan");
-r.rmseInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
-    "omitnan") ;
-r.rmseBack = mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
-    "omitnan");
+r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") );
+r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
+    "omitnan") );
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
@@ -289,10 +304,10 @@ r.meanInc = mean(AttInterp(inc),"omitnan");
 r.stdInc = std(AttInterp(inc),"omitnan");
 r.meanBack = mean(AttInterp(back),"omitnan");
 r.stdBack = std(AttInterp(back),"omitnan");
-r.rmseInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
-    "omitnan") ;
-r.rmseBack = mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
-    "omitnan");
+r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") );
+r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
+    "omitnan") );
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
@@ -312,7 +327,7 @@ A2w = W*A2;
 
 % Regularization: Au = b
 tic
-[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muWTik,mu2WTik,m,n,tol,mask(:),w);
+[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muWTik*4,mu2WTik*4,m,n,tol,mask(:),w);
 toc
 BRWTik = (reshape(Bn*NptodB,m,n));
 CRWTik = (reshape(Cn,m,n));
@@ -322,10 +337,10 @@ r.meanInc = mean(AttInterp(inc),"omitnan");
 r.stdInc = std(AttInterp(inc),"omitnan");
 r.meanBack = mean(AttInterp(back),"omitnan");
 r.stdBack = std(AttInterp(back),"omitnan");
-r.rmseInc = mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
-    "omitnan") ;
-r.rmseBack = mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
-    "omitnan");
+r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") );
+r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
+    "omitnan") );
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
@@ -412,7 +427,7 @@ hold off
 end
 
 %%
-save_all_figures_to_directory(figDir,'phantom');
+save_all_figures_to_directory(resultsDir,'phantom');
 close all
 %%
 results1 = struct2table(MetricsTV);
@@ -449,4 +464,8 @@ disp(results1.cnr)
 disp(results2.cnr)
 disp(results3.cnr)
 disp(results4.cnr)
+
+T = [results1;results2;results3;results4];
+writetable(T,fullfile(resultsDir,tableName),...
+     'WriteRowNames',true);
 %%

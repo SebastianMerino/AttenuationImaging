@@ -9,21 +9,22 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\layered_14_11_23'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-figDir = 'C:\Users\sebas\Pictures\Journal2024\24-01-31';
 
-if (~exist(figDir,"dir")), mkdir(figDir); end
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-07\BS_8_12';
+if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
 refFiles = dir([refDir,'\rf*.mat']);
-if (~exist(figDir,"dir")), mkdir(figDir); end
+
+tableName = 'simuLayered.xlsx';
 
 %% Generating cropped data
 % SETTING PARAMETERS
-blocksize = 12;     % Block size in wavelengths
+blocksize = 8;     % Block size in wavelengths
 freq_L = 3e6; freq_H = 8e6; % freq_L = 3.3e6; freq_H = 8.7e6;
 
 overlap_pc      = 0.8;
-ratio_zx        = 1;
+ratio_zx        = 12/8;
 referenceAtt    = 0.7;
 
 % Weight parameters
@@ -95,7 +96,7 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -450,7 +451,7 @@ c.Label.String = '[a.u.]';
 
 
 %%
-save_all_figures_to_directory(figDir,'layeredSimFig');
+save_all_figures_to_directory(resultsDir,'layeredSimFig');
 close all
 
 %%
@@ -490,5 +491,8 @@ disp(results3.cnr)
 disp(results4.cnr)
 
 
+T = [results1;results2;results3;results4];
+writetable(T,fullfile(resultsDir,tableName),...
+     'WriteRowNames',true);
 
 %%

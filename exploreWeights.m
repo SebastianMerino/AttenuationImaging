@@ -15,21 +15,22 @@ refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 T = readtable('params.xlsx');
 
-figDir = [baseDir,'\fig\24-01-23\uniqueBW-W1-4'];
+figDir = [baseDir,'\fig\24-02-07\BS_8_12'];
 if (~exist("figDir","dir")), mkdir(figDir); end
 
 
-blocksize = 12;     % Block size in wavelengths
+% blocksize = 8;     % Block size in wavelengths
+blocksize = 8;     % Block size in wavelengths
 freq_L = 3.5e6; freq_H = 8e6;
 overlap_pc      = 0.8;
-ratio_zx        = 1;
+ratio_zx        = 12/8;
 
 weightMap = 1;
 
 ratioCutOff     = 10;
 order = 2;
-reject = 0.1;
-extension = 1; % 1 or 3
+reject = 0.2;
+extension = 3; % 1 or 3
 
 muBtv = 10^3; muCtv = 10^1;
 muBtvl1 = 10^3; muCtvl1 = 10^0;
@@ -100,7 +101,8 @@ switch patient
         wSano = 0.5; hSano = 0.5; 
         
     case '189260'
-        rect = [0.923 0.741 1.656 0.929];
+        % rect = [0.923 0.741 1.656 0.929]; % EL BUENO
+        rect = [0.923 0.741 2.056 0.929]; 
         % rect = [0.723 0.741 2.056 1.129];
         x0Tumor = 1.8; z0Tumor = 0.9;
         wTumor = 0.5; hTumor = 0.4;
@@ -131,8 +133,6 @@ switch patient
         rect = [];
 end
 %%
-
-
 out =lectura_OK(samPath);
 sam1 = out.RF(:,:,1);
 fs = out.fs;
@@ -202,7 +202,7 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -217,14 +217,14 @@ ratio = db2mag(-30);
 meanSpectrum = mean(pxx,2);
 meanSpectrum(1) = 0;
 [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-% % freq_L = 3e6; freq_H = 9e6;
-% 
-% % Plotting BW
-% figure,plot(fpxx/1e6,meanSpectrum)
-% yline(max(meanSpectrum)*ratio)
-% xline([freq_L,freq_H]/1e6)
-% xlabel('Frequency [MHz]')
-% ylabel('Magnitude')
+freq_L = 3.5e6; freq_H = 8e6;
+
+% Plotting BW
+figure,plot(fpxx/1e6,meanSpectrum)
+yline(max(meanSpectrum)*ratio)
+xline([freq_L,freq_H]/1e6)
+xlabel('Frequency [MHz]')
+ylabel('Magnitude')
 
 
 NFFT = 2^(nextpow2(nz/2)+2);
@@ -353,11 +353,8 @@ elseif weightMap ==3
             zp = z0p(ii);
             zd = z0d(ii);
     
-            sub_block_p = envelope(zp:zp+nz/2-1,xw:xw+nx-1);
-            sub_block_d = envelope(zd:zd+nz/2-1,xw:xw+nx-1);
-    
-            temp = [sub_block_p(:) sub_block_d(:)];
-            SNR(ii,jj) = mean(temp)/std(temp);
+            block = envelope(zp:zd+nz/2-1,xw:xw+nx-1);
+            SNR(ii,jj) = mean(block(:))/std(block(:));
         end
     end
     

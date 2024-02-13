@@ -17,22 +17,24 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-figDir = 'C:\Users\sebas\Pictures\Journal2024\24-01-31';
-if (~exist(figDir,"dir")), mkdir(figDir); end
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-08\BS_4_12';
+tableName = 'simuInc.xlsx';
+if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
+targetFiles = targetFiles(2:3);
 refFiles = dir([refDir,'\rf*.mat']);
 
-if (~exist(figDir,"dir")), mkdir(figDir); end
+if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 %% Generating cropped data
 % SETTING PARAMETERS
-blocksize = 12;     % Block size in wavelengths
+blocksize = 4;     % Block size in wavelengths
 freq_L = 3e6; freq_H = 8e6; % GOOD
 % freq_L = 3e6; freq_H = 9e6; % Also GOOD
 
 overlap_pc      = 0.8;
-ratio_zx        = 1;
+ratio_zx        = 3;
 referenceAtt    = 0.6;
 
 % Weights SWTV
@@ -46,8 +48,12 @@ order = 5;
 reject = 0.1;
 extension = 3;
 
-groundTruthThyroid = [0.6,1.5];
-groundTruthNodule = [1.2,0.8];
+% groundTruthThyroid = [0.6,1.5];
+% groundTruthNodule = [1.2,0.8];
+groundTruthThyroid = [0.8,1.5];
+groundTruthNodule = [1.5,0.8];
+
+attRange = [0.6 1.7];
 
 % Plotting
 dynRange = [-40,0];
@@ -63,20 +69,34 @@ for iAcq = 1:2
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
 % Regularization
+% switch iAcq
+%     case 1
+%         muBtv = 10^3; muCtv = 10^1;
+%         muBswtv = 10^2.5; muCswtv = 10^0;
+%         muBtvl1 = 10^3; muCtvl1 = 10^0;
+%         muBwfr = 10^3.5; muCwfr = 10^1;
+%         attRange = [0.4 1.4];
+%     case 2
+%         muBtv = 10^3; muCtv = 10^1;
+%         muBswtv = 10^2.5; muCswtv = 10^0;
+%         muBtvl1 = 10^3; muCtvl1 = 10^0;
+%         % muBwfr = 10^2.5; muCwfr = 10^-0.5;
+%         muBwfr = 10^3; muCwfr = 10^0;
+%         attRange = [0.6 1.7];
+% end
 switch iAcq
+    % OPTIMAL WEIGHTS FOR BS 8x12
     case 1
         muBtv = 10^3; muCtv = 10^1;
         muBswtv = 10^2.5; muCswtv = 10^0;
         muBtvl1 = 10^3; muCtvl1 = 10^0;
-        muBwfr = 10^3.5; muCwfr = 10^1;
-        attRange = [0.4 1.4];
+        muBwfr = 10^3.5; muCwfr = 10^1.5;
     case 2
         muBtv = 10^3; muCtv = 10^1;
         muBswtv = 10^2.5; muCswtv = 10^0;
         muBtvl1 = 10^3; muCtvl1 = 10^0;
-        % muBwfr = 10^2.5; muCwfr = 10^-0.5;
-        muBwfr = 10^3; muCwfr = 10^0;
-        attRange = [0.6 1.7];
+        muBwfr = 10^3; muCwfr = 10^-0.5;
+        % muBwfr = 10^3; muCwfr = 10^1.5;
 end
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
@@ -112,7 +132,7 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -338,14 +358,15 @@ bscMap = reshape(Cn*NptodB,m,n);
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 w = movmin(w,extension);
 
-%%
-w = ones(size(BRWFR));
-borderMask = (Z-cz).^2 + (X-cx).^2 <= (rInc-0.1)^2 | ...
-    (Z-cz).^2 + (X-cx).^2 >= (rInc+0.1)^2 ;
-w(borderMask) = 1;
-w(~borderMask) = 0.1;
-
-figure, imagesc(w)
+% %%
+% w = ones(size(BRTVL1));
+% borderMask = (Z-cz).^2 + (X-cx).^2 <= (rInc-0.15)^2 | ...
+%     (Z-cz).^2 + (X-cx).^2 >= (rInc+0.15)^2 ;
+% w(borderMask) = 1;
+% w(~borderMask) = 0.1;
+% w(18:24,:) = 1;
+% 
+% figure, imagesc(x_ACS,z_ACS,w)
 %% -------
 % Setting up new system
 W = repmat(w,[1 1 p]);
@@ -355,8 +376,7 @@ A1w = W*A1;
 A2w = W*A2;
 
 % Method
-% [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
-[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr*3,muCwfr,m,n,tol,mask(:),w);
+[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr*2,muCwfr*2,m,n,tol,mask(:),w);
 BRWFR = reshape(Bn*NptodB,m,n);
 CRWFR = reshape(Cn*NptodB,m,n);
 
@@ -372,6 +392,37 @@ r.rmseTop = sqrt(mean( (AttInterp(thyroidMask) - groundTruthThyroid(iAcq)).^2,"o
 r.rmseBottom = sqrt(mean( (AttInterp(noduleMask) - groundTruthNodule(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsWFR(iAcq) = r;
+
+% TESTING
+%% Plotting
+figure('Units','centimeters', 'Position',[5 5 20 8]);
+tl = tiledlayout(1,3, "Padding","tight");
+
+t1 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+axis equal
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+colormap(t1,gray)
+colorbar(t1, 'eastoutside')
+title('Bmode')
+
+t3 = nexttile; 
+imagesc(x_ACS,z_ACS,w, [0 1])
+colormap(t3,parula)
+axis image
+title('Weights')
+c = colorbar;
+c.Label.String = '[a.u.]';
+
+t4 = nexttile; 
+imagesc(x_ACS,z_ACS,BRWFR, attRange)
+colormap(t4,turbo)
+axis image
+title('WFR')
+c = colorbar;
+c.Label.String = 'Att. [db/cm/MHz]';
+
 
 %% Plotting
 figure('Units','centimeters', 'Position',[5 5 25 4]);
@@ -448,7 +499,7 @@ axis equal
 xlim([x_ACS(1) x_ACS(end)]),
 ylim([z_ACS(1) z_ACS(end)]),
 colormap(t1,gray)
-colorbar(t1, 'westoutside')
+colorbar(t1, 'eastoutside')
 title('Bmode')
 
 t2 = nexttile; 
@@ -467,18 +518,18 @@ title('Weights')
 c = colorbar;
 c.Label.String = '[a.u.]';
 
-%%
-figure,
-[~,hB,hColor] = imOverlayInterp(Bmode,w,[-50 0],[0 1],0.2,...
-    x_ACS,z_ACS,ones(size(Bmode)),x,z);
-colormap(hot)
+
+% figure,
+% [~,hB,hColor] = imOverlayInterp(Bmode,w,[-50 0],[0 1],0.2,...
+%     x_ACS,z_ACS,ones(size(Bmode)),x,z);
+% colormap(hot)
 
 
 end
 
 
 %%
-save_all_figures_to_directory(figDir,'thyroidSimFig');
+save_all_figures_to_directory(resultsDir,'thyroidSimFig');
 close all
 
 %%
@@ -518,5 +569,8 @@ disp(results3.cnr)
 disp(results4.cnr)
 
 
+T = [results1;results2;results3;results4];
+writetable(T,fullfile(resultsDir,tableName),...
+     'WriteRowNames',true);
 
 %%

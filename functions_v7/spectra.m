@@ -29,5 +29,6 @@ if all(saran_layer)
     spect = spect./saran_layer;
 end
 
-psnr_Sp = 10*log10(max(spect)./spect(end/2,:)); 
+% psnr_Sp = 10*log10(max(spect)./spect(end/2,:)); 
+psnr_Sp = mean(log(spect),2);
 end
