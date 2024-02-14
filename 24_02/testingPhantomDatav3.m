@@ -3,7 +3,8 @@
 % Jan 12, 2024
 % ======================================================================
 %% PHANTOMSSS
-clear, clc
+clear,
+% clc
 close all
 
 % targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
@@ -19,23 +20,26 @@ targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 rawFiles = dir([targetDir,'\*.rf']);
 targetFiles = dir([targetDir,'\*.mat']);
 
-resultsDir = fullfile(targetDir,'results','24-02-12','TEST');
+resultsDir = fullfile(targetDir,'results','24-02-14','TEST');
 if ~exist("resultsDir","dir"); mkdir(resultsDir); end
 tableName = 'phantoms.xlsx';
 
 %% Constants
 blocksize = 8;     % Block size in wavelengths
-ratio_zx        = 2;
+ratio_zx        = 12/8;
 
 % freq_L = 2.7e6; freq_H = 7.7e6;
 % freq_L = 3e6; freq_H = 6e6;
-% freq_C = mean([freq_L freq_H]);
+% freq_L = 2.5e6; freq_H = 7.5e6;
+freq_L = 2.5e6; freq_H = 7.5e6;
+fixedBW = true;
 freq_C = 4.5e6;
+
 overlap_pc      = 0.8;
 x_inf = 0.1; x_sup = 3.8;
 z_inf = 0.2; z_sup = 3.5;
 NptodB = log10(exp(1))*20;
-freqCutOff = db2mag(-20); % 15 is VERY GOOD
+freqCutOff = db2mag(-15); % 15 is VERY GOOD
 
 % Weights SWTV
 aSNR = 1; bSNR = 0.1;
@@ -62,7 +66,7 @@ roiL = 1; roiD = 0.6;
 roiLz = 1.5;
 %% For looping each phantom
 
-iAcq = 8;
+iAcq = 4;
 switch mod(iAcq,3)
     % Optimal reg for BS 8x12
     case 0
@@ -71,10 +75,15 @@ switch mod(iAcq,3)
         muBtvl1 = 10^3.5; muCtvl1 = 10^2;
         muBwfr = 10^3.5; muCwfr = 10^2;
     case 1
-        muBtv = 10^3.5; muCtv = 10^2;
-        muWTV = 10^3; mu2WTV = 10^0;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
-        muBwfr = 10^4; muCwfr = 10^1;
+%         muBtv = 10^3.5; muCtv = 10^2;
+%         muWTV = 10^3; mu2WTV = 10^0;
+%         muBtvl1 = 10^3.5; muCtvl1 = 10^1;
+%         muBwfr = 10^4; muCwfr = 10^1;
+        muBtv = 10^3; muCtv = 10^1;
+        muWTV = 10^2.5; mu2WTV = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^0;
+        muBwfr = 10^3.5; muCwfr = 10^1;
+
     case 2
         muBtv = 10^3; muCtv = 10^1;
         muWTV = 10^2.5; mu2WTV = 10^0;
@@ -93,6 +102,37 @@ x = x*1e2; % [cm]
 z = z*1e2; % [cm]
 sam1 = RF(:,:,1);
 
+% %%
+% rect = [];
+% BmodeFull = db(hilbert(sam1));
+% BmodeFull = BmodeFull - max(BmodeFull(:));
+% 
+% if isempty(rect)
+%     % Manual cropping
+%     dynRange = [-50,-10];
+%     figure('Units','centimeters', 'Position',[5 5 15 15]),
+%     imagesc(x,z,BmodeFull,dynRange); axis image; 
+%     colormap gray; clim(dynRange);
+%     hb2=colorbar; ylabel(hb2,'dB')
+%     xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
+%     ylim([0.1 3.5])
+%     
+%     confirmation = '';
+%     while ~strcmp(confirmation,'Yes')
+%         rect = getrect;
+%         confirmation = questdlg('Sure?');
+%         if strcmp(confirmation,'Cancel')
+%             disp(rect)
+%             break
+%         end
+%     end
+%     close,
+% end
+% x_inf = rect(1); x_sup = rect(1)+rect(3); 
+% z_inf = rect(2); z_sup = rect(2)+rect(4);
+
+
+%%
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
 ind_z = z_inf <= z & z <= z_sup;
@@ -127,14 +167,16 @@ NFFT = 2^(nextpow2(nz/2)+2);
 [pxx,fpxx] = pwelch(sam1-mean(sam1),windowing,round(nz/4),NFFT,fs);
 meanSpectrum = mean(pxx,2);
 meanSpectrum = meanSpectrum./max(meanSpectrum);
+if ~fixedBW
+    [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, freqCutOff);
+end
 figure,plot(fpxx/1e6,db(meanSpectrum))
-[freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, freqCutOff);
 xline([freq_L,freq_H]/1e6)
 xline(freq_C/1e6, 'k--')
-xlim([0 15])
-ylim([-40 0])
+xlim([0 20])
+ylim([-90 0])
 xlabel('Frequency [MHz]')
-ylabel('Magnitude')
+ylabel('Magnitude [dB]')
 grid on
 
 % Frequency samples
@@ -245,46 +287,59 @@ rInc = .9;
 c1x = 1.93;
 c1z = 1.97;
 % incBmode = (Xq - c1x).^2 + (Zq - c1z).^2 < rInc^2;
-incAcs = (X - c1x).^2 + (Z - c1z).^2 < (rInc-0.1)^2;
-backAcs = (X - c1x).^2 + (Z - c1z).^2 >= (rInc+0.1)^2;
-% figure, imagesc(incAcs.*meanSpect(:,:,1))
-
+% incAcs = (X - c1x).^2 + (Z - c1z).^2 < (rInc-0.1)^2;
+% backAcs = (X - c1x).^2 + (Z - c1z).^2 >= (rInc+0.1)^2;
+[backAcs, incAcs] = getRegionMasks(x_ACS,z_ACS,c1x,c1z,roiL,roiD,roiLz);
 meanSpect = db(( abs(Sp) + abs(Sd) )/ 2);
 meanSpect = meanSpect - max(meanSpect(:));
 
 %% Spectrum
 test = reshape(meanSpect(repmat(incAcs,1,1,p)),sum(incAcs(:)),p);
 spectInc = mean(test);
-spectInc = spectInc -max(spectInc);
+% spectInc = spectInc -max(spectInc);
 
 test = reshape(meanSpect(repmat(backAcs,1,1,p)),sum(backAcs(:)),p);
 spectBack = mean(test);
-spectBack = spectBack -max(spectBack);
+% spectBack = spectBack -max(spectBack);
 
-figure('Units','centimeters', 'Position',[5 5 18 6])
-tiledlayout(1,2),
-nexttile,
+% figure('Units','centimeters', 'Position',[5 5 18 6])
+% tiledlayout(1,2),
+% nexttile,
+% plot(f,spectInc)
+% ylim([-20 0])
+% grid on
+% title('Spectrum at inclusion')
+% nexttile,
+% plot(f,spectBack)
+% ylim([-20 0])
+% grid on
+% title('Spectrum at background')
+
+figure('Units','centimeters', 'Position',[5 5 10 10])
 plot(f,spectInc)
-ylim([-20 0])
+ylim([-70 0])
 grid on
-title('Spectrum at inclusion')
-
-nexttile,
+title('Spectrum')
+hold on,
 plot(f,spectBack)
-ylim([-20 0])
-grid on
-title('Spectrum at background')
-
+hold off
+legend('Inc','Back')
+xlim([2 9])
+xlabel('Frequency [MHz]')
+ylabel('Magnitude [dB]')
 
 %% SLD
+test = reshape(b(repmat(incAcs,1,1,p)),sum(incAcs(:)),p);
+sld1 = mean(test)' * NptodB /4/L;
 
-sld1 = squeeze(sum(sum(b.*incAcs,1),2))/sum(incAcs(:)) * NptodB /4/L;
+test = reshape(b(repmat(backAcs,1,1,p)),sum(backAcs(:)),p);
+sld2 = mean(test)' * NptodB /4/L;
+
 acs1 = [f,ones(size(f))]\sld1;
 fprintf('Attenuation is %.2f\n',acs1(1))
-sld2 = squeeze(sum(sum(b.*backAcs,1),2))/sum(backAcs(:)) * NptodB /4/L;
 acs2 = [f,ones(size(f))]\sld2;
 fprintf('Attenuation is %.2f\n',acs2(1))
-figure('Units','centimeters', 'Position',[5 5 15 15])
+figure('Units','centimeters', 'Position',[5 5 10 10])
 plot(f,sld1)
 hold on
 plot(f,sld2)

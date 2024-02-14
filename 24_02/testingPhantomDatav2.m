@@ -17,7 +17,7 @@ refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 rawFiles = dir([targetDir,'\*.rf']);
 targetFiles = dir([targetDir,'\*.mat']);
 
-resultsDir = fullfile(targetDir,'results','24-02-13','BS_8_12-BW_2o9_7o8');
+resultsDir = fullfile(targetDir,'results','24-02-14','BS_8_12-BW_3_8');
 if ~exist("resultsDir","dir"); mkdir(resultsDir); end
 tableName = 'phantoms.xlsx';
 
@@ -26,10 +26,11 @@ blocksize = 8;     % Block size in wavelengths
 ratio_zx        = 12/8;
 
 % freq_L = 2.6e6; freq_H = 7.7e6;
-freq_L = 3e6; freq_H = 6e6;
-% freq_C = mean([freq_L freq_H]);
+% freq_L = 2.9e6; freq_H = 7.8e6;
 freq_C = 4.5e6;
-freqCutOff = db2mag(-15);
+% freq_L = 2.9e6; freq_H = 7.8e6;
+freq_L = 3e6; freq_H = 8e6;
+freqCutOff = db2mag(-20); fixedBW = true;
 
 overlap_pc      = 0.8;
 x_inf = 0.1; x_sup = 3.8;
@@ -70,10 +71,15 @@ switch mod(iAcq,3)
         muBtvl1 = 10^3.5; muCtvl1 = 10^2;
         muBwfr = 10^3.5; muCwfr = 10^2;
     case 1
-        muBtv = 10^3.5; muCtv = 10^2;
-        muWTV = 10^3; mu2WTV = 10^0;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
-        muBwfr = 10^4; muCwfr = 10^1;
+%         muBtv = 10^3.5; muCtv = 10^2;
+%         muWTV = 10^3; mu2WTV = 10^0;
+%         muBtvl1 = 10^3.5; muCtvl1 = 10^1;
+%         muBwfr = 10^4; muCwfr = 10^1;
+        muBtv = 10^3; muCtv = 10^1;
+        muWTV = 10^2.5; mu2WTV = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^0;
+        muBwfr = 10^3.5; muCwfr = 10^1;
+
     case 2
         muBtv = 10^3; muCtv = 10^1;
         muWTV = 10^2.5; mu2WTV = 10^0;
@@ -130,14 +136,16 @@ NFFT = 2^(nextpow2(nz/2)+2);
 [pxx,fpxx] = pwelch(sam1-mean(sam1),windowing,round(nz/4),NFFT,fs);
 meanSpectrum = mean(pxx,2);
 meanSpectrum = meanSpectrum./max(meanSpectrum);
+if ~fixedBW
+    [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, freqCutOff);
+end
 figure,plot(fpxx/1e6,db(meanSpectrum))
-[freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, freqCutOff);
 xline([freq_L,freq_H]/1e6)
 xline(freq_C/1e6, 'k--')
-xlim([0 10])
-ylim([-40 0])
+xlim([0 20])
+ylim([-90 0])
 xlabel('Frequency [MHz]')
-ylabel('Magnitude')
+ylabel('Magnitude [dB]')
 grid on
 
 % Frequency samples
@@ -309,6 +317,7 @@ r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
+r.method = 'TV';
 MetricsTV(iAcq) = r;
 
 %% TVL1
@@ -349,6 +358,7 @@ r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
+r.method = 'TVL1';
 MetricsTVL1(iAcq) = r;
  
 %% NEW WEIGHTS
@@ -382,6 +392,7 @@ r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
+r.method = 'WFR';
 MetricsWFR(iAcq) = r;
 %%
 figure('Units','centimeters', 'Position',[5 5 20 6]);
