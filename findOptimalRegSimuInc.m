@@ -4,12 +4,14 @@
 % ====================================================================== %
 clc, clear,
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_01_30'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\24_01_30'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\inc_journal'];
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-resultsDir = [baseDir,'\results\24-02-20'];
+resultsDir = [baseDir,'\results\24-02-20\ov80-BS_6_12-BAD'];
 mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -19,7 +21,7 @@ refFiles = dir([refDir,'\rf*.mat']);
 blocksize = 8;     % Block size in wavelengths
 freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
-ratio_zx        = 12/8;
+ratio_zx        = 2;
 referenceAtt    = 0.6;
 
 % G.T.
@@ -93,7 +95,8 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2); % Window size
+% nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+nz = 2*round(blocksize*wl/dz /2);
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -126,7 +129,8 @@ fprintf('\nFrequency range: %.2f - %.2f MHz\n',freq_L*1e-6,freq_H*1e-6)
 fprintf('Blocksize in wavelengths: %i\n',blocksize)
 fprintf('Blocksize x: %.2f mm, z: %.2f mm\n',nx*dx*1e3,nz*dz*1e3)
 fprintf('Blocksize in pixels nx: %i, nz: %i\n',nx,nz);
-fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
+fprintf('Diff x: %.2f mm, z: %.2f mm\n',wx*dx*1e3,wz*dz*1e3)
+fprintf('Region of interest rows: %i, col: %i\n\n',m,n);
 
 %% Generating Diffraction compensation
 % Generating references

@@ -7,15 +7,15 @@ clear,
 clc
 close all
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
 
-% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
 
 rawFiles = dir([targetDir,'\*.rf']);
 targetFiles = dir([targetDir,'\*.mat']);
@@ -30,9 +30,8 @@ ratio_zx        = 12/8;
 
 % freq_L = 2.7e6; freq_H = 7.7e6;
 % freq_L = 3e6; freq_H = 6e6;
-% freq_L = 2.5e6; freq_H = 7.5e6;
-% freq_L = 2.5e6; freq_H = 7.5e6;
-freq_L = 2e6; freq_H = 9e6;
+freq_L = 2.5e6; freq_H = 7.5e6;
+% freq_L = 2e6; freq_H = 9e6;
 fixedBW = true;
 freq_C = 4.5e6;
 
@@ -155,7 +154,8 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+% nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+nz = 2*round(blocksize*wl/dz /2); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;

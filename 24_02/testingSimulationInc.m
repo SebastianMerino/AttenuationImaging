@@ -8,15 +8,15 @@ addpath('./functions_v7');
 addpath('./AttUtils');
 addpath('./journalScripts/');
 
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\simulations_processed\24_01_26'];
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_01_30'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\24_02_06'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\24_01_30'];
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-20\BS_8_12';
+resultsDir = fullfile(baseDir,'results');
 tableName = 'simuInc.xlsx';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
@@ -61,7 +61,7 @@ bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
 %% For looping
-iAcq = 2;
+iAcq = 1;
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
 switch iAcq
@@ -146,10 +146,10 @@ p = length(f);
 % dynRange = [-40 -10];
 Bmode = db(hilbert(sam1));
 Bmode = Bmode - max(Bmode(:));
-% figure, imagesc(x,z,Bmode);
-% axis image; colormap gray; clim(dynRange);
-% hb2=colorbar; ylabel(hb2,'dB')
-% xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
+figure, imagesc(x,z,Bmode);
+axis image; colormap gray; clim(dynRange);
+hb2=colorbar; ylabel(hb2,'dB')
+xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 
 
 fprintf('\nFrequency range: %.2f - %.2f MHz\n',freq_L*1e-6,freq_H*1e-6)
