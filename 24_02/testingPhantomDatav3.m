@@ -7,15 +7,15 @@ clear,
 clc
 close all
 
-% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-%     '\ID316V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-%     '\ID544V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+    '\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+    '\ID544V2\06-08-2023-Generic'];
 
-targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
-refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
 
 rawFiles = dir([targetDir,'\*.rf']);
 targetFiles = dir([targetDir,'\*.mat']);
@@ -154,8 +154,8 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-% nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
-nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+% nz = 2*round(blocksize*wl/dz /2); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -442,12 +442,24 @@ bscMap = reshape(Cn,m,n)*NptodB;
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 w = movmin(w,extension);
 
+% COMPENSATION
+% rInc = .9;
+% c1x = 1.93;
+% c1z = 1.97;
+% incAcs = (X - c1x).^2 + (Z - c1z).^2 < (rInc-0.1)^2;
+% backAcs = (X - c1x).^2 + (Z - c1z).^2 >= (rInc+0.1)^2;
+% 
+% comp = ones(m,n);
+% comp = comp + incAcs;
+% figure, imagesc(w)
+
+w = w.*comp;
 W = repmat(w,[1 1 p]);
 W = spdiags(W(:),0,m*n*p,m*n*p);
 bw = W*b(:);
 A1w = W*A1;
 A2w = W*A2;
-
+%%
 % Regularization: Au = b
 tic
 [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);

@@ -17,7 +17,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-20\BS_8_8';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-20\BS_8_12';
 tableName = 'simuInc.xlsx';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
@@ -69,19 +69,19 @@ for iAcq = 1:2
 
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
-switch iAcq
-    % OPTIMAL WEIGHTS FOR BS 8x12 NEW
-    case 1
-        muBtv = 10^3; muCtv = 10^1;
-        muBswtv = 10^2.5; muCswtv = 10^0;
-        muBtvl1 = 10^3; muCtvl1 = 10^1;
-        muBwfr = 10^3.5; muCwfr = 10^1.5;
-    case 2
-        muBtv = 10^3; muCtv = 10^1;
-        muBswtv = 10^2.5; muCswtv = 10^0;
-        muBtvl1 = 10^3; muCtvl1 = 10^0;
-        muBwfr = 10^3; muCwfr = 10^-0.5;
-end
+% switch iAcq
+%     % OPTIMAL WEIGHTS FOR BS 8x12 NEW
+%     case 1
+%         muBtv = 10^3; muCtv = 10^1;
+%         muBswtv = 10^2.5; muCswtv = 10^0;
+%         muBtvl1 = 10^3; muCtvl1 = 10^1;
+%         muBwfr = 10^3.5; muCwfr = 10^1.5;
+%     case 2
+%         muBtv = 10^3; muCtv = 10^1;
+%         muBswtv = 10^2.5; muCswtv = 10^0;
+%         muBtvl1 = 10^3; muCtvl1 = 10^0;
+%         muBwfr = 10^3; muCwfr = 10^-0.5;
+% end
 switch iAcq
     % OPTIMAL WEIGHTS FOR BS 8x12
     case 1
@@ -129,8 +129,8 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2); % Window size
-% nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+% nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
