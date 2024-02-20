@@ -9,11 +9,11 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-figDir = [baseDir,'\fig\24-02-07-CUEC'];
-mkdir(figDir);
+resultsDir = [baseDir,'\results\24-02-20'];
+mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
-targetFiles = targetFiles(2:2);
+targetFiles = targetFiles(2:3);
 refFiles = dir([refDir,'\rf*.mat']);
 
 blocksize = 8;     % Block size in wavelengths
@@ -25,8 +25,8 @@ referenceAtt    = 0.6;
 % G.T.
 % groundTruthBack = [0.6,1.5];
 % groundTruthInc = [1.2,0.8];
-groundTruthBack = [0.8];
-groundTruthInc = [1.5];
+groundTruthBack = [0.8,1.5];
+groundTruthInc = [1.5,0.8];
 
 
 % Weights SWTV
@@ -44,6 +44,8 @@ extension = 3;
 dynRange = [-40,0];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
+attRange = [0.6 1.7];
+
 
 %% Setting up
 
@@ -59,12 +61,12 @@ z = z*1e2; % [cm]
 sam1 = rf(:,:,1);
 dynRange = [-50,0];
 
-switch iAcq
-    case 1
-        attRange = [0.4 1.4];
-    case 2
-        attRange = [0.6 1.7];
-end
+% switch iAcq
+%     case 1
+%         attRange = [0.4 1.4];
+%     case 2
+%         attRange = [0.6 1.7];
+% end
 
 %% Cropping and finding sample sizes
 % Region for attenuation imaging
@@ -573,7 +575,7 @@ r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdBottom^2);
 MetricsWFR(iAcq) = r;
 
 %%
-save_all_figures_to_directory(figDir,['sim',num2str(iAcq),'Figure']);
+save_all_figures_to_directory(resultsDir,['sim',num2str(iAcq),'Figure']);
 close all
 
 end

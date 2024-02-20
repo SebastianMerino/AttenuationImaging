@@ -15,7 +15,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
 
-figDir = 'C:\Users\sebas\Pictures\ISBI2024\v3';
+figDir = 'C:\Users\sebas\Pictures\ISBI2024\v5';
 mkdir(figDir)
 %%
 for iAcq = [1,2,3,6]
@@ -317,7 +317,7 @@ croppedDir = [baseDir,'\cropped'];
 croppedFiles = dir([croppedDir,'\*.mat']);
 NptodB = log10(exp(1))*20;
 
-figDir = 'C:\Users\sebas\Pictures\ISBI2024\v3';
+figDir = 'C:\Users\sebas\Pictures\ISBI2024\v5';
 
 %% For looping each phantom
 
@@ -624,7 +624,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 croppedDir = [baseDir,'\cropped'];
-figDir = 'C:\Users\sebas\Pictures\ISBI2024\v2';
+figDir = 'C:\Users\sebas\Pictures\ISBI2024\v5';
 
 targetFiles = dir([targetDir,'\*.mat']);
 
@@ -634,7 +634,8 @@ overlap_pc      = 0.8;
 ratio_zx        = 1;
 NptodB = log10(exp(1))*20;
 
-attRange = [0,1.7];
+% attRange = [0,1.7];
+attRange = [0.3,1.8];
 %% Loading case
 iAcq = 8;
 for iRoi = 1:2
@@ -866,7 +867,7 @@ extension = 3;
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 w = movmin(w,extension);
 
-figure, imagesc(w)
+% figure, imagesc(w)
 
 % Weighting equation and regularizations
 b = (log(Sp) - log(Sd)) - (compensation);

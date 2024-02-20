@@ -17,7 +17,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-08\BS_4_12';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-20\BS_8_8';
 tableName = 'simuInc.xlsx';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
@@ -29,12 +29,13 @@ if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 %% Generating cropped data
 % SETTING PARAMETERS
-blocksize = 4;     % Block size in wavelengths
+blocksize = 8;     % Block size in wavelengths
+ratio_zx        = 12/8;
+
 freq_L = 3e6; freq_H = 8e6; % GOOD
 % freq_L = 3e6; freq_H = 9e6; % Also GOOD
 
 overlap_pc      = 0.8;
-ratio_zx        = 3;
 referenceAtt    = 0.6;
 
 % Weights SWTV
@@ -87,10 +88,10 @@ load(fullfile(targetDir,targetFiles(iAcq).name));
 switch iAcq
     % OPTIMAL WEIGHTS FOR BS 8x12
     case 1
-        muBtv = 10^3; muCtv = 10^1;
-        muBswtv = 10^2.5; muCswtv = 10^0;
-        muBtvl1 = 10^3; muCtvl1 = 10^0;
-        muBwfr = 10^3.5; muCwfr = 10^1.5;
+        muBtv = 10^3.5; muCtv = 10^2;
+        muBswtv = 10^2.5; muCswtv = 10^1;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
+        muBwfr = 10^4; muCwfr = 10^2;
     case 2
         muBtv = 10^3; muCtv = 10^1;
         muBswtv = 10^2.5; muCswtv = 10^0;
@@ -132,7 +133,8 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+nz = 2*round(blocksize*wl/dz /2); % Window size
+% nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -172,7 +174,7 @@ fprintf('\nFrequency range: %.2f - %.2f MHz\n',freq_L*1e-6,freq_H*1e-6)
 fprintf('Blocksize in wavelengths: %i\n',blocksize)
 fprintf('Blocksize x: %.2f mm, z: %.2f mm\n',nx*dx*1e3,nz*dz*1e3)
 fprintf('Blocksize in pixels nx: %i, nz: %i\n',nx,nz);
-fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
+fprintf('Region of interest rows: %i, col: %i\n\n',m,n);
 
 %% Generating Diffraction compensation
 
@@ -376,7 +378,7 @@ A1w = W*A1;
 A2w = W*A2;
 
 % Method
-[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr*2,muCwfr*2,m,n,tol,mask(:),w);
+[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 BRWFR = reshape(Bn*NptodB,m,n);
 CRWFR = reshape(Cn*NptodB,m,n);
 

@@ -4,18 +4,18 @@
 % ======================================================================
 %% PHANTOMSSS
 clear,
-% clc
+clc
 close all
 
-% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-%     '\ID316V2\06-08-2023-Generic'];
-refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+    '\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+    '\ID544V2\06-08-2023-Generic'];
 
-targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-%     '\ID544V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
 
 rawFiles = dir([targetDir,'\*.rf']);
 targetFiles = dir([targetDir,'\*.mat']);
@@ -31,7 +31,8 @@ ratio_zx        = 12/8;
 % freq_L = 2.7e6; freq_H = 7.7e6;
 % freq_L = 3e6; freq_H = 6e6;
 % freq_L = 2.5e6; freq_H = 7.5e6;
-freq_L = 2.5e6; freq_H = 7.5e6;
+% freq_L = 2.5e6; freq_H = 7.5e6;
+freq_L = 2e6; freq_H = 9e6;
 fixedBW = true;
 freq_C = 4.5e6;
 
@@ -66,7 +67,7 @@ roiL = 1; roiD = 0.6;
 roiLz = 1.5;
 %% For looping each phantom
 
-iAcq = 4;
+iAcq = 8;
 switch mod(iAcq,3)
     % Optimal reg for BS 8x12
     case 0
