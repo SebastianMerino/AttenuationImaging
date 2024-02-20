@@ -50,22 +50,40 @@ roiLz = 1.5;
 
 for iAcq = 1:3
 switch iAcq
-    % Optimal reg for BS 8x12
+%     % Optimal reg for BS 8x12
+%     case 1
+%         muTV = 10^3.5; mu2TV = 10^3;
+%         muWTV = 10^3; mu2WTV = 10^2;
+%         muTik = 10^3.5; mu2Tik = 10^2;
+%         muWTik = 10^3.5; mu2WTik = 10^2;
+%     case 2
+%         muTV = 10^3.5; mu2TV = 10^2;
+%         muWTV = 10^3; mu2WTV = 10^0;
+%         muTik = 10^3.5; mu2Tik = 10^1;
+%         muWTik = 10^4; mu2WTik = 10^1;
+%     case 3
+%         muTV = 10^3; mu2TV = 10^1;
+%         muWTV = 10^2.5; mu2WTV = 10^0;
+%         muTik = 10^3; mu2Tik = 10^0;
+%         muWTik = 10^3.5; mu2WTik = 10^1;
+
+    % Optimal reg for NEW BS 8x12
     case 1
         muTV = 10^3.5; mu2TV = 10^3;
         muWTV = 10^3; mu2WTV = 10^2;
         muTik = 10^3.5; mu2Tik = 10^2;
-        muWTik = 10^3.5; mu2WTik = 10^2;
+        muWTik = 10^3; mu2WTik = 10^1.5;
     case 2
         muTV = 10^3.5; mu2TV = 10^2;
         muWTV = 10^3; mu2WTV = 10^0;
-        muTik = 10^3.5; mu2Tik = 10^1;
-        muWTik = 10^4; mu2WTik = 10^1;
+        muTik = 10^3; mu2Tik = 10^1;
+        muWTik = 10^3.5; mu2WTik = 10^1.5;
     case 3
         muTV = 10^3; mu2TV = 10^1;
         muWTV = 10^2.5; mu2WTV = 10^0;
         muTik = 10^3; mu2Tik = 10^0;
         muWTik = 10^3.5; mu2WTik = 10^1;
+
 
 end
 

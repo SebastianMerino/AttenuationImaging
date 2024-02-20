@@ -11,7 +11,7 @@ baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-resultsDir = [baseDir,'\results\24-02-20\ov80-BS_6_12-BAD'];
+resultsDir = [baseDir,'\results\24-02-20\ov80-BS_8_8'];
 mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -21,7 +21,7 @@ refFiles = dir([refDir,'\rf*.mat']);
 blocksize = 8;     % Block size in wavelengths
 freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
-ratio_zx        = 2;
+ratio_zx        = 1;
 referenceAtt    = 0.6;
 
 % G.T.
@@ -95,8 +95,8 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-% nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
-nz = 2*round(blocksize*wl/dz /2);
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+% nz = 2*round(blocksize*wl/dz /2);
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;

@@ -69,35 +69,31 @@ for iAcq = 1:2
 
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
-% Regularization
-% switch iAcq
-%     case 1
-%         muBtv = 10^3; muCtv = 10^1;
-%         muBswtv = 10^2.5; muCswtv = 10^0;
-%         muBtvl1 = 10^3; muCtvl1 = 10^0;
-%         muBwfr = 10^3.5; muCwfr = 10^1;
-%         attRange = [0.4 1.4];
-%     case 2
-%         muBtv = 10^3; muCtv = 10^1;
-%         muBswtv = 10^2.5; muCswtv = 10^0;
-%         muBtvl1 = 10^3; muCtvl1 = 10^0;
-%         % muBwfr = 10^2.5; muCwfr = 10^-0.5;
-%         muBwfr = 10^3; muCwfr = 10^0;
-%         attRange = [0.6 1.7];
-% end
 switch iAcq
-    % OPTIMAL WEIGHTS FOR BS 8x12
+    % OPTIMAL WEIGHTS FOR BS 8x12 NEW
     case 1
-        muBtv = 10^3.5; muCtv = 10^2;
-        muBswtv = 10^2.5; muCswtv = 10^1;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
-        muBwfr = 10^4; muCwfr = 10^2;
+        muBtv = 10^3; muCtv = 10^1;
+        muBswtv = 10^2.5; muCswtv = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^1;
+        muBwfr = 10^3.5; muCwfr = 10^1.5;
     case 2
         muBtv = 10^3; muCtv = 10^1;
         muBswtv = 10^2.5; muCswtv = 10^0;
         muBtvl1 = 10^3; muCtvl1 = 10^0;
         muBwfr = 10^3; muCwfr = 10^-0.5;
-        % muBwfr = 10^3; muCwfr = 10^1.5;
+end
+switch iAcq
+    % OPTIMAL WEIGHTS FOR BS 8x12
+    case 1
+        muBtv = 10^3; muCtv = 10^1;
+        muBswtv = 10^2.5; muCswtv = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^1;
+        muBwfr = 10^4; muCwfr = 10^1.5;
+    case 2
+        muBtv = 10^3; muCtv = 10^1;
+        muBswtv = 10^2.5; muCswtv = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^0;
+        muBwfr = 10^3.5; muCwfr = 10^-0.5;
 end
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
