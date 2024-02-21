@@ -8,15 +8,15 @@ addpath('./functions_v7');
 addpath('./AttUtils');
 addpath('./journalScripts/');
 
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\simulations_processed\24_02_06'];
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_01_30'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\inc_journal'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\24_01_30'];
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = fullfile(baseDir,'results');
+resultsDir = fullfile(baseDir,'results','24-02-20','test-BS8');
 tableName = 'simuInc.xlsx';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
@@ -29,8 +29,8 @@ if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 %% Generating cropped data
 % SETTING PARAMETERS
 blocksize = 8;     % Block size in wavelengths
-ratio_zx        = 12/8;
-% ratio_zx        = 1;
+% ratio_zx        = 12/8;
+ratio_zx        = 1;
 overlap_pc      = 0.8;
 
 freq_L = 3e6; freq_H = 8e6; % GOOD
@@ -61,7 +61,7 @@ bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
 %% For looping
-iAcq = 1;
+iAcq = 2;
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
 switch iAcq
@@ -115,8 +115,8 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-% nz = 2*round(blocksize*wl/dz /2); % Window size
-nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+nz = 2*round(blocksize*wl/dz /2); % Window size
+% nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -488,8 +488,8 @@ c.Label.String = '[a.u.]';
 
 
 %%
-% save_all_figures_to_directory(resultsDir,'thyroidSimFig');
-% close all
+save_all_figures_to_directory(resultsDir,'thyroidSimFig');
+close all
 
 % %%
 % results1 = struct2table(MetricsTV);

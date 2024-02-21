@@ -2,21 +2,28 @@
 % ======================================================================
 %% PHANTOMSSS
 clear, clc
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
-rawFiles = dir([targetDir,'\*.rf']);
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
-targetFiles = dir([targetDir,'\*.mat']);
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
+% resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-13\BS_8_12-BW-2.6-7.7';
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-13\BS_8_12-BW-2.6-7.7';
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-02-20\BS_8_12';
+
+rawFiles = dir([targetDir,'\*.rf']);
+targetFiles = dir([targetDir,'\*.mat']);
+targetFiles = targetFiles(end-2:end);
 if ~exist("resultsDir","dir"); mkdir(resultsDir); end
 tableName = 'phantoms.xlsx';
 
 %% Constants
 blocksize = 8;     % Block size in wavelengths
-freq_L = 2.6e6; freq_H = 7.7e6;
-freq_C = 5e6;
+freq_L = 2.5e6; freq_H = 7.5e6;
+freq_C = 4.5e6;
 
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
@@ -51,47 +58,46 @@ roiLz = 1.5;
 for iAcq = 1:3
 switch iAcq
 %     % Optimal reg for BS 8x12
-%     case 1
-%         muTV = 10^3.5; mu2TV = 10^3;
-%         muWTV = 10^3; mu2WTV = 10^2;
-%         muTik = 10^3.5; mu2Tik = 10^2;
-%         muWTik = 10^3.5; mu2WTik = 10^2;
-%     case 2
-%         muTV = 10^3.5; mu2TV = 10^2;
-%         muWTV = 10^3; mu2WTV = 10^0;
-%         muTik = 10^3.5; mu2Tik = 10^1;
-%         muWTik = 10^4; mu2WTik = 10^1;
-%     case 3
-%         muTV = 10^3; mu2TV = 10^1;
-%         muWTV = 10^2.5; mu2WTV = 10^0;
-%         muTik = 10^3; mu2Tik = 10^0;
-%         muWTik = 10^3.5; mu2WTik = 10^1;
-
-    % Optimal reg for NEW BS 8x12
     case 1
-        muTV = 10^3.5; mu2TV = 10^3;
-        muWTV = 10^3; mu2WTV = 10^2;
-        muTik = 10^3.5; mu2Tik = 10^2;
-        muWTik = 10^3; mu2WTik = 10^1.5;
+        muBtv = 10^3.5; muCtv = 10^3;
+        muBswtv = 10^2.5; muCswtv = 10^2;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^2;
+        muBwfr = 10^3.5; muCwfr = 10^2;
     case 2
-        muTV = 10^3.5; mu2TV = 10^2;
-        muWTV = 10^3; mu2WTV = 10^0;
-        muTik = 10^3; mu2Tik = 10^1;
-        muWTik = 10^3.5; mu2WTik = 10^1.5;
+        muBtv = 10^3.5; muCtv = 10^2;
+        muBswtv = 10^3; muCswtv = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^1;
+        muBwfr = 10^4; muCwfr = 10^1.5;
     case 3
-        muTV = 10^3; mu2TV = 10^1;
-        muWTV = 10^2.5; mu2WTV = 10^0;
-        muTik = 10^3; mu2Tik = 10^0;
-        muWTik = 10^3.5; mu2WTik = 10^1;
+        muBtv = 10^3; muCtv = 10^1;
+        muBswtv = 10^2.5; muCswtv = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^0;
+        muBwfr = 10^3.5; muCwfr = 10^1;
+
+%     % Optimal reg for NEW BS 8x12
+%     case 1
+%         muBtv = 10^3.5; muCtv = 10^3;
+%         muBswtv = 10^3; muCswtv = 10^2;
+%         muBtvl1 = 10^3.5; muCtvl1 = 10^2;
+%         muBwfr = 10^3; muCwfr = 10^1.5;
+%     case 2
+%         muBtv = 10^3.5; muCtv = 10^2;
+%         muBswtv = 10^3; muCswtv = 10^0;
+%         muBtvl1 = 10^3; muCtvl1 = 10^1;
+%         muBwfr = 10^3.5; muCwfr = 10^1.5;
+%     case 3
+%         muBtv = 10^3; muCtv = 10^1;
+%         muBswtv = 10^2.5; muCswtv = 10^0;
+%         muBtvl1 = 10^3; muCtvl1 = 10^0;
+%         muBwfr = 10^3.5; muCwfr = 10^1;
 
 
 end
 
 %%
-fprintf("Phantom no. %i, %s\n",iAcq,targetFiles(iAcq+5).name);
-load(fullfile(targetDir,targetFiles(iAcq+5).name));
+fprintf("Phantom no. %i, %s\n",iAcq,targetFiles(iAcq).name);
+load(fullfile(targetDir,targetFiles(iAcq).name));
 
-fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 dx = x(2)-x(1);
 dz = z(2)-z(1);
 x = x*1e2; % [cm]
@@ -247,7 +253,7 @@ mask = ones(m,n,p);
 %% RSLD-TV
 
 tic
-[Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muTV,mu2TV,m,n,tol,mask(:));
+[Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
 toc
 BR = (reshape(Bn*NptodB,m,n));
 CR = (reshape(Cn,m,n));
@@ -264,6 +270,7 @@ r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
+r.method = 'TV';
 MetricsTV(iAcq) = r;
 
 %% British Columbia Approach
@@ -290,7 +297,7 @@ w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 % computation
 tic
-[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muWTV,mu2WTV,m,n,tol,mask(:),w);
+[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv,m,n,tol,mask(:),w);
 toc
 BRBC = (reshape(Bn*NptodB,m,n));
 CRBC = (reshape(Cn,m,n));
@@ -307,11 +314,12 @@ r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
+r.method = 'SWTV';
 MetricsSWTV(iAcq) = r;
 
 %% TVL1
 tic
-[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muTik,mu2Tik,m,n,tol,mask(:));
+[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBtvl1,muCtvl1,m,n,tol,mask(:));
 toc
 BRTik = (reshape(Bn*NptodB,m,n));
 CRTik = (reshape(Cn,m,n));
@@ -329,6 +337,7 @@ r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
+r.method = 'TVL1';
 MetricsTVL1(iAcq) = r;
 
 %% NEW WEIGHTS
@@ -345,7 +354,7 @@ A2w = W*A2;
 
 % Regularization: Au = b
 tic
-[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muWTik*4,mu2WTik*4,m,n,tol,mask(:),w);
+[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 toc
 BRWTik = (reshape(Bn*NptodB,m,n));
 CRWTik = (reshape(Cn,m,n));
@@ -362,6 +371,7 @@ r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
 r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
+r.method = 'WFR';
 MetricsWFR(iAcq) = r;
 
 %%

@@ -10,8 +10,8 @@ addpath(genpath(pwd))
 
 % save parameters
 BaseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulation_h5files\Simulation_24_02_04'];
-folderNames = {'inclusion3'};
+    'Attenuation\simulation_h5files\Simulation_24_02_20'];
+folderNames = {'inclusion1','inclusion2','inclusion3','inclusion4'};
 
 % medium parameters
 c0              = 1540;     % sound speed [m/s]

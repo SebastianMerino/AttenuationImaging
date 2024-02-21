@@ -10,9 +10,9 @@ addpath(genpath(pwd))
 
 % save parameters
 BaseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulation_h5files\Simulation_24_02_04'];
-mkdir(BaseDir)
+    'Attenuation\simulation_h5files\Simulation_24_02_20'];
 folderNames = {'inclusion1','inclusion2','inclusion3','inclusion4'};
+mkdir(BaseDir)
 
 % medium parameters
 c0              = 1540;     % sound speed [m/s]
@@ -73,26 +73,26 @@ for iSim = 1:length(folderNames)
     rx = kgrid.y;
 
     switch iSim
-        case 1
-            background_std = 0.032;
-            background_alpha = 1.5;       % [dB/(MHz^y cm)]
+        case 3
+            background_std = 0.002;
+            background_alpha = 0.8;       % [dB/(MHz^y cm)]
             inclusion_std = 0.008;
-            inclusion_alpha = 0.8;
+            inclusion_alpha = 1.5;
         case 2
             background_std = 0.008;
             background_alpha = 1.5;       % [dB/(MHz^y cm)]
-            inclusion_std = 0.032;
+            inclusion_std = 0.002;
             inclusion_alpha = 0.8;
-        case 3
-            background_std = 0.032;
-            background_alpha = 0.8;       % [dB/(MHz^y cm)]
-            inclusion_std = 0.008;
-            inclusion_alpha = 1.5;
         case 4
             background_std = 0.008;
             background_alpha = 0.8;       % [dB/(MHz^y cm)]
-            inclusion_std = 0.032;
+            inclusion_std = 0.002;
             inclusion_alpha = 1.5;
+        case 1
+            background_std = 0.002;
+            background_alpha = 1.5;       % [dB/(MHz^y cm)]
+            inclusion_std = 0.008;
+            inclusion_alpha = 0.8;
     end
 
     medium = addRegionSimu([],c0,rho0,background_std,...

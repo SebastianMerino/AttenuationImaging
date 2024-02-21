@@ -16,7 +16,7 @@ refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 
 rawFiles = dir([targetDir,'\*.rf']);
 
-resultsDir = fullfile(targetDir,'results','24-02-20','BS_8_12-NEW');
+resultsDir = fullfile(targetDir,'results','24-02-20','BS_8_12');
 if ~exist(resultsDir,"dir"); mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\*.mat']);
@@ -92,8 +92,8 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-% nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
-nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+% nz = 2*round(blocksize*wl/dz /2); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
