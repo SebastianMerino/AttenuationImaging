@@ -18,7 +18,7 @@ targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
 % resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-20\BS_8_12';
-resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-02-20\BS_8_12_BAD';
+resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-02-20\BS_8_12';
 
 tableName = 'simuInc.xlsx';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
@@ -59,7 +59,7 @@ groundTruthNodule = [1.5,0.8];
 attRange = [0.6 1.7];
 
 % Plotting
-dynRange = [-40,0];
+dynRange = [-60,0];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
@@ -99,7 +99,7 @@ sam1 = rf(:,:,1);
 %% Cropping and finding sample sizes
 % Region for attenuation imaging
 x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.5; z_sup = 3.5;
+z_inf = 0.3; z_sup = 3.9;
 
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
@@ -121,8 +121,8 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2); % Window size
-% nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+% nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -481,16 +481,16 @@ c.Label.String = 'Att. [db/cm/MHz]';
 %     'LineStyle','--', 'LineWidth',1)
 % hold off
 %%
-figure('Units','centimeters', 'Position',[5 5 20 5])
-tiledlayout(1,3)
-t1 = nexttile;
-imagesc(x,z,Bmode,dynRange)
-axis equal
-xlim([x_ACS(1) x_ACS(end)]),
-ylim([z_ACS(1) z_ACS(end)]),
-colormap(t1,gray)
-colorbar(t1, 'eastoutside')
-title('Bmode')
+figure('Units','centimeters', 'Position',[5 5 10 5])
+tl = tiledlayout(1,2, "Padding","tight");
+% t1 = nexttile;
+% imagesc(x,z,Bmode,dynRange)
+% axis equal
+% xlim([x_ACS(1) x_ACS(end)]),
+% ylim([z_ACS(1) z_ACS(end)]),
+% colormap(t1,gray)
+% colorbar(t1, 'eastoutside')
+% title('Bmode')
 
 t2 = nexttile; 
 imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
@@ -498,7 +498,8 @@ colormap(t2,parula)
 axis image
 title('TVL1')
 c = colorbar;
-c.Label.String = 'BS log ratio [dB]';
+c.Label.String = '\DeltaBSC [dB/cm]';
+% xlabel('')
 
 t3 = nexttile; 
 imagesc(x_ACS,z_ACS,w, [0 1])
@@ -506,7 +507,7 @@ colormap(t3,parula)
 axis image
 title('Weights')
 c = colorbar;
-c.Label.String = '[a.u.]';
+% c.Label.String = '[a.u.]';
 
 
 % figure,
