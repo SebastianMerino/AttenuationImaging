@@ -10,13 +10,16 @@ addpath('./journalScripts/');
 
 baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
     'Attenuation\simulations_processed\inc_journal'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\simulations_processed\24_02_20'];
+
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\Simulation\24_01_30'];
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = fullfile(baseDir,'results','24-02-20','test-BS8');
+resultsDir = fullfile(baseDir,'results','24-02-21','test-BS8_12');
 tableName = 'simuInc.xlsx';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
@@ -29,8 +32,8 @@ if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 %% Generating cropped data
 % SETTING PARAMETERS
 blocksize = 8;     % Block size in wavelengths
-% ratio_zx        = 12/8;
-ratio_zx        = 1;
+ratio_zx        = 12/8;
+% ratio_zx        = 1;
 overlap_pc      = 0.8;
 
 freq_L = 3e6; freq_H = 8e6; % GOOD
@@ -93,7 +96,8 @@ sam1 = rf(:,:,1);
 %% Cropping and finding sample sizes
 % Region for attenuation imaging
 x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.5; z_sup = 3.5;
+% z_inf = 0.5; z_sup = 3.5;
+z_inf = 0.1; z_sup = 3.9;
 
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
@@ -115,8 +119,8 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2); % Window size
-% nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+% nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -341,6 +345,11 @@ bscMap = reshape(Cn*NptodB,m,n);
 % Computing weights
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 w = movmin(w,extension);
+
+noduleACS = (Z-cz).^2 + (X-cx).^2 <= rInc^2;
+w2 = ones(m,n)*0.5;
+w2(noduleACS) = 1;
+%%
 
 % Setting up new system
 W = repmat(w,[1 1 p]);

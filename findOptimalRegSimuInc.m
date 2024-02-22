@@ -8,10 +8,10 @@ clc, clear,
 %     'Attenuation\Simulation\24_01_30'];
 baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
     'Attenuation\simulations_processed\inc_journal'];
-
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-resultsDir = [baseDir,'\results\24-02-20\ov80-BS_8_8'];
+
+resultsDir = [baseDir,'\results\24-02-21\BS_8_12'];
 mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -21,14 +21,14 @@ refFiles = dir([refDir,'\rf*.mat']);
 blocksize = 8;     % Block size in wavelengths
 freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
-ratio_zx        = 1;
+ratio_zx        = 12/8;
 referenceAtt    = 0.6;
 
 % G.T.
 % groundTruthBack = [0.6,1.5];
 % groundTruthInc = [1.2,0.8];
-groundTruthBack = [0.8,1.5];
-groundTruthInc = [1.5,0.8];
+groundTruthBack = [0.8,1.5,0.8,1.5];
+groundTruthInc = [1.5,0.8,1.5,0.8];
 
 
 % Weights SWTV
@@ -62,6 +62,9 @@ z = z*1e2; % [cm]
 
 sam1 = rf(:,:,1);
 dynRange = [-50,0];
+Bmode = db(hilbert(sam1));
+Bmode = Bmode - max(Bmode(:));
+
 
 % switch iAcq
 %     case 1
@@ -73,7 +76,8 @@ dynRange = [-50,0];
 %% Cropping and finding sample sizes
 % Region for attenuation imaging
 x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.5; z_sup = 3.5;
+% z_inf = 0.5; z_sup = 3.5;
+z_inf = 0.3; z_sup = 3.9;
 
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
@@ -81,6 +85,7 @@ ind_z = z_inf <= z & z <= z_sup;
 x = x(ind_x);
 z = z(ind_z);
 sam1 = sam1(ind_z,ind_x);
+Bmode = Bmode(ind_z,ind_x);
 
 % Wavelength size
 c0 = 1540;
@@ -103,8 +108,6 @@ z0d = z0p + nz/2;
 z_ACS = z(z0p+ nz/2);
 m  = length(z0p);
 
-Bmode = db(hilbert(sam1));
-Bmode = Bmode - max(Bmode(:));
 
 %% Spectrum
 % BW from spectrogram

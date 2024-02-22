@@ -77,14 +77,14 @@ switch iAcq
         muBtv = 10^3; muCtv = 10^1;
         muBswtv = 10^2.5; muCswtv = 10^0;
         muBtvl1 = 10^3; muCtvl1 = 10^1;
-        % muBwfr = 10^4; muCwfr = 10^1.5;
-        muBwfr = 10^3.5; muCwfr = 10^1.5; % WRONG WINDOW
+        muBwfr = 10^4; muCwfr = 10^1.5;
+        % muBwfr = 10^3.5; muCwfr = 10^1.5; % WRONG WINDOW
     case 2
         muBtv = 10^3; muCtv = 10^1;
         muBswtv = 10^2.5; muCswtv = 10^0;
         muBtvl1 = 10^3; muCtvl1 = 10^0;
-        % muBwfr = 10^3.5; muCwfr = 10^-0.5;
-        muBwfr = 10^3; muCwfr = 10^-0.5; % WRONG WINDOW
+        muBwfr = 10^3.5; muCwfr = 10^-0.5;
+        % muBwfr = 10^3; muCwfr = 10^-0.5; % WRONG WINDOW
 
 end
 
