@@ -990,7 +990,7 @@ set(hF,'AlphaData',alphadata);
 hold off
 ylim([0.05 3])
 xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-title('RRSLD-WFR')
+title('RSLD-WFR')
 hColor.Label.String = 'ACS [dB/cm/MHz]';
 fontsize(gcf,8,'points')
 

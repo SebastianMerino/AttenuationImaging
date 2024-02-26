@@ -10,7 +10,7 @@ addpath(genpath(pwd))
 
 % save parameters
 BaseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulation_h5files\Simulation_24_02_20'];
+    'Attenuation\simulation_h5files\Simulation_24_02_25'];
 folderNames = {'inclusion1','inclusion2','inclusion3','inclusion4'};
 mkdir(BaseDir)
 
@@ -73,33 +73,36 @@ for iSim = 1:length(folderNames)
     rx = kgrid.y;
 
     switch iSim
-        case 3
+        case 1
             background_std = 0.002;
             background_alpha = 0.8;       % [dB/(MHz^y cm)]
             inclusion_std = 0.008;
             inclusion_alpha = 1.5;
+            r = 5e-3;
         case 2
             background_std = 0.008;
             background_alpha = 1.5;       % [dB/(MHz^y cm)]
             inclusion_std = 0.002;
             inclusion_alpha = 0.8;
-        case 4
-            background_std = 0.008;
-            background_alpha = 0.8;       % [dB/(MHz^y cm)]
-            inclusion_std = 0.002;
-            inclusion_alpha = 1.5;
-        case 1
+            r = 5e-3;
+        case 3
             background_std = 0.002;
-            background_alpha = 1.5;       % [dB/(MHz^y cm)]
+            background_alpha = 0.8;       % [dB/(MHz^y cm)]
             inclusion_std = 0.008;
-            inclusion_alpha = 0.8;
+            inclusion_alpha = 1.5;
+            r = 9e-3;
+        case 4
+            background_std = 0.002;
+            background_alpha = 0.8;       % [dB/(MHz^y cm)]
+            inclusion_std = 0.008;
+            inclusion_alpha = 1.5;
+            r = 9e-3;
     end
 
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
 
     cz = 20e-3; cx = 0;
-    r = 7e-3;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
     medium = addRegionSimu(medium,c0,rho0,inclusion_std,...
         inclusion_alpha,maskNodule);

@@ -3,14 +3,14 @@ addpath('./functions_v7');
 addpath('./AttUtils');
 addpath('./journalScripts/');
 
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\layered_14_11_23'];
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\layered_14_11_23'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\simulations_processed\layered_14_11_23'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\layered_14_11_23'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-07\BS_8_12';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-22\BS_8_12';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -352,7 +352,52 @@ r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsWFR(iAcq) = r;
 
 %% Plotting
-figure('Units','centimeters', 'Position',[5 5 25 4]);
+% figure('Units','centimeters', 'Position',[5 5 25 4]);
+% tl = tiledlayout(1,5, "Padding","tight");
+% 
+% t1 = nexttile;
+% imagesc(x,z,Bmode,dynRange)
+% axis equal
+% xlim([x_ACS(1) x_ACS(end)]),
+% ylim([z_ACS(1) z_ACS(end)]),
+% colormap(t1,gray)
+% colorbar(t1, 'westoutside')
+% title('Bmode')
+% 
+% t1 = nexttile; 
+% imagesc(x_ACS,z_ACS,BRTV, attRange)
+% colormap(t1,turbo)
+% axis image
+% title('TV')
+% %c = colorbar;
+% %c.Label.String = 'Att. [db/cm/MHz]';
+% 
+% t1 = nexttile; 
+% imagesc(x_ACS,z_ACS,BRSWTV, attRange)
+% colormap(t1,turbo)
+% axis image
+% title('SWTV')
+% %c = colorbar;
+% %c.Label.String = 'Att. [db/cm/MHz]';
+% 
+% t1 = nexttile; 
+% imagesc(x_ACS,z_ACS,BRTVL1, attRange)
+% colormap(t1,turbo)
+% axis image
+% title('TVL1')
+% %c = colorbar;
+% %c.Label.String = 'Att. [db/cm/MHz]';
+% 
+% t4 = nexttile; 
+% imagesc(x_ACS,z_ACS,BRWFR, attRange)
+% colormap(t4,turbo)
+% axis image
+% title('WFR')
+% c = colorbar;
+% c.Label.String = 'Att. [db/cm/MHz]';
+
+%% Plotting
+figure('Units','centimeters', 'Position',[5 5 20 4]);
 tl = tiledlayout(1,5, "Padding","tight");
 
 t1 = nexttile;
@@ -361,32 +406,35 @@ axis equal
 xlim([x_ACS(1) x_ACS(end)]),
 ylim([z_ACS(1) z_ACS(end)]),
 colormap(t1,gray)
-colorbar(t1, 'westoutside')
+c = colorbar(t1, 'westoutside');
+c.Label.String = '[db]';
 title('Bmode')
+ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRTV, attRange)
 colormap(t1,turbo)
 axis image
 title('TV')
-%c = colorbar;
-%c.Label.String = 'Att. [db/cm/MHz]';
+ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRSWTV, attRange)
 colormap(t1,turbo)
 axis image
 title('SWTV')
-%c = colorbar;
-%c.Label.String = 'Att. [db/cm/MHz]';
+ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRTVL1, attRange)
 colormap(t1,turbo)
 axis image
 title('TVL1')
-%c = colorbar;
-%c.Label.String = 'Att. [db/cm/MHz]';
+ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
 
 t4 = nexttile; 
 imagesc(x_ACS,z_ACS,BRWFR, attRange)
@@ -394,7 +442,46 @@ colormap(t4,turbo)
 axis image
 title('WFR')
 c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
+c.Label.String = 'ACS [db/cm/MHz]';
+ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
+
+fontsize(gcf,8,'points')
+
+%%
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tl = tiledlayout(1,2, "Padding","tight");
+% t1 = nexttile;
+% imagesc(x,z,Bmode,dynRange)
+% axis equal
+% xlim([x_ACS(1) x_ACS(end)]),
+% ylim([z_ACS(1) z_ACS(end)]),
+% colormap(t1,gray)
+% colorbar(t1, 'eastoutside')
+% title('Bmode')
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
+colormap(t2,parula)
+axis image
+title('TVL1')
+c = colorbar;
+c.Label.String = '\DeltaBSC [dB/cm]';
+xlabel('Lateral [cm]')
+ylabel('Axial [cm]')
+
+t3 = nexttile; 
+imagesc(x_ACS,z_ACS,w, [0 1])
+colormap(t3,parula)
+axis image
+title('Weights')
+c = colorbar;
+xlabel('Lateral [cm]')
+ylabel('Axial [cm]')
+% c.Label.String = '[a.u.]';
+
+fontsize(gcf,8,'points')
+
 
 end
 %% Axial profiles
@@ -411,7 +498,7 @@ hold off
 grid on
 ylim([0.4 1.4])
 xlim([z_ACS(1) z_ACS(end)])
-title('Axial profiles')
+title('Axial profile - L1')
 legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
 
 nexttile,
@@ -425,29 +512,29 @@ hold off
 grid on
 ylim([0.4 1.4])
 xlim([z_ACS(1) z_ACS(end)])
-title('Axial profiles')
+title('Axial profile - L1')
 legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
 
 
-%%
-figure('Units','centimeters', 'Position',[5 5 15 5])
-tiledlayout(1,2)
-
-t2 = nexttile; 
-imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
-colormap(t2,parula)
-axis image
-title('TVL1')
-c = colorbar;
-c.Label.String = 'BS log ratio [dB]';
-
-t3 = nexttile; 
-imagesc(x_ACS,z_ACS,w, [0 1])
-colormap(t3,parula)
-axis image
-title('Weights')
-c = colorbar;
-c.Label.String = '[a.u.]';
+% %%
+% figure('Units','centimeters', 'Position',[5 5 15 5])
+% tiledlayout(1,2)
+% 
+% t2 = nexttile; 
+% imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
+% colormap(t2,parula)
+% axis image
+% title('TVL1')
+% c = colorbar;
+% c.Label.String = 'BS log ratio [dB]';
+% 
+% t3 = nexttile; 
+% imagesc(x_ACS,z_ACS,w, [0 1])
+% colormap(t3,parula)
+% axis image
+% title('Weights')
+% c = colorbar;
+% c.Label.String = '[a.u.]';
 
 
 %%
