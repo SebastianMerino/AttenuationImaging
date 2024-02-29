@@ -10,7 +10,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-22\BS_8_12';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-28';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -49,6 +49,11 @@ muBtv = 10^3; muCtv = 10^1.5;
 muBswtv = 10^2.5; muCswtv = 10^1;
 muBtvl1 = 10^3.5; muCtvl1 = 10^1.5;
 muBwfr = 10^4.5; muCwfr = 10^2;
+
+% muBtv = 10^3.5; muCtv = 10^2;
+% muBswtv = 10^3; muCswtv = 10^1.5;
+% muBtvl1 = 10^4; muCtvl1 = 10^2;
+% muBwfr = 10^4.5; muCwfr = 10^2;
 
 % GT
 groundTruthTop = [0.6,0.6,0.6,1.2,1.2,1.2];

@@ -157,7 +157,7 @@ ratio = db2mag(-30);
 meanSpectrum = mean(pxx,2);
 meanSpectrum(1) = 0;
 [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-% % freq_L = 3e6; freq_H = 9e6;
+% freq_L = 1e6; freq_H = 12e6;
 % 
 % Plotting BW
 figure,plot(fpxx/1e6,meanSpectrum)
@@ -272,7 +272,7 @@ bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
 %% SLD fit
-sldLine = squeeze(mean(mean(b,2),1))/4/L*NptodB;
+sldLine = squeeze(median(median(b,2),1))/4/L*NptodB;
 % sldLine = squeeze(sum(sum(b.*w,2),1))/4/L*NptodB/sum(w(:));
 fit1 = f\sldLine;
 fit2 = [f ones(length(f),1)]\sldLine;

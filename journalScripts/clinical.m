@@ -14,7 +14,7 @@ refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 tableName = 'clinical.xlsx';
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-20\BS_8_12';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-29\';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 T = readtable('params.xlsx');
@@ -35,9 +35,14 @@ ratio_zx        = 12/8;
 % extension = 3; % 1 or 3
 
 % reg
-muBtv = 10^3; muCtv = 10^1;
-muBswtv = 10^2.5; muCswtv = 10^0.5;
-muBtvl1 = 10^3; muCtvl1 = 10^0;
+% muBtv = 10^3; muCtv = 10^1;
+% muBswtv = 10^2.5; muCswtv = 10^0.5;
+% muBtvl1 = 10^3; muCtvl1 = 10^0;
+% muBwfr = 10^3; muCwfr = 10^0;
+
+muBtv = 10^2.5; muCtv = 10^1;
+muBswtv = 10^2; muCswtv = 10^0.5;
+muBtvl1 = 10^2.5; muCtvl1 = 10^0;
 muBwfr = 10^3; muCwfr = 10^0;
 
 % ================= NEW THINGS  BS 6X12 ==============
@@ -49,7 +54,7 @@ muBwfr = 10^3; muCwfr = 10^0;
 muB0 = 10^3; muC0 = 10^0;
 ratioCutOff     = 10;
 order = 5;
-reject = 0.2;
+reject = 0.1;
 extension = 3; % 1 or 3
 % =============================================
 
@@ -58,17 +63,10 @@ aSNR = 1; bSNR = 0.1;
 desvMin = 15;
 
 %%
-rowId = []; 
-col1 = [];
-col2 = [];
-col3 = [];
-col4 = [];
-col5 = [];
-col6 = [];
-col7 = [];
-col8 = [];
+dataCols = zeros(height(T),16);
 for iAcq = 1:height(T)
 patient = num2str(T.patient(iAcq));
+class = T.clase(iAcq);
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
 refDir = fullfile(refsDir,T.reference{iAcq});
 
@@ -350,8 +348,15 @@ CRSWTV = reshape(Cn*NptodB,m,n);
 BRTVL1 = reshape(Bn*NptodB,m,n);
 
 %% WFR
+
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB0,muC0,m,n,tol,mask(:));
 bscMap = reshape(Cn,m,n)*NptodB;
+if strcmp(patient,'134135')||strcmp(patient,'199031')||strcmp(patient,'254581')
+    ratioCutOff = 15;
+else
+    ratioCutOff = 10;
+end
+%%
 w = (1-reject)* (1./((bscMap/ratioCutOff).^(2*order) + 1)) + reject;
 w = movmin(w,extension);
 
@@ -365,7 +370,7 @@ A2w = W*A2;
 [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 BRWFR = reshape(Bn*NptodB,m,n);
 
-%%
+%% Weight map
 figure('Units','centimeters', 'Position',[5 5 30 8]);
 tl = tiledlayout(1,3, 'TileSpacing','tight');
 
@@ -399,47 +404,47 @@ c.Label.String = 'ACS [db/cm/MHz]';
 
 
 %%
-figure('Units','centimeters', 'Position',[5 5 12 12]);
-tl = tiledlayout(2,2);
-title(tl,{'Comparison'})
-subtitle(tl,{['Patient ',patient],''})
-
-t2 = nexttile; 
-imagesc(x_ACS,z_ACS,BRTV, attRange)
-colormap(t2,turbo)
-axis equal tight
-title('TV')
-% subtitle(['\mu_b=',num2str(muBtv,2),', \mu_c=',num2str(muCtv,2)])
-c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
-
-t2 = nexttile; 
-imagesc(x_ACS,z_ACS,BRSWTV, attRange)
-colormap(t2,turbo)
-axis equal tight
-title('SWTV')
-% subtitle(['\mu_b=',num2str(muBwfr,2),', \mu_c=',num2str(muCwfr,2)])
-c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
-
-
-t2 = nexttile; 
-imagesc(x_ACS,z_ACS,BRTVL1, attRange)
-colormap(t2,turbo)
-axis equal tight
-title('TV-L1')
-% subtitle(['\mu_b=',num2str(muBtvl1,2),', \mu_c=',num2str(muCtvl1,2)])
-c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
-
-t2 = nexttile; 
-imagesc(x_ACS,z_ACS,BRWFR, attRange)
-colormap(t2,turbo)
-axis equal tight
-title('WFR')
-% subtitle(['\mu_b=',num2str(muBwfr,2),', \mu_c=',num2str(muCwfr,2)])
-c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
+% figure('Units','centimeters', 'Position',[5 5 12 12]);
+% tl = tiledlayout(2,2);
+% title(tl,{'Comparison'})
+% subtitle(tl,{['Patient ',patient],''})
+% 
+% t2 = nexttile; 
+% imagesc(x_ACS,z_ACS,BRTV, attRange)
+% colormap(t2,turbo)
+% axis equal tight
+% title('TV')
+% % subtitle(['\mu_b=',num2str(muBtv,2),', \mu_c=',num2str(muCtv,2)])
+% c = colorbar;
+% c.Label.String = 'Att. [db/cm/MHz]';
+% 
+% t2 = nexttile; 
+% imagesc(x_ACS,z_ACS,BRSWTV, attRange)
+% colormap(t2,turbo)
+% axis equal tight
+% title('SWTV')
+% % subtitle(['\mu_b=',num2str(muBwfr,2),', \mu_c=',num2str(muCwfr,2)])
+% c = colorbar;
+% c.Label.String = 'Att. [db/cm/MHz]';
+% 
+% 
+% t2 = nexttile; 
+% imagesc(x_ACS,z_ACS,BRTVL1, attRange)
+% colormap(t2,turbo)
+% axis equal tight
+% title('TV-L1')
+% % subtitle(['\mu_b=',num2str(muBtvl1,2),', \mu_c=',num2str(muCtvl1,2)])
+% c = colorbar;
+% c.Label.String = 'Att. [db/cm/MHz]';
+% 
+% t2 = nexttile; 
+% imagesc(x_ACS,z_ACS,BRWFR, attRange)
+% colormap(t2,turbo)
+% axis equal tight
+% title('WFR')
+% % subtitle(['\mu_b=',num2str(muBwfr,2),', \mu_c=',num2str(muCwfr,2)])
+% c = colorbar;
+% c.Label.String = 'Att. [db/cm/MHz]';
 
 
 %% Mascaras
@@ -454,61 +459,82 @@ maskThyroidACS = imerode(maskThyroidACS,se);
 maskNoduleACS = imerode(maskNoduleACS,se);
 %figure, imagesc(x_ACS,z_ACS,maskThyroidACS|maskNoduleACS)
 
-rowId = [rowId;{patient}]; 
-col1 = [col1;mean(BRTV(maskNoduleACS))];
-col2 = [col2;mean(BRSWTV(maskNoduleACS))];
-col3 = [col3;mean(BRTVL1(maskNoduleACS))];
-col4 = [col4;mean(BRWFR(maskNoduleACS))];
-col5 = [col5;mean(BRTV(maskThyroidACS))];
-col6 = [col6;mean(BRSWTV(maskThyroidACS))];
-col7 = [col7;mean(BRTVL1(maskThyroidACS))];
-col8 = [col8;mean(BRWFR(maskThyroidACS))];
-
+patCol(iAcq) = {patient}; 
+classCol(iAcq) = {class};
+dataCols(iAcq,:) = [mean(BRTV(maskNoduleACS)), std(BRTV(maskNoduleACS)),...
+    mean(BRSWTV(maskNoduleACS)), std(BRSWTV(maskNoduleACS)),...
+    mean(BRTVL1(maskNoduleACS)), std(BRTVL1(maskNoduleACS)),...
+    mean(BRWFR(maskNoduleACS)), std(BRWFR(maskNoduleACS)), ...
+    mean(BRTV(maskThyroidACS)), std(BRTV(maskThyroidACS)),...
+    mean(BRSWTV(maskThyroidACS)), std(BRSWTV(maskThyroidACS)),...
+    mean(BRTVL1(maskThyroidACS)), std(BRTVL1(maskThyroidACS)),...
+    mean(BRWFR(maskThyroidACS)), std(BRWFR(maskThyroidACS))];
 %% Overlay
 [X,Z] = meshgrid(xFull,zFull);
 roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 %figure, imagesc(roi);
 
-figure('Units','centimeters', 'Position',[5 5 8 12])
-tiledlayout(2,1)
+figure('Units','centimeters', 'Position',[5 5 12 8])
+tiledlayout(2,2, 'TileSpacing','tight', 'Padding','tight')
 t2 = nexttile;
-imagesc(xFull,zFull,BmodeFull,[-50 0])
-axis image
-title('B-mode')
-ylim([0.1, 3.5])
-c = colorbar;
-c.Label.String = 'dB';
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRTV,[-50 0],attRange,0.5,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('TV')
+colorbar off
+% hColor.Label.String = 'dB/cm/MHz';
+ylim([0.1, 3])
+hold on
+contour(xFull,zFull,roi,1,'w--')
+contour(x,z,maskThyroid,1,'w--')
+hold off
+% xlabel('x [cm]')
+ylabel('z [cm]')
+
+nexttile,
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRSWTV,[-50 0],attRange,0.5,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('SWTV')
+colorbar off
+% hColor.Label.String = 'dB/cm/MHz';
+ylim([0.1, 3])
+hold on
+contour(xFull,zFull,roi,1,'w--')
+contour(x,z,maskThyroid,1,'w--')
+hold off
+% xlabel('x [cm]')
+% ylabel('z [cm]')
+
+nexttile,
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRTVL1,[-50 0],attRange,0.5,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('TVL1')
+colorbar off
+% hColor.Label.String = 'dB/cm/MHz';
+ylim([0.1, 3])
 hold on
 contour(xFull,zFull,roi,1,'w--')
 contour(x,z,maskThyroid,1,'w--')
 hold off
 xlabel('x [cm]')
 ylabel('z [cm]')
+
 
 nexttile,
 [~,hB,hColor] = imOverlayInterp(BmodeFull,BRWFR,[-50 0],attRange,0.5,...
     x_ACS,z_ACS,roi,xFull,zFull);
-title('TV')
-hColor.Label.String = 'dB/cm/MHz';
-ylim([0.1, 3.5])
+title('WFR')
+ylim([0.1, 3])
 hold on
 contour(xFull,zFull,roi,1,'w--')
 contour(x,z,maskThyroid,1,'w--')
 hold off
-colormap(t2,gray)
 xlabel('x [cm]')
-ylabel('z [cm]')
+% ylabel('z [cm]')
 
-% nexttile,
-% [~,hB,hColor] = imOverlayInterp(BmodeFull,BRWFR,[-50 0],attRange,0.5,...
-%     x_ACS,z_ACS,roi,xFull,zFull);
-% title('B-mode and attenuation map')
-% hColor.Label.String = 'dB/cm/MHz';
-% ylim([0.1, 3.5])
-% hold on
-% contour(xFull,zFull,roi,1,'w--')
-% contour(x,z,maskThyroid,1,'w--')
-% hold off
+% cb = colorbar;
+hColor.Layout.Tile = 'east';
+hColor.Label.String = 'dB/cm/MHz';
+fontsize(gcf,8,'points')
 
 
 %%
@@ -518,10 +544,19 @@ close all
 end
 
 %%
-T = table(col1,col2,col3,col4,col5,col6,col7,col8,...
-          'VariableNames',{ ...
-          'noduleTV','noduleSWTV','noduleTVL1','noduleWFR', ...
-          'thyroidTV','thyroidSWTV','thyroidTVL1','thyroidWFR'},...
-          'RowNames',rowId)
-writetable(T,fullfile(resultsDir,tableName),...
+infoTable = table(patCol',classCol',...
+          'VariableNames',{'patient','type'});
+dataTable = array2table(dataCols,...
+    'VariableNames',{ ...
+    'nod-TV-mean','nod-TV-std', ...
+    'nod-SWTV-mean','nod-SWTV-std', ...
+    'nod-TVL1-mean','nod-TVL1-std', ...
+    'nod-WFR-mean','nod-WFR-std', ...
+    'thy-TV-mean','thy-TV-std', ...
+    'thy-SWTV-mean','thy-SWTV-std', ...
+    'thy-TVL1-mean','thy-TVL1-std', ...
+    'thy-WFR-mean','thy-WFR-std', ...
+    });
+
+writetable([infoTable,dataTable],fullfile(resultsDir,tableName),...
      'WriteRowNames',true);

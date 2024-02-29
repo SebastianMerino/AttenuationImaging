@@ -7,8 +7,8 @@ function [hF,hB,hColor] = imoverlay2(B,SWS,climB,clim,alpha,x,z,ROI,xBm,zBm)
 B = repmat(mat2gray(double(B),double(climB)),[1,1,3]);
 
 hB = imagesc(xBm,zBm,B);%axis image on;
-xlabel('\bf x [mm]')
-ylabel('\bf z [mm]')
+% xlabel('\bf x [mm]')
+% ylabel('\bf z [mm]')
 colormap(gray)
 
 hColor = colorbar; colormap turbo;
