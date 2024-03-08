@@ -10,7 +10,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-28';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-07';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -40,7 +40,8 @@ desvMin = 15;
 
 % Plotting
 dynRange = [-40,0];
-attRange = [0.4,1.4];
+% attRange = [0.4,1.4];
+attRange = [0.4,1.7];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
@@ -406,16 +407,23 @@ figure('Units','centimeters', 'Position',[5 5 20 4]);
 tl = tiledlayout(1,5, "Padding","tight");
 
 t1 = nexttile;
-imagesc(x,z,Bmode,dynRange)
-axis equal
-xlim([x_ACS(1) x_ACS(end)]),
-ylim([z_ACS(1) z_ACS(end)]),
-colormap(t1,gray)
-c = colorbar(t1, 'westoutside');
-c.Label.String = '[db]';
-title('Bmode')
-ylabel('Axial [cm]')
-xlabel('Lateral [cm]')
+% imagesc(x,z,Bmode,dynRange)
+% axis equal
+% xlim([x_ACS(1) x_ACS(end)]),
+% ylim([z_ACS(1) z_ACS(end)]),
+% colormap(t1,gray)
+% c = colorbar(t1, 'westoutside');
+% c.Label.String = '[db]';
+% title('Bmode')
+% ylabel('Axial [cm]')
+% xlabel('Lateral [cm]')
+imagesc(x_ACS,z_ACS,attIdeal,attRange)
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+colormap(turbo)
+axis image
+title('Ideal')
+% c = colorbar;
+% c.Label.String = 'ACS [dB/cm/MHz]';
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRTV, attRange)
@@ -517,7 +525,7 @@ hold off
 grid on
 ylim([0.4 1.4])
 xlim([z_ACS(1) z_ACS(end)])
-title('Axial profile - L1')
+title('Axial profile - L2')
 legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
 
 
@@ -540,7 +548,8 @@ legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside')
 % title('Weights')
 % c = colorbar;
 % c.Label.String = '[a.u.]';
-
+save('simuLayered.mat','axialTV','axialSWTV','axialTVL1','axialWFR',...
+    'z_ACS','attIdeal');
 
 %%
 save_all_figures_to_directory(resultsDir,'layeredSimFig');

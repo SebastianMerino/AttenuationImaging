@@ -1,0 +1,181 @@
+% ====================================================================== %
+% Script to fin the acoustic enhancement posterior to a colloid nodule.
+% For Journal.
+% ====================================================================== %
+clear,
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Thyroid_Data_PUCP_UTD'];
+refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\REFERENCES'];
+
+tableName = 'clinical.xlsx';
+
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-29\';
+if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
+
+T = readtable('params.xlsx');
+
+% CASOS INTERESANTES: 2,4,6,8,9,13
+
+blocksize = 8;     % Block size in wavelengths
+fixedBW = true;
+ratio = db2mag(-30);
+freq_L = 3.5e6; freq_H = 8e6;
+% freq_L = 3e6; freq_H = 9e6;
+overlap_pc      = 0.8;
+ratio_zx        = 12/8;
+
+%% Loading case
+iAcq = 4;
+patient = num2str(T.patient(iAcq));
+class = T.clase(iAcq);
+samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
+refDir = fullfile(refsDir,T.reference{iAcq});
+
+out =lectura_OK(samPath);
+sam1 = out.RF(:,:,1);
+fs = out.fs;
+fc = out.fc;
+x = out.x; z = out.z;
+fprintf("\n Selecting acq. no. %i, patient %s\n",iAcq,patient);
+
+
+% Manual cropping
+dx = x(2)-x(1);
+dz = z(2)-z(1);
+xFull = x*1e2; % [cm]
+zFull = z*1e2; % [cm]
+
+BmodeFull = db(hilbert(sam1));
+BmodeFull = BmodeFull - max(BmodeFull(:));
+
+% Manual cropping
+dynRange = [-50,-10];
+figure('Units','centimeters', 'Position',[5 5 15 15]),
+imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
+colormap gray; clim(dynRange);
+hb2=colorbar; ylabel(hb2,'dB')
+xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
+ylim([0.1 3.5])
+title(patient)
+
+confirmation = '';
+while ~strcmp(confirmation,'Yes')
+    rect = getrect;
+    confirmation = questdlg('Sure?');
+    if strcmp(confirmation,'Cancel')
+        disp(rect)
+        break
+    end
+end
+close,
+
+
+%% Cropping and finding sample sizes
+% Region for attenuation imaging
+x_inf = rect(1); x_sup = rect(1)+rect(3);
+z_inf = rect(2); z_sup = rect(2)+rect(4);
+
+% Limits for ACS estimation
+ind_x = x_inf <= xFull & xFull <= x_sup;
+ind_z = z_inf <= zFull & zFull <= z_sup;
+roi = ind_x.*ind_z';
+x = xFull(ind_x);
+z = zFull(ind_z);
+sam1 = sam1(ind_z,ind_x);
+
+% Plot region of interest B-mode image
+Bmode = db(hilbert(sam1));
+Bmode = Bmode - max(Bmode(:));
+
+dynRange = [-50,0];
+attRange = [0.3,1.7];
+%attRange = [0,1]; % Just for 13 acq
+bsRange = [-2 2];
+
+
+
+%% ACOUSTIC ENHANCEMENT
+
+fs = 40000000;
+[pxx,fpxx] = pwelch(sam1,300,250,512,fs);
+
+figure('Units','centimeters', 'Position',[5 5 18 6]),
+tiledlayout(1,2)
+nexttile, imagesc(x,z,Bmode,dynRange)
+axis image
+colormap(gray)
+colorbar('westoutside')
+title('Bmode')
+
+nexttile,plot(fpxx/1e6,mean(pxx,2))
+title('Spectrum')
+xlabel('f [MHz]')
+grid on
+
+
+%%
+fc = 7E6;
+[bFilt,aFilt] = butter(1,[fc-0.5E6 fc+0.5E6]/fs*2, "bandpass");
+samFilt = filtfilt(bFilt,aFilt,sam1);
+[pxx,fpxx] = pwelch(samFilt,300,250,512,fs);
+
+BmodeFilt = db(hilbert(samFilt));
+BmodeFilt = BmodeFilt - max(BmodeFilt(:));
+
+figure('Units','centimeters', 'Position',[5 5 18 6]),
+tiledlayout(1,2)
+nexttile, imagesc(x,z,BmodeFilt,[-50 0])
+axis image
+colormap(gray)
+colorbar('westoutside')
+title('Bmode')
+% z0 = 1.8; zf = 1.9;
+z0 = 2.4; zf = 3;
+
+% z0 = 2.2; zf = 2.5;
+% z0 = 1.3; zf = 2.4;
+yline(z0, 'b--','LineWidth',1.5)
+yline(zf, 'b--','LineWidth',1.5)
+
+nexttile,plot(fpxx/1e6,mean(pxx,2))
+title('Spectrum')
+xlabel('f [MHz]')
+grid on
+
+%%
+[~,Z] = meshgrid(x,z);
+mask = Z>z0 & Z<zf;
+
+% x0Inc = 1.5; xfInc = 3;
+% x0Out = 0.05; xfOut = 0.9;
+
+x0Inc = 2.2; xfInc = 3.1;
+x0Out = 0.5; xfOut = 1.5;
+
+% x0Inc = 1.5; xfInc = 2;
+% x0Out = 2.5; xfOut = 3.5;
+
+BmodeFilt(~mask) = NaN;
+latProfile = median(BmodeFilt,"omitmissing");
+figure('Units','centimeters', 'Position',[5 5 9 6]),
+plot(x,latProfile)
+grid on
+axis tight
+xlabel('Lateral [cm]')
+title('Acoustic enhancement')
+
+xline(x0Inc, 'g--', 'LineWidth',2)
+xline(xfInc, 'g--', 'LineWidth',2)
+xline(x0Out, 'r--', 'LineWidth',2)
+xline(xfOut, 'r--', 'LineWidth',2)
+
+%%
+% incDiameter = 2.3-1.1;
+incDiameter = 1.2;
+% incDiameter = 0.9;
+underInclusion = mean(latProfile(x>x0Inc & x <xfInc))
+ousideInclusion = mean(latProfile(x>x0Out & x <xfOut))
+acEnhancement = underInclusion - ousideInclusion
+
+attDiff = acEnhancement/2/incDiameter/fc*1E6

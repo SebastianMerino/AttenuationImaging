@@ -15,7 +15,7 @@ addpath('./journalScripts/');
 
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_01_30'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-22\BS_8_12';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-07';
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
@@ -57,7 +57,8 @@ extension = 3;
 groundTruthThyroid = [0.8,1.5];
 groundTruthNodule = [1.5,0.8];
 
-attRange = [0.6 1.7];
+%attRange = [0.6 1.7];
+attRange = [0.4,1.7];
 
 % Plotting
 dynRange = [-60,0];
@@ -385,21 +386,31 @@ r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsWFR(iAcq) = r;
 
 % TESTING
+%%
+attIdeal{iAcq} = ones(m,n)*groundTruthThyroid(iAcq);
+incACS = (Z-cz).^2 + (X-cx).^2 <= (rInc)^2;
+attIdeal{iAcq}(incACS) = groundTruthNodule(iAcq);
+
 %% Plotting
 figure('Units','centimeters', 'Position',[5 5 20 4]);
 tl = tiledlayout(1,5, "Padding","tight");
 
 t1 = nexttile;
-imagesc(x,z,Bmode,dynRange)
-axis equal
-xlim([x_ACS(1) x_ACS(end)]),
-ylim([z_ACS(1) z_ACS(end)]),
-colormap(t1,gray)
-c = colorbar(t1, 'westoutside');
-c.Label.String = '[db]';
-title('Bmode')
-ylabel('Axial [cm]')
-xlabel('Lateral [cm]')
+% imagesc(x,z,Bmode,dynRange)
+% axis equal
+% xlim([x_ACS(1) x_ACS(end)]),
+% ylim([z_ACS(1) z_ACS(end)]),
+% colormap(t1,gray)
+% c = colorbar(t1, 'westoutside');
+% c.Label.String = '[db]';
+% title('Bmode')
+% ylabel('Axial [cm]')
+% xlabel('Lateral [cm]')
+imagesc(x_ACS,z_ACS,attIdeal{iAcq},attRange)
+xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+colormap(turbo)
+axis image
+title('Ideal')
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRTV, attRange)
@@ -466,36 +477,39 @@ xlabel('Lateral [cm]')
 fontsize(gcf,8,'points')
 
 %%
-figure('Units','centimeters', 'Position',[5 5 10 4])
-tl = tiledlayout(1,2, "Padding","tight");
-% t1 = nexttile;
-% imagesc(x,z,Bmode,dynRange)
-% axis equal
-% xlim([x_ACS(1) x_ACS(end)]),
-% ylim([z_ACS(1) z_ACS(end)]),
-% colormap(t1,gray)
-% colorbar(t1, 'eastoutside')
-% title('Bmode')
+figure('Units','centimeters', 'Position',[5 5 10 8])
+tl = tiledlayout(2,2, "Padding","tight", 'TileSpacing','tight');
+t1 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+axis equal
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+colormap(t1,gray)
+c = colorbar(t1, 'eastoutside');
+c.Label.String = '[dB]';
+title('Bmode')
+xlabel('Lateral [cm]')
+ylabel('Axial [cm]')
 
 t2 = nexttile; 
 imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
 colormap(t2,parula)
 axis image
-title('TVL1')
-c = colorbar;
-c.Label.String = '\DeltaBSC [dB/cm]';
+title('\DeltaBSC')
+c = colorbar(t2, 'eastoutside');
+c.Label.String = '[dB/cm]';
 xlabel('Lateral [cm]')
-ylabel('Axial [cm]')
+%ylabel('Axial [cm]')
 
-t3 = nexttile; 
+t3 = nexttile([1,2]); 
 imagesc(x_ACS,z_ACS,w, [0 1])
 colormap(t3,parula)
 axis image
 title('Weights')
-c = colorbar;
+c = colorbar(t3, 'eastoutside');
 xlabel('Lateral [cm]')
 ylabel('Axial [cm]')
-% c.Label.String = '[a.u.]';
+c.Label.String = '[a.u.]';
 
 fontsize(gcf,8,'points')
 
@@ -503,10 +517,6 @@ fontsize(gcf,8,'points')
 % [~,hB,hColor] = imOverlayInterp(Bmode,w,[-50 0],[0 1],0.2,...
 %     x_ACS,z_ACS,ones(size(Bmode)),x,z);
 % colormap(hot)
-%%
-attIdeal{iAcq} = ones(m,n)*groundTruthThyroid(iAcq);
-incACS = (Z-cz).^2 + (X-cx).^2 <= (rInc)^2;
-attIdeal{iAcq}(incACS) = groundTruthNodule(iAcq);
 %%
 axialTV{iAcq} = mean(BRTV(:,41:49),2);
 axialSWTV{iAcq} = mean(BRSWTV(:,41:49),2);
@@ -525,10 +535,50 @@ lateralWFR{iAcq} = mean(BRWFR(24:26,:),1);
 
 end
 
+save_all_figures_to_directory(resultsDir,'thyroidSimFig');
+close all
 %%
-figure('Units','centimeters', 'Position',[5 5 12 12])
-tiledlayout(2,1)
-nexttile
+layered = load('simuLayered.mat');
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile([1,2]),
+plot(layered.z_ACS, layered.axialTV{1}, 'r:', 'LineWidth',1.5),
+hold on
+plot(layered.z_ACS, layered.axialSWTV{1}, 'r', 'LineWidth',1),
+plot(layered.z_ACS, layered.axialTVL1{1}, 'b:', 'LineWidth',1.5),
+plot(layered.z_ACS, layered.axialWFR{1}, 'b', 'LineWidth',1),
+plot(layered.z_ACS,mean(layered.attIdeal,2), 'k--')
+hold off
+grid on
+ylim([0.4 1.4])
+xlim([layered.z_ACS(1) layered.z_ACS(end)])
+%title('Axial profile')
+xlabel('Axial [cm]')
+ylabel('ACS [dB/cm/MHz]')
+legend({'TV','SWTV','TVL1','WFR'}, 'Location','northwest') 
+
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile([1,2]),
+plot(layered.z_ACS, layered.axialTV{2}, 'r:', 'LineWidth',1.5),
+hold on
+plot(layered.z_ACS, layered.axialSWTV{2}, 'r', 'LineWidth',1),
+plot(layered.z_ACS, layered.axialTVL1{2}, 'b:', 'LineWidth',1.5),
+plot(layered.z_ACS, layered.axialWFR{2}, 'b', 'LineWidth',1),
+plot(layered.z_ACS,mean(layered.attIdeal,2), 'k--')
+hold off
+grid on
+ylim([0.4 1.4])
+xlim([layered.z_ACS(1) layered.z_ACS(end)])
+%title('Axial profile')
+ylabel('ACS [dB/cm/MHz]')
+xlabel('Axial [cm]')
+%legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+% figure('Units','centimeters', 'Position',[5 5 12 12])
+nexttile,
 plot(z_ACS, axialTV{1}, 'r:', 'LineWidth',1.5),
 hold on
 plot(z_ACS, axialSWTV{1}, 'r', 'LineWidth',1),
@@ -539,29 +589,12 @@ hold off
 grid on
 ylim([0.6 1.7])
 xlim([z_ACS(1) z_ACS(end)])
-title('Axial profile - C1')
-xlabel('Depth [cm]')
-legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+%title('Axial profile')
+ylabel('ACS [dB/cm/MHz]')
+xlabel('Axial [cm]')
+% legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
 
 
-nexttile,
-plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
-hold on
-plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
-plot(z_ACS,mean(attIdeal{2}(:,41:49),2), 'k--')
-hold off
-grid on
-ylim([0.6 1.7])
-xlim([z_ACS(1) z_ACS(end)])
-title('Axial profile - C2')
-xlabel('Depth [cm]')
-legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
-
-%%
-figure('Units','centimeters', 'Position',[5 5 12 12])
-tiledlayout(2,1)
 nexttile,
 plot(x_ACS, lateralTV{1}, 'r:', 'LineWidth',1.5),
 hold on
@@ -573,9 +606,28 @@ hold off
 grid on
 ylim([0.6 1.7])
 xlim([x_ACS(1) x_ACS(end)])
-title('Lateral profile - C1')
+%title('Lateral profile')
 xlabel('Lateral [cm]')
-legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+%legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile,
+plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
+hold on
+plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
+plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
+plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
+plot(z_ACS,mean(attIdeal{2}(:,41:49),2), 'k--')
+hold off
+grid on
+ylim([0.6 1.7])
+xlim([z_ACS(1) z_ACS(end)])
+%title('Axial profile')
+ylabel('ACS [dB/cm/MHz]')
+xlabel('Axial [cm]')
+% legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+
 
 nexttile,
 plot(x_ACS, lateralTV{2}, 'r:', 'LineWidth',1.5),
@@ -588,12 +640,122 @@ hold off
 grid on
 ylim([0.6 1.7])
 xlim([x_ACS(1) x_ACS(end)])
-title('Lateral profile - C2')
+% title('Lateral profile')
 xlabel('Lateral [cm]')
-legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
-%%
-save_all_figures_to_directory(resultsDir,'thyroidSimFig');
-close all
+% legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+
+fontsize(gcf,8,'points')
+
+save_all_figures_to_directory(resultsDir,'SimAxialLat');
+
+%% ALL IN ONE FIGURE
+% layered = load('simuLayered.mat');
+% figure('Units','centimeters', 'Position',[5 5 10 15])
+% tiledlayout(4,2, 'TileSpacing','compact', 'Padding','compact')
+% nexttile([1,2]),
+% plot(layered.z_ACS, layered.axialTV{1}, 'r:', 'LineWidth',1.5),
+% hold on
+% plot(layered.z_ACS, layered.axialSWTV{1}, 'r', 'LineWidth',1),
+% plot(layered.z_ACS, layered.axialTVL1{1}, 'b:', 'LineWidth',1.5),
+% plot(layered.z_ACS, layered.axialWFR{1}, 'b', 'LineWidth',1),
+% plot(layered.z_ACS,mean(layered.attIdeal,2), 'k--')
+% hold off
+% grid on
+% ylim([0.4 1.4])
+% xlim([layered.z_ACS(1) layered.z_ACS(end)])
+% %title('Axial profile')
+% xlabel('Axial [cm]')
+% ylabel('ACS [dB/cm/MHz]')
+% legend({'TV','SWTV','TVL1','WFR'}, 'Location','northwest') 
+% 
+% nexttile([1,2]),
+% plot(layered.z_ACS, layered.axialTV{2}, 'r:', 'LineWidth',1.5),
+% hold on
+% plot(layered.z_ACS, layered.axialSWTV{2}, 'r', 'LineWidth',1),
+% plot(layered.z_ACS, layered.axialTVL1{2}, 'b:', 'LineWidth',1.5),
+% plot(layered.z_ACS, layered.axialWFR{2}, 'b', 'LineWidth',1),
+% plot(layered.z_ACS,mean(layered.attIdeal,2), 'k--')
+% hold off
+% grid on
+% ylim([0.4 1.4])
+% xlim([layered.z_ACS(1) layered.z_ACS(end)])
+% %title('Axial profile')
+% ylabel('ACS [dB/cm/MHz]')
+% xlabel('Axial [cm]')
+% %legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+% 
+% 
+% % figure('Units','centimeters', 'Position',[5 5 12 12])
+% nexttile,
+% plot(z_ACS, axialTV{1}, 'r:', 'LineWidth',1.5),
+% hold on
+% plot(z_ACS, axialSWTV{1}, 'r', 'LineWidth',1),
+% plot(z_ACS, axialTVL1{1}, 'b:', 'LineWidth',1.5),
+% plot(z_ACS, axialWFR{1}, 'b', 'LineWidth',1),
+% plot(z_ACS,mean(attIdeal{1}(:,41:49),2), 'k--')
+% hold off
+% grid on
+% ylim([0.6 1.7])
+% xlim([z_ACS(1) z_ACS(end)])
+% %title('Axial profile')
+% ylabel('ACS [dB/cm/MHz]')
+% xlabel('Axial [cm]')
+% % legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+% 
+% 
+% % figure('Units','centimeters', 'Position',[5 5 12 12])
+% % tiledlayout(2,1)
+% nexttile,
+% plot(x_ACS, lateralTV{1}, 'r:', 'LineWidth',1.5),
+% hold on
+% plot(x_ACS, lateralSWTV{1}, 'r', 'LineWidth',1),
+% plot(x_ACS, lateralTVL1{1}, 'b:', 'LineWidth',1.5),
+% plot(x_ACS, lateralWFR{1}, 'b', 'LineWidth',1),
+% plot(x_ACS,mean(attIdeal{1}(24:26,:),1), 'k--')
+% hold off
+% grid on
+% ylim([0.6 1.7])
+% xlim([x_ACS(1) x_ACS(end)])
+% %title('Lateral profile')
+% xlabel('Lateral [cm]')
+% %legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+% 
+% 
+% nexttile,
+% plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
+% hold on
+% plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
+% plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
+% plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
+% plot(z_ACS,mean(attIdeal{2}(:,41:49),2), 'k--')
+% hold off
+% grid on
+% ylim([0.6 1.7])
+% xlim([z_ACS(1) z_ACS(end)])
+% %title('Axial profile')
+% ylabel('ACS [dB/cm/MHz]')
+% xlabel('Axial [cm]')
+% % legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+% 
+% 
+% nexttile,
+% plot(x_ACS, lateralTV{2}, 'r:', 'LineWidth',1.5),
+% hold on
+% plot(x_ACS, lateralSWTV{2}, 'r', 'LineWidth',1),
+% plot(x_ACS, lateralTVL1{2}, 'b:', 'LineWidth',1.5),
+% plot(x_ACS, lateralWFR{2}, 'b', 'LineWidth',1),
+% plot(x_ACS,mean(attIdeal{2}(24:26,:),1), 'k--')
+% hold off
+% grid on
+% ylim([0.6 1.7])
+% xlim([x_ACS(1) x_ACS(end)])
+% % title('Lateral profile')
+% xlabel('Lateral [cm]')
+% % legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+% 
+% fontsize(gcf,8,'points')
+% save_all_figures_to_directory(resultsDir,'SimAxialLat');
+
 
 %%
 results1 = struct2table(MetricsTV);

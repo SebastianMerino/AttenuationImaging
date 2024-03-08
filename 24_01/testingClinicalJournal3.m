@@ -16,7 +16,7 @@ refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 T = readtable('params.xlsx');
 
-resultsDir = [baseDir,'\results\24-02-13\BS_8_12-BW_3.5_8'];
+resultsDir = [baseDir,'\results\24-03-06'];
 tableName = 'table.xlsx';
 if (~exist("figDir","dir")), mkdir(resultsDir); end
 
@@ -100,8 +100,8 @@ switch patient
     case '265002'
         % rect = [1.6240    0.9431    2.0236    1.4136];
         % rect = [1.6240    1.1431    2.0236    1.2136];
-        rect = [1.6240    1.0431    2.0236    1.3136];
-
+        % rect = [1.6240    1.0431    2.0236    1.3136]; % OFFICIAL
+        rect = [1.5240    1.0431    2.1236    1.3136];
     case '266844'
         % rect = [0.3531 0.6098 2.6286 2.1788];
         rect = [0.3531 0.8098 2.6286 1.9788];
@@ -194,7 +194,7 @@ NFFT = 2^(nextpow2(nz/2)+2);
 meanSpectrum = mean(pxx,2);
 meanSpectrum = meanSpectrum./max(meanSpectrum);
 figure,plot(fpxx/1e6,db(meanSpectrum))
-[freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, freqCutOff);
+% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, freqCutOff);
 xline([freq_L,freq_H]/1e6)
 xline(freq_C/1e6, 'k--')
 xlim([0 10])
@@ -353,10 +353,15 @@ title('Weights')
 
 
 %%
-% muBtv = 10^3; muCtv = 10^1;
-% muBtvl1 = 10^3; muCtvl1 = 10^0;
-% muBwfr2 = 10^3; muCwfr2 = 10^1;
-% muBwfr = 10^3; muCwfr = 10^0;
+% muBtv = 10^2.5; muCtv = 10^1;
+% muBtvl1 = 10^2.5; muCtvl1 = 10^0;
+% muBwfr2 = 10^2.5; muCwfr2 = 10^1;
+% muBwfr = 10^2.5; muCwfr = 10^0;
+muBtv = 10^3; muCtv = 10^1;
+muBtvl1 = 10^3; muCtvl1 = 10^0;
+muBwfr2 = 10^3; muCwfr2 = 10^1;
+muBwfr = 10^3; muCwfr = 10^0;
+
 
 % RSLD-TV
 [Bn,~] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
@@ -433,6 +438,7 @@ c.Label.String = 'Att. [db/cm/MHz]';
 
 %% Mascaras
 load(fullfile('newMasks',[patient,'.mat']));
+
 [X,Z] = meshgrid(x,z);
 [Xq,Zq] = meshgrid(x_ACS,z_ACS);
 maskNoduleACS = interp2(X,Z,maskNodule,Xq,Zq, 'nearest');
