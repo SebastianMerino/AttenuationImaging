@@ -10,7 +10,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-07';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-19';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -154,7 +154,8 @@ for jj=1:n
 end
 
 % Windows for spectrum
-windowing = tukeywin(nz/2,0.25);
+% windowing = tukeywin(nz/2,0.25);
+windowing = hamming(nz/2);
 windowing = windowing*ones(1,nx);
 
 % For looping

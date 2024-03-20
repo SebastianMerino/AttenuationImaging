@@ -5,9 +5,6 @@
 % ====================================================================== %
 
 clear,clc
-addpath('./functions_v7');
-addpath('./AttUtils');
-addpath('./journalScripts/');
 
 % baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\simulations_processed\inc_journal'];
@@ -15,7 +12,7 @@ addpath('./journalScripts/');
 
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_01_30'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-07';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-19';
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
@@ -178,7 +175,8 @@ for jj=1:n
 end
 
 % Windows for spectrum
-windowing = tukeywin(nz/2,0.25);
+% windowing = tukeywin(nz/2,0.25);
+windowing = hamming(nz/2);
 windowing = windowing*ones(1,nx);
 
 % For looping

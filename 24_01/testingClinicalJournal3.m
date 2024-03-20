@@ -16,7 +16,7 @@ refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 T = readtable('params.xlsx');
 
-resultsDir = [baseDir,'\results\24-03-06'];
+resultsDir = [baseDir,'\results\24-03-12'];
 tableName = 'table.xlsx';
 if (~exist("figDir","dir")), mkdir(resultsDir); end
 
@@ -313,6 +313,12 @@ muB0 = 1e3; muC0 = 10^0;
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB0,muC0,m,n,tol,mask(:));
 bscMap = reshape(Cn,m,n)*NptodB;
 
+if iAcq == 4 || iAcq == 6
+    ratioCutOff = 15;
+else
+    ratioCutOff = 10;
+end
+
 w1 = (1-reject)* (1./((bscMap/ratioCutOff).^(2*order) + 1)) + reject;
 w1 = movmin(w1,extension);
 w2 = db2mag(-dBgain*abs(bscMap));
@@ -394,7 +400,7 @@ A2w = W*A2;
 [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w2);
 BRWFR2 = reshape(Bn*NptodB,m,n);
 
-
+%%
 figure('Units','centimeters', 'Position',[5 5 20 15]);
 tl = tiledlayout(2,2);
 title(tl,{'Comparison'})
@@ -419,7 +425,8 @@ c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
 t2 = nexttile; 
-imagesc(x_ACS,z_ACS,BRWFR, attRange)
+im = imagesc(x_ACS,z_ACS,BRWFR, attRange);
+%im.AlphaData = maskNoduleACS;
 colormap(t2,turbo)
 axis equal tight
 title('Weights v1')
@@ -448,7 +455,7 @@ se = strel('diamond',1);
 maskThyroidACS = imerode(maskThyroidACS,se);
 maskNoduleACS = imerode(maskNoduleACS,se);
 %figure, imagesc(x_ACS,z_ACS,maskThyroidACS|maskNoduleACS)
-
+%%
 rowId = [rowId;{patient}]; 
 col1 = [col1;mean(BRTV(maskNoduleACS))];
 col2 = [col2;mean(BRTVL1(maskNoduleACS))];

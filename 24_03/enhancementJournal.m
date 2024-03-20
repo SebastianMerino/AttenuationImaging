@@ -26,7 +26,7 @@ overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
 %% Loading case
-iAcq = 4;
+iAcq = 1;
 patient = num2str(T.patient(iAcq));
 class = T.clase(iAcq);
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
@@ -130,8 +130,8 @@ axis image
 colormap(gray)
 colorbar('westoutside')
 title('Bmode')
-% z0 = 1.8; zf = 1.9;
-z0 = 2.4; zf = 3;
+z0 = 1.8; zf = 1.9;
+% z0 = 2.4; zf = 3;
 
 % z0 = 2.2; zf = 2.5;
 % z0 = 1.3; zf = 2.4;
@@ -147,11 +147,11 @@ grid on
 [~,Z] = meshgrid(x,z);
 mask = Z>z0 & Z<zf;
 
-% x0Inc = 1.5; xfInc = 3;
-% x0Out = 0.05; xfOut = 0.9;
+x0Inc = 1.5; xfInc = 3;
+x0Out = 0.2; xfOut = 0.9;
 
-x0Inc = 2.2; xfInc = 3.1;
-x0Out = 0.5; xfOut = 1.5;
+% x0Inc = 2.2; xfInc = 3.1;
+% x0Out = 0.5; xfOut = 1.5;
 
 % x0Inc = 1.5; xfInc = 2;
 % x0Out = 2.5; xfOut = 3.5;
@@ -172,7 +172,8 @@ xline(xfOut, 'r--', 'LineWidth',2)
 
 %%
 % incDiameter = 2.3-1.1;
-incDiameter = 1.2;
+incDiameter = 1;
+% incDiameter = 1.2;
 % incDiameter = 0.9;
 underInclusion = mean(latProfile(x>x0Inc & x <xfInc))
 ousideInclusion = mean(latProfile(x>x0Out & x <xfOut))

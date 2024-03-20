@@ -6,7 +6,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID316V2\06-08-2023-Generic'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID544V2\06-08-2023-Generic'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-22\BS_8_12';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-19';
 
 % targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
@@ -176,7 +176,8 @@ if true %iAcq == 1
     end
     
     % Windows for spectrum
-    windowing = tukeywin(nz/2,0.25);
+    % windowing = tukeywin(nz/2,0.25);
+    windowing = hamming(nz/2);
     windowing = windowing*ones(1,nx);
     
     % For looping

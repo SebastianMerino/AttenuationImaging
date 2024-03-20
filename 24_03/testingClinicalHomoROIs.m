@@ -49,15 +49,15 @@ NptodB = log10(exp(1))*20;
 % iAcq = 6;
 % rect2 = [1.4, 0.4, 0.7, 0.8];
 % rect1 = [1.4, 1.3, 0.7, 0.8];
+% 
+% iAcq = 4;
+% rect1 = [0.7    1.1    0.9    1.2];
+% rect2 = [2.1   1.1    0.9    1.2];
+% ratioCutOff     = 10;
 
-iAcq = 4;
-rect1 = [0.7    1.1    0.9    1.2];
-rect2 = [2.1   1.1    0.9    1.2];
-ratioCutOff     = 10;
-
-% iAcq = 1;
-% rect1 = [0.1    0.75    0.8    0.8];
-% rect2 = [1.2    0.75    0.8    0.8];
+iAcq = 1;
+rect1 = [0.4    0.75    0.4    0.8];
+rect2 = [1.6    0.75    0.4    0.8];
 
 patient = num2str(T.patient(iAcq));
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
@@ -122,6 +122,7 @@ roi = ind_x.*ind_z';
 x = xFull(ind_x);
 z = zFull(ind_z);
 sam1 = sam1(ind_z,ind_x);
+Bmode = BmodeFull(ind_z,ind_x);
 
 % Wavelength size
 c0 = 1540;
@@ -151,8 +152,8 @@ f  = band(rang)*1e-6; % [MHz]
 p = length(f);
 
 % Plot region of interest B-mode image
-Bmode = db(hilbert(sam1));
-Bmode = Bmode - max(Bmode(:));
+% Bmode = db(hilbert(sam1));
+% Bmode = Bmode - max(Bmode(:));
 
 fprintf('\nFrequency range: %.2f - %.2f MHz\n',freq_L*1e-6,freq_H*1e-6)
 fprintf('Blocksize in wavelengths: %i\n',blocksize)
@@ -161,7 +162,12 @@ fprintf('Blocksize in pixels nx: %i, nz: %i\n',nx,nz);
 fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 
 %%
-[pxx,fpxx] = pwelch(sam1,nz,nz-wz,nz,fs);
+%[pxx,fpxx] = pwelch(sam1,nz,nz-wz,nz,fs);
+%plot(fpxx,db(meanSpectrum))
+
+%%
+pxx = fft(sam1);
+fpxx = (0:size(pxx,1)-1)/size(pxx,1)*fs;
 meanSpectrum = mean(pxx,2);
 spec{iRoi} =  db(meanSpectrum);
 
@@ -381,7 +387,7 @@ ylabel('Magnitude [dB]')
 xline(freq_L/1e6,'k--')
 xline(freq_H/1e6,'k--')
 legend('Thyroid', 'Nodule')
-
+xlim([0 20])
 %% ACS images
 
 alpha = 0.7;
@@ -467,6 +473,6 @@ fprintf("Mean: %.2f, Std: %.2f\n",mean(dataRoi{2}.WFR(:)),...
 
 %%
 
-save_all_figures_to_directory(resultsDir,['pat',patient,'fig']);
-close all
+% save_all_figures_to_directory(resultsDir,['pat',patient,'fig']);
+% close all
 

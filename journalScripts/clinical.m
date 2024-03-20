@@ -14,7 +14,7 @@ refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 tableName = 'clinical.xlsx';
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-06\BW_3.5_8';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-20';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 T = readtable('params.xlsx');
@@ -32,32 +32,15 @@ ratio_zx        = 12/8;
 muB0 = 1e3; muC0 = 10^0;
 ratioCutOff     = 10;
 order = 5;
-reject = 0.2;
+reject = 0.3;
 extension = 3; % 1 or 3
 
 % reg FINAL VERSION
-muBtv = 10^3; muCtv = 10^1;
-muBswtv = 10^2.5; muCswtv = 10^0.5;
+% muBtv = 10^3; muCtv = 10^1;
+muBtv = 10^3; muCtv = 10^1.5;
+muBswtv = 10^2.5; muCswtv = 10^1;
 muBtvl1 = 10^3; muCtvl1 = 10^0;
 muBwfr = 10^3; muCwfr = 10^0;
-
-% muBtv = 10^2.5; muCtv = 10^1;
-% muBswtv = 10^2; muCswtv = 10^0.5;
-% muBtvl1 = 10^2.5; muCtvl1 = 10^0;
-% muBwfr = 10^3; muCwfr = 10^0;
-
-% ================= NEW THINGS  BS 6X12 ==============
-% muBtv = 10^3.5; muCtv = 10^1.5;
-% muBswtv = 10^3; muCswtv = 10^1;
-% muBtvl1 = 10^3.5; muCtvl1 = 10^0.5;
-% muBwfr = 10^3.5; muCwfr = 10^0.5;
-
-% muB0 = 10^3; muC0 = 10^0;
-% ratioCutOff     = 10;
-% order = 5;
-% reject = 0.1;
-% extension = 3; % 1 or 3
-% =============================================
 
 % swtv weights
 aSNR = 1; bSNR = 0.1;
@@ -355,7 +338,7 @@ BRTVL1 = reshape(Bn*NptodB,m,n);
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB0,muC0,m,n,tol,mask(:));
 bscMap = reshape(Cn,m,n)*NptodB;
 % if strcmp(patient,'134135')||strcmp(patient,'199031')||strcmp(patient,'254581')
-% if strcmp(patient,'134135')
+% % if strcmp(patient,'134135')
 %     ratioCutOff = 15;
 % else
 %     ratioCutOff = 10;
@@ -381,8 +364,8 @@ A2w = W*A2;
 BRWFR = reshape(Bn*NptodB,m,n);
 
 %% Weight map
-figure('Units','centimeters', 'Position',[5 5 15 4]);
-tl = tiledlayout(1,3, 'TileSpacing','tight');
+figure('Units','centimeters', 'Position',[5 5 18 4]);
+tl = tiledlayout(1,3, 'TileSpacing','tight', 'Padding','compact');
 
 t2 = nexttile; 
 imagesc(x_ACS,z_ACS,bscMap, [-20 20])
@@ -467,18 +450,18 @@ se = strel('diamond',1);
 maskThyroidACS = imerode(maskThyroidACS,se);
 maskNoduleACS = imerode(maskNoduleACS,se);
 %figure, imagesc(x_ACS,z_ACS,maskThyroidACS|maskNoduleACS)
-
+%%
 patCol(iAcq) = {patient}; 
 classCol(iAcq) = {class};
-dataCols(iAcq,:) = [mean(BRTV(maskNoduleACS)), std(BRTV(maskNoduleACS)),...
-    mean(BRSWTV(maskNoduleACS)), std(BRSWTV(maskNoduleACS)),...
-    mean(BRTVL1(maskNoduleACS)), std(BRTVL1(maskNoduleACS)),...
-    mean(BRWFR(maskNoduleACS)), std(BRWFR(maskNoduleACS)), ...
-    mean(BRTV(maskThyroidACS)), std(BRTV(maskThyroidACS)),...
-    mean(BRSWTV(maskThyroidACS)), std(BRSWTV(maskThyroidACS)),...
-    mean(BRTVL1(maskThyroidACS)), std(BRTVL1(maskThyroidACS)),...
-    mean(BRWFR(maskThyroidACS)), std(BRWFR(maskThyroidACS))];
-% disp(mean(BRWFR(maskNoduleACS)))
+dataCols(iAcq,:) = [median(BRTV(maskNoduleACS)), iqr(BRTV(maskNoduleACS)),...
+    median(BRSWTV(maskNoduleACS)), iqr(BRSWTV(maskNoduleACS)),...
+    median(BRTVL1(maskNoduleACS)), iqr(BRTVL1(maskNoduleACS)),...
+    median(BRWFR(maskNoduleACS)), iqr(BRWFR(maskNoduleACS)), ...
+    median(BRTV(maskThyroidACS)), iqr(BRTV(maskThyroidACS)),...
+    median(BRSWTV(maskThyroidACS)), iqr(BRSWTV(maskThyroidACS)),...
+    median(BRTVL1(maskThyroidACS)), iqr(BRTVL1(maskThyroidACS)),...
+    median(BRWFR(maskThyroidACS)), iqr(BRWFR(maskThyroidACS))];
+% disp(mean(BRWFR(maskNoduleACS)), std)
 
 dataThyroidTV{iAcq} = BRTV(maskThyroidACS);
 dataThyroidWFR{iAcq} = BRWFR(maskThyroidACS);
@@ -587,9 +570,6 @@ writetable([infoTable,dataTable],fullfile(resultsDir,tableName),...
      'WriteRowNames',true);
 
 %%
-
-
-
 figure('Units','centimeters', 'Position',[5 5 12 10]), 
 tl = tiledlayout(2,2, TileSpacing="compact", Padding="compact");
 % ylabel(tl,'ACS [dB/cm/MHz]')
@@ -616,19 +596,22 @@ g = [g1; g2; g3];
 boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
 ylim([-0.5,2.5])
 grid on
+ylabel('ACS [dB/cm/MHz]')
 title('Thyroid')
 
 nexttile,
-x = [dataThyroidTV{4};dataThyroidTV{6};dataThyroidTV{7}];
-g1 = repmat({'4'},length(dataThyroidTV{4}),1);
-g2 = repmat({'5'},length(dataThyroidTV{6}),1);
-g3 = repmat({'6'},length(dataThyroidTV{7}),1);
-g = [g1; g2; g3];
+x = [dataThyroidTV{1};dataThyroidTV{4};dataThyroidTV{6};dataThyroidTV{7}];
+g0 = repmat({'4'},length(dataThyroidTV{1}),1);
+g1 = repmat({'5'},length(dataThyroidTV{4}),1);
+g2 = repmat({'6'},length(dataThyroidTV{6}),1);
+g3 = repmat({'7'},length(dataThyroidTV{7}),1);
+g = [g0; g1; g2; g3];
 boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
 ylim([-0.5,2.5])
 grid on
-ylabel('ACS [dB/cm/MHz]')
 title('Thyroid')
+fontsize(gcf,9,'points')
+xlabel(tl,'Patient number', 'FontSize',10)
 
 
 nexttile,
@@ -645,11 +628,12 @@ ylabel('ACS [dB/cm/MHz]')
 title('Adenomatoid nodule')
 
 nexttile,
-x = [dataNoduleTV{4};dataNoduleTV{6};dataNoduleTV{7}];
-g1 = repmat({'4'},length(dataNoduleTV{4}),1);
-g2 = repmat({'5'},length(dataNoduleTV{6}),1);
-g3 = repmat({'6'},length(dataNoduleTV{7}),1);
-g = [g1; g2; g3];
+x = [dataNoduleTV{1};dataNoduleTV{4};dataNoduleTV{6};dataNoduleTV{7}];
+g0 = repmat({'4'},length(dataNoduleTV{1}),1);
+g1 = repmat({'5'},length(dataNoduleTV{4}),1);
+g2 = repmat({'6'},length(dataNoduleTV{6}),1);
+g3 = repmat({'7'},length(dataNoduleTV{7}),1);
+g = [g0; g1; g2; g3];
 boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
 ylim([-0.5,2.5])
 grid on
@@ -684,19 +668,22 @@ g = [g1; g2; g3];
 boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
 ylim([-0.5,2.5])
 grid on
+ylabel('ACS [dB/cm/MHz]')
 title('Thyroid')
 
 nexttile,
-x = [dataThyroidWFR{4};dataThyroidWFR{6};dataThyroidWFR{7}];
-g1 = repmat({'4'},length(dataThyroidWFR{4}),1);
-g2 = repmat({'5'},length(dataThyroidWFR{6}),1);
-g3 = repmat({'6'},length(dataThyroidWFR{7}),1);
-g = [g1; g2; g3];
+x = [dataThyroidWFR{1};dataThyroidWFR{4};dataThyroidWFR{6};dataThyroidWFR{7}];
+g0 = repmat({'4'},length(dataThyroidWFR{1}),1);
+g1 = repmat({'5'},length(dataThyroidWFR{4}),1);
+g2 = repmat({'6'},length(dataThyroidWFR{6}),1);
+g3 = repmat({'7'},length(dataThyroidWFR{7}),1);
+g = [g0; g1; g2; g3];
 boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
 ylim([-0.5,2.5])
 grid on
-ylabel('ACS [dB/cm/MHz]')
 title('Thyroid')
+fontsize(gcf,9,'points')
+xlabel(tl,'Patient number', 'FontSize',10)
 
 
 nexttile,
@@ -713,11 +700,12 @@ ylabel('ACS [dB/cm/MHz]')
 title('Adenomatoid nodule')
 
 nexttile,
-x = [dataNoduleWFR{4};dataNoduleWFR{6};dataNoduleWFR{7}];
-g1 = repmat({'4'},length(dataNoduleWFR{4}),1);
-g2 = repmat({'5'},length(dataNoduleWFR{6}),1);
-g3 = repmat({'6'},length(dataNoduleWFR{7}),1);
-g = [g1; g2; g3];
+x = [dataNoduleWFR{1};dataNoduleWFR{4};dataNoduleWFR{6};dataNoduleWFR{7}];
+g0 = repmat({'4'},length(dataNoduleWFR{1}),1);
+g1 = repmat({'5'},length(dataNoduleWFR{4}),1);
+g2 = repmat({'6'},length(dataNoduleWFR{6}),1);
+g3 = repmat({'7'},length(dataNoduleWFR{7}),1);
+g = [g0; g1; g2; g3];
 boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
 ylim([-0.5,2.5])
 grid on
@@ -726,5 +714,111 @@ title('Colloidal nodule')
 fontsize(gcf,9,'points')
 xlabel(tl,'Patient number', 'FontSize',10)
 
+%% NEW BOXPLOT
+g1 = repmat({'1'},length(dataThyroidTV{2}),1);
+g2 = repmat({'2'},length(dataThyroidTV{5}),1);
+g3 = repmat({'3'},length(dataThyroidTV{8}),1);
+g4 = repmat({'4'},length(dataThyroidTV{1}),1);
+g5 = repmat({'5'},length(dataThyroidTV{4}),1);
+g6 = repmat({'6'},length(dataThyroidTV{6}),1);
+g7 = repmat({'7'},length(dataThyroidTV{7}),1);
+gPat = categorical([g1; g2; g3; g4; g5; g6; g7]);
+
+g1 = repmat({'1'},length(dataNoduleTV{2}),1);
+g2 = repmat({'2'},length(dataNoduleTV{5}),1);
+g3 = repmat({'3'},length(dataNoduleTV{8}),1);
+g4 = repmat({'4'},length(dataNoduleTV{1}),1);
+g5 = repmat({'5'},length(dataNoduleTV{4}),1);
+g6 = repmat({'6'},length(dataNoduleTV{6}),1);
+g7 = repmat({'7'},length(dataNoduleTV{7}),1);
+gPat2 = categorical([g1; g2; g3; g4; g5; g6; g7]);
+
+gTissue = [repmat({'Nodule'},length(gPat2),1);...
+    repmat({'Thyroid'},length(gPat),1)];
+
+
+figure('Units','centimeters', 'Position',[5 5 12 15]), 
+tiledlayout(2,1, 'TileSpacing','compact','Padding','compact')
+nexttile,
+x = [dataThyroidTV{2};dataThyroidTV{5};dataThyroidTV{8};...
+    dataThyroidTV{1};dataThyroidTV{4};dataThyroidTV{6};dataThyroidTV{7}];
+xNod = [dataNoduleTV{2};dataNoduleTV{5};dataNoduleTV{8};...
+    dataNoduleTV{1};dataNoduleTV{4};dataNoduleTV{6};dataNoduleTV{7}];
+
+boxchart([gPat2;gPat], [xNod;x], 'MarkerStyle','.', ...
+    'GroupByColor',gTissue, 'JitterOutliers','on');
+ylim([-0.5,2.5])
+hold on
+xline(0.5:1:8, 'Color',[0.8,0.8,0.8])
+yline(0:0.5:2, 'Color',[0.8,0.8,0.8])
+hold off
+legend({'Nodule','Thyroid'}, 'Location','southwest')
+ylabel('ACS [dB/cm/MHz]')
+title('TV')
+fontsize(gcf,9,'points')
+
+% h = get(gca,'Children');
+% set(gca,'Children',flip(h));
+
+nexttile,
+x = [dataThyroidWFR{2};dataThyroidWFR{5};dataThyroidWFR{8};...
+    dataThyroidWFR{1};dataThyroidWFR{4};dataThyroidWFR{6};dataThyroidWFR{7}];
+xNod = [dataNoduleWFR{2};dataNoduleWFR{5};dataNoduleWFR{8};...
+    dataNoduleWFR{1};dataNoduleWFR{4};dataNoduleWFR{6};dataNoduleWFR{7}];
+
+boxchart([gPat2;gPat], [xNod;x], 'MarkerStyle','.', ...
+    'GroupByColor',gTissue, 'JitterOutliers','on');
+ylim([-0.5,2.5])
+hold on
+xline(0.5:1:8, 'Color',[0.8,0.8,0.8])
+%xline([0.5,3.5],'k', 'LineWidth',1)
+%xlim([{'1'},{'7'}])
+yline(0:0.5:2, 'Color',[0.8,0.8,0.8])
+hold off
+legend({'Nodule','Thyroid'}, 'Location','southwest')
+ylabel('ACS [dB/cm/MHz]')
+xlabel('Patient number')
+title('WFR')
+fontsize(gcf,9,'points')
+
+%%
+medAcs = [median(dataThyroidTV{2}); median(dataThyroidTV{5});...
+    median(dataThyroidTV{8}); median(dataThyroidTV{1});...
+    median(dataThyroidTV{4}); median(dataThyroidTV{6});...
+    median(dataThyroidTV{7});...
+    median(dataNoduleTV{2}); median(dataNoduleTV{5});...
+    median(dataNoduleTV{8}); median(dataNoduleTV{1});...
+    median(dataNoduleTV{4}); median(dataNoduleTV{6});...
+    median(dataNoduleTV{7});...
+    median(dataThyroidWFR{2}); median(dataThyroidWFR{5});...
+    median(dataThyroidWFR{8}); median(dataThyroidWFR{1});...
+    median(dataThyroidWFR{4}); median(dataThyroidWFR{6});...
+    median(dataThyroidWFR{7});...
+    median(dataNoduleWFR{2}); median(dataNoduleWFR{5});...
+    median(dataNoduleWFR{8}); median(dataNoduleWFR{1});...
+    median(dataNoduleWFR{4}); median(dataNoduleWFR{6});...
+    median(dataNoduleWFR{7})];
+gMethod = categorical([repmat({'TV'},14,1);repmat({'WFR'},14,1)]);
+gRegion = [repmat({'T'},7,1);repmat({'AN'},3,1);repmat({'CN'},4,1)];
+gRegion = categorical([gRegion;gRegion]);
+%%
+figure('Units','centimeters', 'Position',[5 5 8 8]), 
+boxchart(gMethod, medAcs, 'MarkerStyle','o', ...
+    'GroupByColor',gRegion);
+%grid on
+ylim([-0.2,2.2])
+xlim("tickaligned")
+hold on
+xline(1.5, 'Color',[0.8,0.8,0.8])
+%xline([0.5,3.5],'k', 'LineWidth',1)
+%xlim([{'1'},{'7'}])
+yline(0:0.5:2, 'Color',[0.8,0.8,0.8])
+hold off
+legend({'AN','CN','T'}, 'Location','north', 'NumColumns',3)
+ylabel('ACS [dB/cm/MHz]')
+xlabel('Method')
+fontsize(gcf,9,'points')
+
+%%
 save_all_figures_to_directory(resultsDir,'clinicalBoxplot');
 close all
