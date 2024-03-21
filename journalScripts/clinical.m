@@ -4,8 +4,6 @@
 % ====================================================================== %
 clear,clc
 close all
-    addpath('./functions_v7');
-addpath('./AttUtils');
 
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Thyroid_Data_PUCP_UTD'];
@@ -14,7 +12,7 @@ refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 tableName = 'clinical.xlsx';
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-20';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-21\mean';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 T = readtable('params.xlsx');
@@ -46,8 +44,13 @@ muBwfr = 10^3; muCwfr = 10^0;
 aSNR = 1; bSNR = 0.1;
 desvMin = 15;
 
-%%
+% Plotting constants
+dynRange = [-50,0];
+attRange = [0.4,1.9];
+bsRange = [-15 15];
+
 dataCols = zeros(height(T),16);
+%%
 for iAcq = 1:height(T)
 patient = num2str(T.patient(iAcq));
 class = T.clase(iAcq);
@@ -127,13 +130,12 @@ BmodeFull = BmodeFull - max(BmodeFull(:));
 
 if isempty(rect)
     % Manual cropping
-    dynRange = [-50,-10];
     figure('Units','centimeters', 'Position',[5 5 15 15]),
     imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
     colormap gray; clim(dynRange);
     hb2=colorbar; ylabel(hb2,'dB')
     xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
-    ylim([0.1 3.5])
+    ylim([0.1 3.0])
     title(patient)
     
     confirmation = '';
@@ -288,11 +290,6 @@ b = (log(Sp) - log(Sd)) - (compensation);
 tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
-
-% Plotting constants
-dynRange = [-40,-5];
-attRange = [0.4,1.9];
-bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
 
@@ -453,14 +450,14 @@ maskNoduleACS = imerode(maskNoduleACS,se);
 %%
 patCol(iAcq) = {patient}; 
 classCol(iAcq) = {class};
-dataCols(iAcq,:) = [median(BRTV(maskNoduleACS)), iqr(BRTV(maskNoduleACS)),...
-    median(BRSWTV(maskNoduleACS)), iqr(BRSWTV(maskNoduleACS)),...
-    median(BRTVL1(maskNoduleACS)), iqr(BRTVL1(maskNoduleACS)),...
-    median(BRWFR(maskNoduleACS)), iqr(BRWFR(maskNoduleACS)), ...
-    median(BRTV(maskThyroidACS)), iqr(BRTV(maskThyroidACS)),...
-    median(BRSWTV(maskThyroidACS)), iqr(BRSWTV(maskThyroidACS)),...
-    median(BRTVL1(maskThyroidACS)), iqr(BRTVL1(maskThyroidACS)),...
-    median(BRWFR(maskThyroidACS)), iqr(BRWFR(maskThyroidACS))];
+dataCols(iAcq,:) = [mean(BRTV(maskNoduleACS)), std(BRTV(maskNoduleACS)),...
+    mean(BRSWTV(maskNoduleACS)), std(BRSWTV(maskNoduleACS)),...
+    mean(BRTVL1(maskNoduleACS)), std(BRTVL1(maskNoduleACS)),...
+    mean(BRWFR(maskNoduleACS)), std(BRWFR(maskNoduleACS)), ...
+    mean(BRTV(maskThyroidACS)), std(BRTV(maskThyroidACS)),...
+    mean(BRSWTV(maskThyroidACS)), std(BRSWTV(maskThyroidACS)),...
+    mean(BRTVL1(maskThyroidACS)), std(BRTVL1(maskThyroidACS)),...
+    mean(BRWFR(maskThyroidACS)), std(BRWFR(maskThyroidACS))];
 % disp(mean(BRWFR(maskNoduleACS)), std)
 
 dataThyroidTV{iAcq} = BRTV(maskThyroidACS);
@@ -471,46 +468,75 @@ dataNoduleWFR{iAcq} = BRWFR(maskNoduleACS);
 %% Overlay
 [X,Z] = meshgrid(xFull,zFull);
 roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
-%figure, imagesc(roi);
 
-figure('Units','centimeters', 'Position',[5 5 12 4])
-tiledlayout(1,2, 'TileSpacing','tight', 'Padding','tight')
+Lx = 3.8*0.75/2;
+Lz = 3*0.75/2;
+cx = (x(1) + x(end))/2;
+cz = (z(1) + z(end))/2;
+xlim1 = cx - Lx;
+xlim2 = cx + Lx;
+zlim1 = cz - Lz;
+zlim2 = cz + Lz;
+if xlim1 < 0; xlim1=0; xlim2 = xlim1 + 2*Lx; end
+if zlim1 < 0.1; zlim1=0; zlim2 = zlim1 + 2*Lz; end
+if xlim2 > 3.8; xlim2=3.8; xlim1 = xlim2 - 2*Lx; end
+if zlim2 > 3; zlim2=3; zlim1 = zlim2 - 2*Lz; end
+
+
+figure('Units','centimeters', 'Position',[5 5 14 7])
+tiledlayout(2,3, 'TileSpacing','tight', 'Padding','compact')
+t1 = nexttile([2,2]);
+imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
+title('B-mode')
+ylim([0.1, 3])
+hold on
+contour(xFull,zFull,roi,1,'w--')
+hold off
+xlabel('Lateral [cm]')
+ylabel('Axial [cm]')
+
+
 t2 = nexttile;
-[~,hB,hColor] = imOverlayInterp(BmodeFull,BRTV,[-50 0],attRange,0.7,...
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRTV,dynRange,attRange,0.7,...
     x_ACS,z_ACS,roi,xFull,zFull);
 title('TV')
 colorbar off
 % hColor.Label.String = 'dB/cm/MHz';
-ylim([0.1, 3])
+ylim([zlim1,zlim2])
+xlim([xlim1,xlim2])
 hold on
 contour(xFull,zFull,roi,1,'w--')
 contour(x,z,maskThyroid,1,'w--')
 hold off
-xlabel('x [cm]')
-ylabel('z [cm]')
+% axis off
+%xlabel('x [cm]')
+%ylabel('z [cm]')
 
 nexttile,
-[~,hB,hColor] = imOverlayInterp(BmodeFull,BRWFR,[-50 0],attRange,0.7,...
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRWFR,dynRange,attRange,0.7,...
     x_ACS,z_ACS,roi,xFull,zFull);
 title('WFR')
-ylim([0.1, 3])
+% colorbar off
+ylim([zlim1,zlim2])
+xlim([xlim1,xlim2])
 hold on
 contour(xFull,zFull,roi,1,'w--')
 contour(x,z,maskThyroid,1,'w--')
 hold off
-xlabel('x [cm]')
+xlabel('Lateral [cm]')
 
 
 % cb = colorbar;
 hColor.Layout.Tile = 'east';
-hColor.Label.String = 'dB/cm/MHz';
+hColor.Label.String = 'ACS [dB/cm/MHz]';
+colormap(t1,'gray')
 fontsize(gcf,8,'points')
 %%
 figure('Units','centimeters', 'Position',[5 5 12 4])
 tiledlayout(1,2, 'TileSpacing','tight', 'Padding','tight')
 
 nexttile,
-[~,hB,hColor] = imOverlayInterp(BmodeFull,BRSWTV,[-50 0],attRange,0.5,...
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRSWTV,dynRange,attRange,0.5,...
     x_ACS,z_ACS,roi,xFull,zFull);
 title('SWTV')
 % hColor.Label.String = 'dB/cm/MHz';
@@ -524,7 +550,7 @@ xlabel('x [cm]')
 ylabel('z [cm]')
 
 nexttile,
-[~,hB,hColor] = imOverlayInterp(BmodeFull,BRTVL1,[-50 0],attRange,0.5,...
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRTVL1,dynRange,attRange,0.5,...
     x_ACS,z_ACS,roi,xFull,zFull);
 title('TVL1')
 % hColor.Label.String = 'dB/cm/MHz';
@@ -537,7 +563,7 @@ xlabel('x [cm]')
 % ylabel('z [cm]')
 
 hColor.Layout.Tile = 'east';
-hColor.Label.String = 'dB/cm/MHz';
+hColor.Label.String = 'ACS [dB/cm/MHz]';
 fontsize(gcf,8,'points')
 
 
@@ -782,22 +808,22 @@ title('WFR')
 fontsize(gcf,9,'points')
 
 %%
-medAcs = [median(dataThyroidTV{2}); median(dataThyroidTV{5});...
-    median(dataThyroidTV{8}); median(dataThyroidTV{1});...
-    median(dataThyroidTV{4}); median(dataThyroidTV{6});...
-    median(dataThyroidTV{7});...
-    median(dataNoduleTV{2}); median(dataNoduleTV{5});...
-    median(dataNoduleTV{8}); median(dataNoduleTV{1});...
-    median(dataNoduleTV{4}); median(dataNoduleTV{6});...
-    median(dataNoduleTV{7});...
-    median(dataThyroidWFR{2}); median(dataThyroidWFR{5});...
-    median(dataThyroidWFR{8}); median(dataThyroidWFR{1});...
-    median(dataThyroidWFR{4}); median(dataThyroidWFR{6});...
-    median(dataThyroidWFR{7});...
-    median(dataNoduleWFR{2}); median(dataNoduleWFR{5});...
-    median(dataNoduleWFR{8}); median(dataNoduleWFR{1});...
-    median(dataNoduleWFR{4}); median(dataNoduleWFR{6});...
-    median(dataNoduleWFR{7})];
+medAcs = [mean(dataThyroidTV{2}); mean(dataThyroidTV{5});...
+    mean(dataThyroidTV{8}); mean(dataThyroidTV{1});...
+    mean(dataThyroidTV{4}); mean(dataThyroidTV{6});...
+    mean(dataThyroidTV{7});...
+    mean(dataNoduleTV{2}); mean(dataNoduleTV{5});...
+    mean(dataNoduleTV{8}); mean(dataNoduleTV{1});...
+    mean(dataNoduleTV{4}); mean(dataNoduleTV{6});...
+    mean(dataNoduleTV{7});...
+    mean(dataThyroidWFR{2}); mean(dataThyroidWFR{5});...
+    mean(dataThyroidWFR{8}); mean(dataThyroidWFR{1});...
+    mean(dataThyroidWFR{4}); mean(dataThyroidWFR{6});...
+    mean(dataThyroidWFR{7});...
+    mean(dataNoduleWFR{2}); mean(dataNoduleWFR{5});...
+    mean(dataNoduleWFR{8}); mean(dataNoduleWFR{1});...
+    mean(dataNoduleWFR{4}); mean(dataNoduleWFR{6});...
+    mean(dataNoduleWFR{7})];
 gMethod = categorical([repmat({'TV'},14,1);repmat({'WFR'},14,1)]);
 gRegion = [repmat({'T'},7,1);repmat({'AN'},3,1);repmat({'CN'},4,1)];
 gRegion = categorical([gRegion;gRegion]);
