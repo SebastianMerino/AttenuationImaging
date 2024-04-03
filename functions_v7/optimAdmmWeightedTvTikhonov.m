@@ -1,6 +1,6 @@
 function [B,C] = optimAdmmWeightedTvTikhonov(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
-% Solver for SLD with Isotropic Total Variation regularization for ACS 
-% and Tikhonov regularization for BSC
+% Solver for SLD with Weighted Isotropic Total Variation regularization for ACS 
+% and weighted Tikhonov regularization for BSC
 
 p = length(mask)/(m*n);
 minimask = reshape(mask,[m n p]);
@@ -33,7 +33,8 @@ while abs(error) > tol && ite < 20
     rho = 1;
     % First part of ADMM algorithm: B
     B = IRLS_TV_weighted(b-A2*C-D-v,A1,mu1/rho,m,n,tol,minimask,W);
-    
+    % B = IRLS_TV(b-A2*C-D-v,A1,mu1/rho,m,n,tol,mask,minimask);
+
     % Second part of ADMM algorithm: C
     Params.alpha2 = mu2/rho; Params.tolerance = tol;
     Params.beta = 0.1; Params.k = 1;

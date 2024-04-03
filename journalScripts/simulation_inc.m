@@ -2,7 +2,7 @@
 % ========================================================================
 % ========================================================================
 %% SIMULATION ON INCLUSIONS
-
+clear,clc
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\Simulation_23_12_18'];
 
@@ -14,17 +14,14 @@ if (~exist(croppedDir,"dir")), mkdir(croppedDir); end
 targetFiles = dir([targetDir,'\rf*.mat']);
 refFiles = dir([refDir,'\rf*.mat']);
 
-for iAcq = 1:length(croppedFiles)
-    fprintf("Acquisition no. %i, patient %s\n",iAcq,croppedFiles(iAcq).name);
-end 
-
-blocksize = 10;     % Block size in wavelengths
+% BS=10 GIVES GOOD RESULTS
+blocksize = 8;     % Block size in wavelengths
 freq_L = 3.3e6; freq_H = 8.7e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
-ratio_zx        = 1;
+ratio_zx        = 12/8;
 referenceAtt    = 0.7;
 
-figDir = 'C:\Users\sebas\Pictures\Journal2024';
+figDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-02\inclusion';
 
 groundTruthTop = [0.6,0.6,0.6];
 groundTruthBottom = [1.2,1.2,1.2];
@@ -54,18 +51,18 @@ switch iAcq
     case 1
         muBtv = 10^3.5; muCtv = 10^3;
         muBswtv = 10^3; muCswtv = 10^3;
-        muBtvl1 = 10^3; muCtvl1 = 10^1.5;
+        muBtvl1 = 10^3; muCtvl1 = 10^2;
         muBwfr = 10^3.5; muCwfr = 10^2;
     case 2
         muBtv = 10^3.5; muCtv = 10^2;
-        muBswtv = 10^3.5; muCswtv = 10^2.5;
-        muBtvl1 = 10^3; muCtvl1 = 10^0.5;
-        muBwfr = 10^3.5; muCwfr = 10^1.5;
+        muBswtv = 10^3; muCswtv = 10^1;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
+        muBwfr = 10^4; muCwfr = 10^1.5;
     case 3
         muBtv = 10^3.5; muCtv = 10^2;
-        muBswtv = 10^3.5; muCswtv = 10^2.5;
-        muBtvl1 = 10^3; muCtvl1 = 10^0.5;
-        muBwfr = 10^3.5; muCwfr = 10^1.5;
+        muBswtv = 10^3; muCswtv = 10^2;
+        muBtvl1 = 10^3; muCtvl1 = 10^1;
+        muBwfr = 10^4; muCwfr = 10^2;
 end
 
 load(fullfile(targetDir,targetFiles(iAcq).name));
@@ -77,6 +74,7 @@ x = x*1e2; % [cm]
 z = z*1e2; % [cm]
 
 sam1 = rf(:,:,1);
+Bmode = db(hilbert(sam1));
 dynRange = [-50,0];
 
 %% Cropping and finding sample sizes
@@ -90,6 +88,8 @@ ind_z = z_inf <= z & z <= z_sup;
 x = x(ind_x);
 z = z(ind_z);
 sam1 = sam1(ind_z,ind_x);
+Bmode = Bmode(ind_z,ind_x);
+Bmode = Bmode - max(Bmode(:));
 
 % Wavelength size
 c0 = 1540;
@@ -104,7 +104,7 @@ n  = length(x0);
 
 % Axial samples
 wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-nz = 2*round(blocksize*wl/dz /2); % Window size
+nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
 L = (nz/2)*dz*100;   % (cm)
 z0p = 1:wz:length(z)-nz;
 z0d = z0p + nz/2;
@@ -379,26 +379,30 @@ title('WFR')
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
+%%
+save_all_figures_to_directory(figDir,['simInc',num2str(iAcq),'Figure']);
+close all
+
 end
 
 %%
-figure('Units','centimeters', 'Position',[5 5 15 5])
-tiledlayout(1,2)
-t2 = nexttile; 
-imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
-colormap(t2,parula)
-axis image
-title('TVL1')
-c = colorbar;
-c.Label.String = 'BS log ratio [dB]';
-
-t3 = nexttile; 
-imagesc(x_ACS,z_ACS,w, [0 1])
-colormap(t3,parula)
-axis image
-title('Weights')
-c = colorbar;
-c.Label.String = '[a.u.]';
+% figure('Units','centimeters', 'Position',[5 5 15 5])
+% tiledlayout(1,2)
+% t2 = nexttile; 
+% imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
+% colormap(t2,parula)
+% axis image
+% title('TVL1')
+% c = colorbar;
+% c.Label.String = 'BS log ratio [dB]';
+% 
+% t3 = nexttile; 
+% imagesc(x_ACS,z_ACS,w, [0 1])
+% colormap(t3,parula)
+% axis image
+% title('Weights')
+% c = colorbar;
+% c.Label.String = '[a.u.]';
 
 % %% Axial profiles
 % figure('Units','centimeters', 'Position',[5 5 12 12])
@@ -431,9 +435,6 @@ c.Label.String = '[a.u.]';
 % title('Axial profiles')
 % legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
 
-%%
-save_all_figures_to_directory(figDir,['simInc',num2str(iAcq),'Figure']);
-close all
 
 %%
 results1 = struct2table(MetricsTV);

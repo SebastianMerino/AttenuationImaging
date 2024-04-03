@@ -15,7 +15,6 @@ if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 T = readtable('params.xlsx');
 
-% CASOS INTERESANTES: 2,4,6,8,9,13
 
 blocksize = 8;     % Block size in wavelengths
 fixedBW = true;
@@ -26,7 +25,7 @@ overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
 %% Loading case
-iAcq = 1;
+iAcq = 6; % 1,4,6
 patient = num2str(T.patient(iAcq));
 class = T.clase(iAcq);
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
@@ -59,22 +58,24 @@ xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
 ylim([0.1 3.5])
 title(patient)
 
-confirmation = '';
-while ~strcmp(confirmation,'Yes')
-    rect = getrect;
-    confirmation = questdlg('Sure?');
-    if strcmp(confirmation,'Cancel')
-        disp(rect)
-        break
-    end
-end
-close,
+% confirmation = '';
+% while ~strcmp(confirmation,'Yes')
+%     rect = getrect;
+%     confirmation = questdlg('Sure?');
+%     if strcmp(confirmation,'Cancel')
+%         disp(rect)
+%         break
+%     end
+% end
+% close,
 
 
 %% Cropping and finding sample sizes
 % Region for attenuation imaging
-x_inf = rect(1); x_sup = rect(1)+rect(3);
-z_inf = rect(2); z_sup = rect(2)+rect(4);
+% x_inf = rect(1); x_sup = rect(1)+rect(3);
+% z_inf = rect(2); z_sup = rect(2)+rect(4);
+x_inf = 0; x_sup = 4;
+z_inf = 0.1; z_sup = 3.5;
 
 % Limits for ACS estimation
 ind_x = x_inf <= xFull & xFull <= x_sup;
@@ -115,7 +116,7 @@ grid on
 
 
 %%
-fc = 7E6;
+fc = 6E6;
 [bFilt,aFilt] = butter(1,[fc-0.5E6 fc+0.5E6]/fs*2, "bandpass");
 samFilt = filtfilt(bFilt,aFilt,sam1);
 [pxx,fpxx] = pwelch(samFilt,300,250,512,fs);
@@ -125,16 +126,24 @@ BmodeFilt = BmodeFilt - max(BmodeFilt(:));
 
 figure('Units','centimeters', 'Position',[5 5 18 6]),
 tiledlayout(1,2)
-nexttile, imagesc(x,z,BmodeFilt,[-50 0])
+nexttile, imagesc(x,z,BmodeFilt,[-60 0])
 axis image
 colormap(gray)
 colorbar('westoutside')
 title('Bmode')
-z0 = 1.8; zf = 1.9;
-% z0 = 2.4; zf = 3;
 
-% z0 = 2.2; zf = 2.5;
-% z0 = 1.3; zf = 2.4;
+switch iAcq
+    case 1
+        z0 = 1.8; zf = 1.9;
+        % z0 = 2; zf = 2.2;
+    case 4
+        z0 = 2.7; zf = 3;
+    case 6
+        z0 = 1.3; zf = 2;
+    otherwise
+        
+        % z0 = 2.2; zf = 2.5;
+end
 yline(z0, 'b--','LineWidth',1.5)
 yline(zf, 'b--','LineWidth',1.5)
 
@@ -147,15 +156,20 @@ grid on
 [~,Z] = meshgrid(x,z);
 mask = Z>z0 & Z<zf;
 
-x0Inc = 1.5; xfInc = 3;
-x0Out = 0.2; xfOut = 0.9;
-
-% x0Inc = 2.2; xfInc = 3.1;
-% x0Out = 0.5; xfOut = 1.5;
-
-% x0Inc = 1.5; xfInc = 2;
-% x0Out = 2.5; xfOut = 3.5;
-
+switch iAcq
+    case 1
+        x0Inc = 1.5; xfInc = 3;
+        % x0Inc = 2; xfInc = 3.1;
+        x0Out = 0.2; xfOut = 0.9;
+    case 4
+        x0Inc = 2.3; xfInc = 3;
+        x0Out = 0.6; xfOut = 1.6;
+    case 6
+        x0Inc = 1.4; xfInc = 2.1;
+        x0Out = 2.5; xfOut = 3.5;
+    otherwise
+        
+end
 BmodeFilt(~mask) = NaN;
 latProfile = median(BmodeFilt,"omitmissing");
 figure('Units','centimeters', 'Position',[5 5 9 6]),
@@ -171,10 +185,17 @@ xline(x0Out, 'r--', 'LineWidth',2)
 xline(xfOut, 'r--', 'LineWidth',2)
 
 %%
-% incDiameter = 2.3-1.1;
-incDiameter = 1;
-% incDiameter = 1.2;
-% incDiameter = 0.9;
+switch iAcq
+    case 1
+        incDiameter = 1;
+    case 4
+        incDiameter = 1.3; % before 1.2
+    case 6
+        incDiameter = 0.85;
+    otherwise
+        % 
+        % 
+end
 underInclusion = mean(latProfile(x>x0Inc & x <xfInc))
 ousideInclusion = mean(latProfile(x>x0Out & x <xfOut))
 acEnhancement = underInclusion - ousideInclusion

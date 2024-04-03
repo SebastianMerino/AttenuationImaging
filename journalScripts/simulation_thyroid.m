@@ -11,8 +11,8 @@ clear,clc
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-02-20\BS_8_12';
 
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_01_30'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-19';
+    'Attenuation\Simulation\inc_journal'];
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-02';
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
@@ -22,7 +22,7 @@ tableName = 'simuInc.xlsx';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
-targetFiles = targetFiles(2:3);
+% targetFiles = targetFiles(2:3);
 refFiles = dir([refDir,'\rf*.mat']);
 
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
@@ -49,10 +49,11 @@ order = 5;
 reject = 0.1;
 extension = 3;
 
-% groundTruthThyroid = [0.6,1.5];
-% groundTruthNodule = [1.2,0.8];
-groundTruthThyroid = [0.8,1.5];
-groundTruthNodule = [1.5,0.8];
+% groundTruthThyroid = [0.8,1.5];
+% groundTruthNodule = [1.5,0.8];
+groundTruthThyroid = [0.8,1.5,0.8,1.5];
+groundTruthNodule = [1.5,0.8,1.5,0.8];
+
 
 %attRange = [0.6 1.7];
 attRange = [0.4,1.7];
@@ -66,7 +67,7 @@ NptodB = log10(exp(1))*20;
 % figure('Units','centimeters', 'Position',[5 5 25 8]);
 % tl = tiledlayout(2,5, "Padding","tight");
 
-for iAcq = 1:2
+for iAcq = 1:4
 
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
@@ -84,7 +85,16 @@ switch iAcq
         muBtvl1 = 10^3; muCtvl1 = 10^0;
         muBwfr = 10^3.5; muCwfr = 10^-0.5;
         % muBwfr = 10^3; muCwfr = 10^-0.5; % WRONG WINDOW
-
+    case 3
+        muBtv = 10^3.5; muCtv = 10^3;
+        muBswtv = 10^3; muCswtv = 10^3;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^2;
+        muBwfr = 10^3.5; muCwfr = 10^2;
+    case 4
+        muBtv = 10^3.5; muCtv = 10^3;
+        muBswtv = 10^3; muCswtv = 10^3;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^2;
+        muBwfr = 10^3.5; muCwfr = 10^2;
 end
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
@@ -175,8 +185,8 @@ for jj=1:n
 end
 
 % Windows for spectrum
-% windowing = tukeywin(nz/2,0.25);
-windowing = hamming(nz/2);
+windowing = tukeywin(nz/2,0.25);
+% windowing = hamming(nz/2);
 windowing = windowing*ones(1,nx);
 
 % For looping
@@ -391,22 +401,24 @@ attIdeal{iAcq}(incACS) = groundTruthNodule(iAcq);
 
 %% Plotting
 figure('Units','centimeters', 'Position',[5 5 20 4]);
-tl = tiledlayout(1,5, "Padding","tight");
+tiledlayout(1,6, "Padding","tight", 'TileSpacing','compact');
 
 t1 = nexttile;
-% imagesc(x,z,Bmode,dynRange)
-% axis equal
-% xlim([x_ACS(1) x_ACS(end)]),
-% ylim([z_ACS(1) z_ACS(end)]),
-% colormap(t1,gray)
+imagesc(x,z,Bmode,dynRange)
+axis equal
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+colormap(t1,gray)
 % c = colorbar(t1, 'westoutside');
 % c.Label.String = '[db]';
-% title('Bmode')
-% ylabel('Axial [cm]')
-% xlabel('Lateral [cm]')
+title('B-mode')
+ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
+
+t2 = nexttile;
 imagesc(x_ACS,z_ACS,attIdeal{iAcq},attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-colormap(turbo)
+xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
+colormap(t2,turbo)
 axis image
 title('Ideal')
 
@@ -415,7 +427,7 @@ imagesc(x_ACS,z_ACS,BRTV, attRange)
 colormap(t1,turbo)
 axis image
 title('TV')
-ylabel('Axial [cm]')
+% ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 % hold on 
 % rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
@@ -430,7 +442,7 @@ imagesc(x_ACS,z_ACS,BRSWTV, attRange)
 colormap(t1,turbo)
 axis image
 title('SWTV')
-ylabel('Axial [cm]')
+% ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 % hold on 
 % rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
@@ -445,7 +457,7 @@ imagesc(x_ACS,z_ACS,BRTVL1, attRange)
 colormap(t1,turbo)
 axis image
 title('TVL1')
-ylabel('Axial [cm]')
+% ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 % hold on 
 % rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
@@ -462,7 +474,7 @@ axis image
 title('WFR')
 c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
-ylabel('Axial [cm]')
+% ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 % hold on 
 % rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)

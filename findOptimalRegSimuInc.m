@@ -5,31 +5,35 @@
 clc, clear,
 
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\24_01_30'];
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\inc_journal'];
+%     'Attenuation\Simulation\inc_journal'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\Simulation_23_12_18'];
+
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\simulations_processed\inc_journal'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = [baseDir,'\results\24-02-21\BS_8_12'];
+resultsDir = [baseDir,'\results\24-02-04'];
 mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
-targetFiles = targetFiles(2:3);
+% targetFiles = targetFiles(2:3);
 refFiles = dir([refDir,'\rf*.mat']);
 
 blocksize = 8;     % Block size in wavelengths
-freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
+% freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
+freq_L = 3.3e6; freq_H = 8.7e6; 
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
-referenceAtt    = 0.6;
+% referenceAtt    = 0.6; % CHANGE ACCORDINGLY
+referenceAtt    = 0.7;
 
 % G.T.
-% groundTruthBack = [0.6,1.5];
-% groundTruthInc = [1.2,0.8];
-groundTruthBack = [0.8,1.5,0.8,1.5];
-groundTruthInc = [1.5,0.8,1.5,0.8];
-
+% groundTruthBack = [0.8,1.5,0.8,1.5];
+% groundTruthInc = [1.5,0.8,1.5,0.8];
+groundTruthBack = [0.6,0.6,0.6];
+groundTruthInc = [1.2,1.2,1.2];
 
 % Weights SWTV
 aSNR = 1; bSNR = 0.1;
@@ -46,8 +50,8 @@ extension = 3;
 dynRange = [-40,0];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
-attRange = [0.6 1.7];
-
+% attRange = [0.6 1.7];
+attRange = [0.4 1.4];
 
 %% Setting up
 
@@ -277,8 +281,8 @@ legend('Inc','Back')
 
 %% RSLD
 muB = 10.^(3:0.5:3.5);
-muC = 10.^(1:2);
-% muB = 10^ 3.5;
+% muC = 10.^(1:2);
+muC = 10.^(1:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -362,7 +366,8 @@ w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 
 muB = 10.^(2.5:0.5:3);
-muC = 10.^(0:2);
+% muC = 10.^(0:2);
+muC = 10.^(0:3);
 
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -431,9 +436,8 @@ MetricsSWTV(iAcq) = r;
 
 %% Minimizing BS log ratio
 muB = 10.^(3:0.5:4);
-muC = 10.^(0:1:2);
-% muB = 10^3;
-% muC = 10^0;
+%muC = 10.^(0:2);
+muC = 10.^(0:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -508,8 +512,8 @@ A2w = W*A2;
 
 
 muB = 10.^(2.5:0.5:4);
-muC = 10.^(-0.5:0.5:2);
-
+% muC = 10.^(-0.5:0.5:2);
+muC = 10.^(-0.5:0.5:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -543,7 +547,7 @@ end
 %%
 figure('Units','centimeters', 'Position',[5 5 22 6]);
 tl = tiledlayout(1,3, "Padding","tight");
-title(tl,'Weighted Fidelity and Regularization')
+title(tl,'Weighted Fidelity and Regularization') 
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,w, [0 1])
