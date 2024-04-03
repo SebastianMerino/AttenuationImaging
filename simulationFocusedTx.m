@@ -10,8 +10,8 @@ addpath(genpath(pwd))
 
 % save parameters
 BaseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulation_h5files\Simulation_24_02_25'];
-folderNames = {'inclusion1','inclusion2','inclusion3','inclusion4'};
+    'Attenuation\simulation_h5files\Simulation_24_04_02_CUDA'];
+folderNames = {'layered1','layered2','layered3'};
 mkdir(BaseDir)
 
 % medium parameters
@@ -37,7 +37,7 @@ translation     = [-20e-3, 0];
 rotation        = 0;
 
 % computational parameters
-DATA_CAST       = 'single'; % set to 'single' or 'gpuArray-single'
+DATA_CAST       = 'gpuArray-single'; % set to 'single' or 'gpuArray-single'
 ppw             = 6;        % number of points per wavelength, 4 to 8
 depth           = 40e-3;    % imaging depth [m]
 cfl             = 0.3;      % CFL number, could be 0.3 or 0.5
@@ -74,53 +74,30 @@ for iSim = 1:length(folderNames)
 
     switch iSim
         case 1
-            background_std = 0.002;
-            background_alpha = 0.8;       % [dB/(MHz^y cm)]
-            inclusion_std = 0.008;
-            inclusion_alpha = 1.5;
-            r = 5e-3;
+            background_std = 0.004;
+            background_alpha = 0.5;       % [dB/(MHz^y cm)]
+            layer_std = 0.004;
+            layer_alpha = 1.0;
         case 2
-            background_std = 0.008;
-            background_alpha = 1.5;       % [dB/(MHz^y cm)]
-            inclusion_std = 0.002;
-            inclusion_alpha = 0.8;
-            r = 5e-3;
+            background_std = 0.002;
+            background_alpha = 0.5;       % [dB/(MHz^y cm)]
+            layer_std = 0.008;
+            layer_alpha = 1.0;
         case 3
-            background_std = 0.002;
-            background_alpha = 0.8;       % [dB/(MHz^y cm)]
-            inclusion_std = 0.008;
-            inclusion_alpha = 1.5;
-            r = 9e-3;
-        case 4
-            background_std = 0.002;
-            background_alpha = 0.8;       % [dB/(MHz^y cm)]
-            inclusion_std = 0.008;
-            inclusion_alpha = 1.5;
-            r = 9e-3;
+            background_std = 0.008;
+            background_alpha = 0.5;       % [dB/(MHz^y cm)]
+            layer_std = 0.002;
+            layer_alpha = 1.0;
     end
 
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
 
-    cz = 20e-3; cx = 0;
-    maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    medium = addRegionSimu(medium,c0,rho0,inclusion_std,...
-        inclusion_alpha,maskNodule);
-% 
-%     if iSim >=2
-%         maskMuscle = rz<5e-3;
-%         muscle_alpha = 1;
-%         muscle_std = background_std/2;
-%         medium = addRegionSimu(medium,1580,1041,muscle_std,...
-%             muscle_alpha,maskMuscle);
-%         if iSim ==3
-%             maskSkin = rz<2e-3;
-%             skin_alpha = 2;
-%             skin_std = background_std*4;
-%             medium = addRegionSimu(medium,c0,rho0,skin_std,...
-%                 skin_alpha,maskSkin);
-%         end
-%     end
+    % cz = 20e-3; cx = 0; r = 7e-3;
+    % maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
+    maskLayer = rz>2e-2;
+    medium = addRegionSimu(medium,c0,rho0,layer_std,...
+        layer_alpha,maskLayer);
 
     medium.alpha_power = 1.05;
     medium.alpha_mode = 'no_dispersion';
@@ -128,7 +105,7 @@ for iSim = 1:length(folderNames)
 
     save(fullfile(BaseDir,folderNames{iSim},['medium_',folderNames{iSim},'.mat']),...
     'medium','rx','rz');
-    
+    %%
     figure('Units','centimeters', 'Position',[5 5 25 10]),
     tiledlayout(1,3),
     nexttile,
@@ -147,7 +124,7 @@ for iSim = 1:length(folderNames)
     axis image
     
     t3 = nexttile;
-    imagesc(100*rx(1,:),100*rz(:,1),medium.alpha_coeff, [0.5 1.8])
+    imagesc(100*rx(1,:),100*rz(:,1),medium.alpha_coeff, [0.4 1.7])
     xlabel('x [cm]'), ylabel('z [cm]')
     title('Absorption')
     c = colorbar; ylabel(c,'dB/cm/MHz')
@@ -213,7 +190,7 @@ for iSim = 1:length(folderNames)
         input_args = {...
             'PMLInside', false, ...
             'PMLSize', 'auto', ... 
-            'DataCast', 'single', ...
+            'DataCast', DATA_CAST, ...
             'DataRecast', true, ...
             'PlotSim',false,...
             'SaveToDisk', fullfile(BaseDir,folderNames{iSim},'input',[num2str(iLine),'.h5'])};

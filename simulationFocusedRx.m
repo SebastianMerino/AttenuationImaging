@@ -10,8 +10,9 @@ addpath(genpath(pwd))
 
 % save parameters
 BaseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulation_h5files\Simulation_24_02_20'];
-folderNames = {'inclusion1','inclusion2','inclusion3','inclusion4'};
+    'Attenuation\simulation_h5files\Simulation_24_04_02'];
+% folderNames = {'layered1','layered2','layered3'};
+folderNames = {'layered1'};
 
 % medium parameters
 c0              = 1540;     % sound speed [m/s]
@@ -131,6 +132,7 @@ for iSim = 1:length(folderNames)
     rf = bf_data_final(offset:end,:);
     z = axAxis(offset:end);
     x = latAxis;
+    %%
     Bmode = db(hilbert(rf));
     Bmode = Bmode - max(Bmode(:));
     
@@ -144,7 +146,7 @@ for iSim = 1:length(folderNames)
     cb = colorbar;
     title(cb, '[dB]');
     colormap gray
-
+%%
     save(fullfile(BaseDir,['rf_',folderNames{iSim},'.mat']),...
         'rf','x','z','fs','medium');
 
