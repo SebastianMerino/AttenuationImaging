@@ -101,7 +101,7 @@ for iSim = 2:3 %1:length(folderNames)
     medium = addRegionSimu(medium,c0,rho0,layer_std,...
         layer_alpha,maskLayer);
 
-    medium.alpha_power = 1.05;
+    medium.alpha_power = 1;
     medium.alpha_mode = 'no_dispersion';
     medium.sound_speed_ref = 1540;
 
