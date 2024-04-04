@@ -1,7 +1,7 @@
 clear,clc
 
 baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\24_04_03'];
+    'Attenuation\simulations_processed\24_04_04'];
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\Simulation\24_04_02'];
 targetDir = [baseDir,'\raw'];
@@ -72,16 +72,16 @@ sam1 = rf(:,:,1);
 switch iAcq
     case 1
         % Regularization
-        muBtv = 10^3.5; muCtv = 10^2.5;
-        muBswtv = 10^3; muCswtv = 10^1.5;
+        muBtv = 10^3.5; muCtv = 10^3;
+        muBswtv = 10^3; muCswtv = 10^3;
         muBtvl1 = 10^4; muCtvl1 = 10^2;
-        muBwfr = 10^4; muCwfr = 10^1.5;
+        muBwfr = 10^4; muCwfr = 10^2;
 
     case 2
         % Regularization
         muBtv = 10^3.5; muCtv = 10^1;
-        muBswtv = 10^3; muCswtv = 10^0;
-        muBtvl1 = 10^4; muCtvl1 = 10^1;
+        muBswtv = 10^3; muCswtv = 10^1;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^0;
         muBwfr = 10^4; muCwfr = 10^1;
 
     case 3
@@ -371,7 +371,7 @@ MetricsWFR(iAcq) = r;
 
 
 %% Plotting
-figure('Units','centimeters', 'Position',[5 5 20 4]);
+figure('Units','centimeters', 'Position',[5 5 22 4]);
 tiledlayout(1,6, "Padding","tight", 'TileSpacing','compact');
 
 t1 = nexttile;
@@ -380,8 +380,8 @@ axis equal
 xlim([x_ACS(1) x_ACS(end)]),
 ylim([z_ACS(1) z_ACS(end)]),
 colormap(t1,gray)
-% c = colorbar(t1, 'westoutside');
-% c.Label.String = '[db]';
+c = colorbar(t1, 'westoutside');
+c.Label.String = '[db]';
 title('B-mode')
 ylabel('Axial [cm]')
 xlabel('Lateral [cm]')

@@ -7,13 +7,8 @@
 
 function [] = simulationFocusedRTx(BaseDir)
 
-% clear; close all; clc; rng shuffle;
 addpath(genpath(pwd))
-% BaseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\simulation_h5files\Simulation_24_04_02'];
-
-
-folderNames = {'layered1','layered2','layered3'};
+simuNames = {'inclusion1','inclusion2','inclusion3'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -46,14 +41,7 @@ cfl             = 0.3;      % CFL number, could be 0.3 or 0.5
 
 %% For looping simulations
 
-for iSim = 2:3 %1:length(folderNames)
-%     if (~exist(fullfile(BaseDir,folderNames{iSim},"input"),"dir"))
-%         mkdir(fullfile(BaseDir,folderNames{iSim},"input"));
-%     end
-%     if (~exist(fullfile(BaseDir,folderNames{iSim},"output"),"dir"))
-%         mkdir(fullfile(BaseDir,folderNames{iSim},"output"));
-%     end
-
+for iSim = 1:length(simuNames)
     %% GRID
 
     % calculate the grid spacing based on the PPW and F0
@@ -95,11 +83,11 @@ for iSim = 2:3 %1:length(folderNames)
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
 
-    % cz = 20e-3; cx = 0; r = 7e-3;
-    % maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    maskLayer = rz>2e-2;
+    cz = 20e-3; cx = 0; r = 7e-3;
+    maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
+    % maskLayer = rz>2e-2;
     medium = addRegionSimu(medium,c0,rho0,layer_std,...
-        layer_alpha,maskLayer);
+        layer_alpha,maskNodule);
 
     medium.alpha_power = 1;
     medium.alpha_mode = 'no_dispersion';
@@ -194,10 +182,10 @@ for iSim = 2:3 %1:length(folderNames)
     rf = bf_data_final(offset:end,:);
     z = axAxis(offset:end);
     x = latAxis;
-    Bmode = db(hilbert(rf));
-    Bmode = Bmode - max(Bmode(:));
     
     % plot the pressure field 
+%     Bmode = db(hilbert(rf));
+%     Bmode = Bmode - max(Bmode(:));
 %     figure;
 %     imagesc(1e3 * x, 1e3 * z, Bmode, [-50,-5]);
 %     xlabel('z-position [mm]');
@@ -208,7 +196,7 @@ for iSim = 2:3 %1:length(folderNames)
 %     title(cb, '[dB]');
 %     colormap gray
 
-    save(fullfile(BaseDir,['rf_',folderNames{iSim},'.mat']),...
+    save(fullfile(BaseDir,['rf_',simuNames{iSim},'.mat']),...
         'rf','x','z','fs','medium');
 
 end
