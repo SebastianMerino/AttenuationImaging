@@ -139,7 +139,8 @@ switch iAcq
     case 4
         z0 = 2.7; zf = 3;
     case 6
-        z0 = 1.3; zf = 2;
+        % z0 = 1.3; zf = 2;
+        z0 = 1.5; zf = 2.5;
     otherwise
         
         % z0 = 2.2; zf = 2.5;
@@ -166,7 +167,8 @@ switch iAcq
         x0Out = 0.6; xfOut = 1.6;
     case 6
         x0Inc = 1.4; xfInc = 2.1;
-        x0Out = 2.5; xfOut = 3.5;
+        % x0Out = 2.5; xfOut = 3.5;
+        x0Out = 2.3; xfOut = 3.2;
     otherwise
         
 end
@@ -178,6 +180,7 @@ grid on
 axis tight
 xlabel('Lateral [cm]')
 title('Acoustic enhancement')
+ylim([-45 -15])
 
 xline(x0Inc, 'g--', 'LineWidth',2)
 xline(xfInc, 'g--', 'LineWidth',2)

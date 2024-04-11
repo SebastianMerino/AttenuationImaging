@@ -91,7 +91,7 @@ grid on
 
 
 %%
-fc = 6E6;
+fc = 5E6;
 [bFilt,aFilt] = butter(1,[fc-0.5E6 fc+0.5E6]/fs*2, "bandpass");
 samFilt = filtfilt(bFilt,aFilt,sam1);
 [pxx,fpxx] = pwelch(samFilt,300,250,512,fs);
