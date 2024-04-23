@@ -10,7 +10,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Thyroid_Data_PUCP_UTD'];
 refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\REFERENCES'];
-resultsDir = fullfile(baseDir,'results','homogeneous');
+resultsDir = fullfile(baseDir,'results','all_cases');
 T = readtable('params_new.xlsx');
 [~,~,~] = mkdir(resultsDir);
 
@@ -59,9 +59,10 @@ for iAcq = 1:height(T)
     %     clases = [clases, {clase}];
     % end
     
-    
+    % dz = 0.6352 mm, dx = 0.4471 mm
+    % area = 0.2840 mm2
     T.numBlocks(iAcq) =  sum(regionMaskAcs,'all');
-    if     T.numBlocks(iAcq) >= 0
+    if     T.numBlocks(iAcq) >= 150
     T.acsTv(iAcq) = mean(BR(regionMaskAcs));
     % T.acsWfr(iAcq) =  sum(BRWFR.*w,'all')./sum(w,'all');
     T.acsWfr(iAcq) = mean(BRWFR(regionMaskAcs));
@@ -85,4 +86,16 @@ nexttile,
 boxchart(categorical(T.clase), T.acsWfr, 'MarkerStyle','o');
 ylim([-1,2])
 grid on
+title('WFR')
+
+%%
+binEdges = -0.5:0.2:2;
+figure('Units','centimeters', 'Position', [5 5 10 10]),
+tiledlayout(2,1)
+nexttile,
+histogram(T.acsTv, 'BinEdges',binEdges)
+title('TV')
+
+nexttile,
+histogram(T.acsWfr, 'BinEdges',binEdges)
 title('WFR')

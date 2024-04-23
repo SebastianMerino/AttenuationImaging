@@ -10,11 +10,13 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Thyroid_Data_PUCP_UTD'];
 refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\REFERENCES'];
-resultsDir = fullfile(baseDir,'results','homogeneous_v2');
+resultsDir = fullfile(baseDir,'results','all_cases');
 figDir = fullfile(resultsDir,'fig');
 T = readtable('params_new.xlsx');
 [~,~,~] = mkdir(resultsDir);
 [~,~,~] = mkdir(figDir);
+
+maskReady = false;
 
 blocksize = 8;     % Block size in wavelengths
 freq_L = 3e6; freq_H = 8.5e6;
@@ -36,7 +38,7 @@ muBwfr = 10^3.5; muCwfr = 10^0;
 
 % Plotting constants
 dynRange = [-50,0];
-attRange = [0,1.5];
+attRange = [0,2];
 bsRange = [-20 20];
 NptodB = log10(exp(1))*20;
 
@@ -44,9 +46,7 @@ NptodB = log10(exp(1))*20;
 %% Loading case FULL VERSION
 for iAcq = 1:height(T)
 
-% if T.mask{iAcq} ~= 'F'
-%     continue;
-% end
+maskReady = T.mask{iAcq} == 'X';
 
 patient = num2str(T.patient(iAcq));
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
@@ -70,38 +70,40 @@ zFull = z*1e2; % [cm]
 BmodeFull = db(hilbert(sam1));
 BmodeFull = BmodeFull - max(BmodeFull(:));
 
-% figure('Units','centimeters', 'Position',[3 5 35 15]),
-% tiledlayout(1,2)
-% nexttile,
-% orig = imread(fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.png']));
-% image(orig)
-% axis image
-% nexttile,
-% imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
-% colormap gray; clim(dynRange);
-% hb2=colorbar; ylabel(hb2,'dB')
-% xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
-% ylim([0.1 3.5])
-% 
-% confirmation = '';
-% while ~strcmp(confirmation,'Yes')
-%     h = drawfreehand('Multiclick',true);
-%     confirmation = questdlg('Sure?');
-%     if strcmp(confirmation,'Cancel')
-%         break
-%     elseif strcmp(confirmation,'No')
-%         delete(h)
-%     end
-% end
-% regionMask = createMask(h);
-% figure('Units','centimeters', 'Position',[3 5 20 15]),
-% imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
-% colormap gray; clim(dynRange);
-% hb2=colorbar; ylabel(hb2,'dB')
-% xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
-% ylim([0.1 min([3.5,max(zFull)])])
-
-load(fullfile(baseDir,'results','homogeneous',[patient,'.mat']))
+if ~maskReady
+    figure('Units','centimeters', 'Position',[3 5 35 15]),
+    tiledlayout(1,2)
+    nexttile,
+    orig = imread(fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.png']));
+    image(orig)
+    axis image
+    nexttile,
+    imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
+    colormap gray; clim(dynRange);
+    hb2=colorbar; ylabel(hb2,'dB')
+    xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
+    ylim([0.1 3.5])
+    
+    confirmation = '';
+    while ~strcmp(confirmation,'Yes')
+        h = drawfreehand('Multiclick',true);
+        confirmation = questdlg('Sure?');
+        if strcmp(confirmation,'Cancel')
+            break
+        elseif strcmp(confirmation,'No')
+            delete(h)
+        end
+    end
+    regionMask = createMask(h);
+else    
+    load(fullfile(baseDir,'results','homogeneous',[patient,'.mat']))
+    figure('Units','centimeters', 'Position',[3 5 20 15]),
+    imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
+    colormap gray; clim(dynRange);
+    hb2=colorbar; ylabel(hb2,'dB')
+    xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
+    ylim([0.1 min([3.5,max(zFull)])])
+end
 
 [X,Z] = meshgrid(xFull,zFull);
 x_inf = min(X(regionMask));
@@ -109,8 +111,10 @@ x_sup = max(X(regionMask));
 z_inf = min(Z(regionMask));
 z_sup = max(Z(regionMask));
 
-% rectangle('Position', [x_inf, z_inf, x_sup-x_inf, z_sup-z_inf], ...
-%     'LineStyle','--', 'LineWidth',2, 'EdgeColor','w')
+
+rectangle('Position', [x_inf, z_inf, x_sup-x_inf, z_sup-z_inf], ...
+    'LineStyle','--', 'LineWidth',2, 'EdgeColor','w')
+
 
 %%
 % Limits for ACS estimation
@@ -119,6 +123,7 @@ ind_z = z_inf <= zFull & zFull <= z_sup;
 roi = ind_x.*ind_z';
 x = xFull(ind_x);
 z = zFull(ind_z);
+%% 
 sam1 = sam1(ind_z,ind_x);
 Bmode = BmodeFull(ind_z,ind_x);
 Bmode = Bmode - max(Bmode(:));
