@@ -5,35 +5,33 @@
 clc, clear,
 
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\inc_journal'];
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\Simulation_23_12_18'];
+%     'Attenuation\Simulation\Simulation_23_12_18'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\24_04_04_inc'];
 
-% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\simulations_processed\inc_journal'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-
-resultsDir = [baseDir,'\results\24-02-04'];
-mkdir(resultsDir);
+resultsDir = [baseDir,'\results'];
+[~,~,~] = mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
-% targetFiles = targetFiles(2:3);
 refFiles = dir([refDir,'\rf*.mat']);
 
+% BS=10 GIVES GOOD RESULTS
 blocksize = 8;     % Block size in wavelengths
-% freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
-freq_L = 3.3e6; freq_H = 8.7e6; 
+freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
-% referenceAtt    = 0.6; % CHANGE ACCORDINGLY
-referenceAtt    = 0.7;
 
-% G.T.
-% groundTruthBack = [0.8,1.5,0.8,1.5];
-% groundTruthInc = [1.5,0.8,1.5,0.8];
-groundTruthBack = [0.6,0.6,0.6];
-groundTruthInc = [1.2,1.2,1.2];
+% Previous simulation
+% referenceAtt    = 0.7;
+% groundTruthBack = [0.6,0.6,0.6];
+% groundTruthInc = [1.2,1.2,1.2];
+
+% New simu
+referenceAtt    = 0.6;
+groundTruthBack = [0.5,0.5,0.5];
+groundTruthInc = [1,1,1];
 
 % Weights SWTV
 aSNR = 1; bSNR = 0.1;
@@ -51,7 +49,7 @@ dynRange = [-40,0];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 % attRange = [0.6 1.7];
-attRange = [0.4 1.4];
+attRange = [0.4 1.1];
 
 %% Setting up
 
@@ -140,15 +138,6 @@ fprintf('Diff x: %.2f mm, z: %.2f mm\n',wx*dx*1e3,wz*dz*1e3)
 fprintf('Region of interest rows: %i, col: %i\n\n',m,n);
 
 %% Generating Diffraction compensation
-% Generating references
-att_ref = referenceAtt*(f.^1.05)/(20*log10(exp(1)));
-att_ref_map = zeros(m,n,p);
-for jj=1:n
-    for ii=1:m
-        att_ref_map(ii,jj,:) = att_ref;
-    end
-end
-
 % Windows for spectrum
 windowing = tukeywin(nz/2,0.25);
 windowing = windowing*ones(1,nx);
@@ -157,11 +146,16 @@ windowing = windowing*ones(1,nx);
 Nref = length(refFiles);
 
 % Memory allocation
-Sp_ref = zeros(m,n,p,Nref);
-Sd_ref = zeros(m,n,p,Nref);
+Sp_ref = zeros(m,n,p);
+Sd_ref = zeros(m,n,p);
+compensation = zeros(m,n,p,Nref);
+
 for iRef = 1:Nref
     load(fullfile(refDir,refFiles(iRef).name),"rf","medium");
-    disp(mean(medium.alpha_coeff(:)))
+    acs_mean = mean(medium.alpha_coeff(1,1));
+    att_ref = acs_mean*(f.^medium.alpha_power)/NptodB;
+    att_ref_map = repmat(reshape(att_ref,[1 1 p]),m,n,1);
+
     samRef = rf;
     samRef = samRef(ind_z,ind_x); % Cropping
     for jj=1:n
@@ -175,17 +169,14 @@ for iRef = 1:Nref
             [tempSp,~] = spectra(sub_block_p,windowing,0,nz/2,NFFT);
             [tempSd,~] = spectra(sub_block_d,windowing,0,nz/2,NFFT);
 
-            Sp_ref(ii,jj,:,iRef) = (tempSp(rang));
-            Sd_ref(ii,jj,:,iRef) = (tempSd(rang));
+            Sp_ref(ii,jj,:) = (tempSp(rang));
+            Sd_ref(ii,jj,:) = (tempSd(rang));
         end
     end
+    compensation(:,:,:,iRef) = log(Sp_ref) - log(Sd_ref) - 4*L*att_ref_map;
 end
 
-Sp = mean(Sp_ref,4); Sd = mean(Sd_ref,4);
-compensation = ( log(Sp) - log(Sd) ) - 4*L*att_ref_map;
-
-% Liberating memory to avoid killing my RAM
-clear Sp_ref Sd_ref
+compensation = mean(compensation,4);
 
 %% Spectrum
 Sp = zeros(m,n,p);

@@ -3,14 +3,16 @@
 % ========================================================================
 %% SIMULATION ON INCLUSIONS
 clear,clc
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\Simulation_23_12_18'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\Simulation_23_12_18'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\24_04_04_inc'];
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-croppedDir = [baseDir,'\cropped'];
+resultsDir = [baseDir,'\results'];
+[~,~,~] = mkdir(resultsDir);
 
-if (~exist(croppedDir,"dir")), mkdir(croppedDir); end
 targetFiles = dir([targetDir,'\rf*.mat']);
 refFiles = dir([refDir,'\rf*.mat']);
 
@@ -19,12 +21,17 @@ blocksize = 8;     % Block size in wavelengths
 freq_L = 3.3e6; freq_H = 8.7e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
-referenceAtt    = 0.7;
 
-figDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-02\inclusion';
+% Previous simulation
+% referenceAtt    = 0.7;
+% groundTruthTop = [0.6,0.6,0.6];
+% groundTruthBottom = [1.2,1.2,1.2];
 
-groundTruthTop = [0.6,0.6,0.6];
-groundTruthBottom = [1.2,1.2,1.2];
+% New simu
+referenceAtt    = 0.6;
+groundTruthTop = [0.5,0.5,0.5];
+groundTruthBottom = [1,1,1];
+
 
 % Weights SWTV
 aSNR = 1; bSNR = 0.1;
@@ -39,7 +46,7 @@ extension = 3;
 
 % Plotting
 dynRange = [-40,0];
-attRange = [0.4,1.4];
+attRange = [0.4,1.1];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
@@ -157,7 +164,7 @@ Sp_ref = zeros(m,n,p,Nref);
 Sd_ref = zeros(m,n,p,Nref);
 for iRef = 1:Nref
     load(fullfile(refDir,refFiles(iRef).name),"rf","medium");
-    % disp(mean(medium.alpha_coeff(:)))
+    fprintf("Ref mean ACS: %.2f\n",mean(medium.alpha_coeff(:)));
     samRef = rf;
     samRef = samRef(ind_z,ind_x); % Cropping
     for jj=1:n
@@ -380,7 +387,7 @@ c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
 %%
-save_all_figures_to_directory(figDir,['simInc',num2str(iAcq),'Figure']);
+save_all_figures_to_directory(resultsDir,['simInc',num2str(iAcq),'Figure']);
 close all
 
 end

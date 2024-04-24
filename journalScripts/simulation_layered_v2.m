@@ -8,7 +8,7 @@ targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
 % resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-03';
-resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-03';
+resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-23';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
