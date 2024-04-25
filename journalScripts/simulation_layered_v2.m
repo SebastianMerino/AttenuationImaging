@@ -1,7 +1,7 @@
 clear,clc
 
 baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\24_04_04'];
+    'Attenuation\simulations_processed\24_04_04_layered'];
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\Simulation\24_04_02'];
 targetDir = [baseDir,'\raw'];

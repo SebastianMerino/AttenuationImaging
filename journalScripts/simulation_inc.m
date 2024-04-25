@@ -18,7 +18,7 @@ refFiles = dir([refDir,'\rf*.mat']);
 
 % BS=10 GIVES GOOD RESULTS
 blocksize = 8;     % Block size in wavelengths
-freq_L = 3.3e6; freq_H = 8.7e6; % original 3.3-8.7s
+freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 

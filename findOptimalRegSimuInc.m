@@ -11,7 +11,7 @@ baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-resultsDir = [baseDir,'\results'];
+resultsDir = [baseDir,'\results\opt-reg'];
 [~,~,~] = mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -51,6 +51,9 @@ NptodB = log10(exp(1))*20;
 % attRange = [0.6 1.7];
 attRange = [0.4 1.1];
 
+% Region for attenuation imaging
+x_inf = -1.5; x_sup = 1.5;
+z_inf = 0.5; z_sup = 3.5;
 %% Setting up
 
 for iAcq = 1:length(targetFiles)
@@ -76,10 +79,6 @@ Bmode = Bmode - max(Bmode(:));
 % end
 
 %% Cropping and finding sample sizes
-% Region for attenuation imaging
-x_inf = -1.5; x_sup = 1.5;
-% z_inf = 0.5; z_sup = 3.5;
-z_inf = 0.3; z_sup = 3.9;
 
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
@@ -152,7 +151,7 @@ compensation = zeros(m,n,p,Nref);
 
 for iRef = 1:Nref
     load(fullfile(refDir,refFiles(iRef).name),"rf","medium");
-    acs_mean = mean(medium.alpha_coeff(1,1));
+    acs_mean = medium.alpha_coeff(1,1);
     att_ref = acs_mean*(f.^medium.alpha_power)/NptodB;
     att_ref_map = repmat(reshape(att_ref,[1 1 p]),m,n,1);
 
@@ -239,7 +238,7 @@ contour(x,z,inc, 1, 'w--')
 hold off
 
 t2 = nexttile;
-imagesc(x,z,attIdeal,attRange)
+imagesc(x_ACS,z_ACS,attIdeal,attRange)
 axis image
 colormap(t2,turbo);
 c = colorbar('westoutside');
