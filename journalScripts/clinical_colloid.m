@@ -9,7 +9,7 @@ refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 tableName = 'clinical.xlsx';
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-20';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-24';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 T = readtable('params.xlsx');
@@ -277,10 +277,91 @@ se = strel('diamond',1);
 maskThyroidACS = imerode(maskThyroidACS,se);
 maskNoduleACS = imerode(maskNoduleACS,se);
 
+% % FIGURE VERSION 1 
+% figure('Units','centimeters', 'Position',[5 5 14 7])
+% tiledlayout(2,3, 'TileSpacing','tight', 'Padding','compact')
+% t1 = nexttile([2,2]);
+% imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
+% title('B-mode')
+% ylim([0.1, 3])
+% hold on
+% contour(xFull,zFull,roiACS{1},1,'w--')
+% contour(xFull,zFull,roiACS{2},1,'w--')
+% hold off
+% xlabel('Lateral [cm]')
+% ylabel('Axial [cm]')
+% 
+% 
+% t2 = nexttile;
+% iRoi = 1;
+% [~,hB,hColor] = imOverlayInterp(BmodeFull,dataRoi{iRoi}.TV,dynRange,attRange,alpha_img,...
+%     dataRoi{iRoi}.x,dataRoi{iRoi}.z,dataRoi{iRoi}.roi,xFull,zFull);
+% % Interpolation
+% iRoi = 2;
+% [X,Z] = meshgrid(dataRoi{iRoi}.x,dataRoi{iRoi}.z);
+% [Xq,Zq] = meshgrid(xFull,zFull);
+% imgInterp = interp2(X,Z,dataRoi{iRoi}.TV,Xq,Zq);
+% emptyRegion = isnan(imgInterp);
+% newRoi = ~emptyRegion & dataRoi{iRoi}.roi;
+% % Overlap
+% hold on;
+% iRoi = 2;
+% hF = imagesc(dataRoi{iRoi}.x,dataRoi{iRoi}.z,imgInterp,attRange);
+% set(hF,'XData',get(hB,'XData'),'YData',get(hB,'YData'))
+% alphadata = alpha_img.*(newRoi);
+% set(hF,'AlphaData',alphadata);
+% 
+% contour(xFull,zFull,roiACS{1},1,'w--')
+% contour(xFull,zFull,roiACS{2},1,'w--')
+% contour(x,z,maskThyroid,1,'w--')
+% hold off
+% 
+% ylim([zlim1 zlim2])
+% xlim([xlim1 xlim2])
+% % xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+% title('TV')
+% hColor.Label.String = 'ACS [dB/cm/MHz]';
+% fontsize(gcf,8,'points')
+% colorbar off
+% 
+% nexttile,
+% iRoi = 1;
+% [~,hB,hColor] = imOverlayInterp(BmodeFull,dataRoi{iRoi}.WFR,dynRange,attRange,alpha_img,...
+%     dataRoi{iRoi}.x,dataRoi{iRoi}.z,dataRoi{iRoi}.roi,xFull,zFull);
+% % Interpolation
+% iRoi = 2;
+% [X,Z] = meshgrid(dataRoi{iRoi}.x,dataRoi{iRoi}.z);
+% [Xq,Zq] = meshgrid(xFull,zFull);
+% imgInterp = interp2(X,Z,dataRoi{iRoi}.WFR,Xq,Zq);
+% emptyRegion = isnan(imgInterp);
+% newRoi = ~emptyRegion & dataRoi{iRoi}.roi;
+% % Overlap
+% hold on;
+% iRoi = 2;
+% hF = imagesc(dataRoi{iRoi}.x,dataRoi{iRoi}.z,imgInterp,attRange);
+% set(hF,'XData',get(hB,'XData'),'YData',get(hB,'YData'))
+% alphadata = alpha_img.*(newRoi);
+% set(hF,'AlphaData',alphadata);
+% 
+% contour(xFull,zFull,roiACS{1},1,'w--')
+% contour(xFull,zFull,roiACS{2},1,'w--')
+% contour(x,z,maskThyroid,1,'w--')
+% hold off
+% ylim([zlim1 zlim2])
+% xlim([xlim1 xlim2])
+% xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
+% title('WFR')
+% 
+% hColor.Layout.Tile = 'east';
+% hColor.Label.String = 'ACS [dB/cm/MHz]';
+% colormap(t1,'gray')
+% fontsize(gcf,8,'points')
 
-figure('Units','centimeters', 'Position',[5 5 14 7])
-tiledlayout(2,3, 'TileSpacing','tight', 'Padding','compact')
-t1 = nexttile([2,2]);
+
+
+figure('Units','centimeters', 'Position',[5 5 14 5])
+tiledlayout(1,3, 'TileSpacing','compact', 'Padding','tight')
+t1 = nexttile;
 imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
 title('B-mode')
 ylim([0.1, 3])
@@ -305,7 +386,6 @@ emptyRegion = isnan(imgInterp);
 newRoi = ~emptyRegion & dataRoi{iRoi}.roi;
 % Overlap
 hold on;
-iRoi = 2;
 hF = imagesc(dataRoi{iRoi}.x,dataRoi{iRoi}.z,imgInterp,attRange);
 set(hF,'XData',get(hB,'XData'),'YData',get(hB,'YData'))
 alphadata = alpha_img.*(newRoi);
@@ -316,12 +396,9 @@ contour(xFull,zFull,roiACS{2},1,'w--')
 contour(x,z,maskThyroid,1,'w--')
 hold off
 
-ylim([zlim1 zlim2])
-xlim([xlim1 xlim2])
-% xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+ylim([0.1, 3])
+xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
 title('TV')
-hColor.Label.String = 'ACS [dB/cm/MHz]';
-fontsize(gcf,8,'points')
 colorbar off
 
 nexttile,
@@ -337,7 +414,6 @@ emptyRegion = isnan(imgInterp);
 newRoi = ~emptyRegion & dataRoi{iRoi}.roi;
 % Overlap
 hold on;
-iRoi = 2;
 hF = imagesc(dataRoi{iRoi}.x,dataRoi{iRoi}.z,imgInterp,attRange);
 set(hF,'XData',get(hB,'XData'),'YData',get(hB,'YData'))
 alphadata = alpha_img.*(newRoi);
@@ -347,15 +423,16 @@ contour(xFull,zFull,roiACS{1},1,'w--')
 contour(xFull,zFull,roiACS{2},1,'w--')
 contour(x,z,maskThyroid,1,'w--')
 hold off
-ylim([zlim1 zlim2])
-xlim([xlim1 xlim2])
+ylim([0.1, 3])
 xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
 title('WFR')
 
-hColor.Layout.Tile = 'east';
-hColor.Label.String = 'ACS [dB/cm/MHz]';
+% hColor.Layout.Tile = 'east';
+% hColor.Label.String = 'ACS [dB/cm/MHz]';
+colorbar off
 colormap(t1,'gray')
-fontsize(gcf,8,'points')
+fontsize(gcf,9,'points')
+
 
 %%
 fprintf("Homogeneous results: \n")
@@ -385,5 +462,5 @@ fprintf("Median: %.2f, IQR: %.2f\n",median(dataRoi{2}.WFR(:)),...
 
 %%
 
-save_all_figures_to_directory(resultsDir,'specialFig');
+save_all_figures_to_directory(resultsDir,'specialFig','svg');
 close all

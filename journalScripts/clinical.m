@@ -9,7 +9,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Thyroid_Data_PUCP_UTD'];
 refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\REFERENCES'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-03';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-24';
 
 tableName = 'clinical.xlsx';
 T = readtable('params.xlsx');
@@ -618,7 +618,7 @@ fontsize(gcf,9,'points')
 
 
 %%
-save_all_figures_to_directory(resultsDir,['pat',patient,'fig']);
+save_all_figures_to_directory(resultsDir,['pat',patient,'fig'],'svg');
 close all
 
 end
@@ -641,150 +641,6 @@ dataTable = array2table(dataCols,...
 writetable([infoTable,dataTable],fullfile(resultsDir,tableName),...
      'WriteRowNames',true);
 
-%%
-figure('Units','centimeters', 'Position',[5 5 12 10]), 
-tl = tiledlayout(2,2, TileSpacing="compact", Padding="compact");
-% ylabel(tl,'ACS [dB/cm/MHz]')
-% nexttile([1 2])
-% x = [dataThyroidTV{4};dataThyroidTV{6};dataThyroidTV{7};...
-%     dataThyroidTV{2};dataThyroidTV{5};dataThyroidTV{8}];
-% g1 = repmat({'1'},length(dataThyroidTV{4}),1);
-% g2 = repmat({'2'},length(dataThyroidTV{6}),1);
-% g3 = repmat({'3'},length(dataThyroidTV{7}),1);
-% g4 = repmat({'4'},length(dataThyroidTV{2}),1);
-% g5 = repmat({'5'},length(dataThyroidTV{5}),1);
-% g6 = repmat({'6'},length(dataThyroidTV{8}),1);
-% g = [g1; g2; g3; g4; g5; g6];
-% boxplot(x,g);
-% ylim([-0.5,2.5])
-% grid on
-
-nexttile,
-x = [dataThyroidTV{2};dataThyroidTV{5};dataThyroidTV{8}];
-g1 = repmat({'1'},length(dataThyroidTV{2}),1);
-g2 = repmat({'2'},length(dataThyroidTV{5}),1);
-g3 = repmat({'3'},length(dataThyroidTV{8}),1);
-g = [g1; g2; g3];
-boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
-ylim([-0.5,2.5])
-grid on
-ylabel('ACS [dB/cm/MHz]')
-title('Thyroid')
-
-nexttile,
-x = [dataThyroidTV{1};dataThyroidTV{4};dataThyroidTV{6};dataThyroidTV{7}];
-g0 = repmat({'4'},length(dataThyroidTV{1}),1);
-g1 = repmat({'5'},length(dataThyroidTV{4}),1);
-g2 = repmat({'6'},length(dataThyroidTV{6}),1);
-g3 = repmat({'7'},length(dataThyroidTV{7}),1);
-g = [g0; g1; g2; g3];
-boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
-ylim([-0.5,2.5])
-grid on
-title('Thyroid')
-fontsize(gcf,9,'points')
-xlabel(tl,'Patient number', 'FontSize',10)
-
-
-nexttile,
-x = [dataNoduleTV{2};dataNoduleTV{5};dataNoduleTV{8}];
-g1 = repmat({'1'},length(dataNoduleTV{2}),1);
-g2 = repmat({'2'},length(dataNoduleTV{5}),1);
-g3 = repmat({'3'},length(dataNoduleTV{8}),1);
-g = [g1; g2; g3];
-boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
-ylim([-0.5,2.5])
-grid on
-ylabel('ACS [dB/cm/MHz]')
-%xlabel('Patient number')
-title('Adenomatoid nodule')
-
-nexttile,
-x = [dataNoduleTV{1};dataNoduleTV{4};dataNoduleTV{6};dataNoduleTV{7}];
-g0 = repmat({'4'},length(dataNoduleTV{1}),1);
-g1 = repmat({'5'},length(dataNoduleTV{4}),1);
-g2 = repmat({'6'},length(dataNoduleTV{6}),1);
-g3 = repmat({'7'},length(dataNoduleTV{7}),1);
-g = [g0; g1; g2; g3];
-boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
-ylim([-0.5,2.5])
-grid on
-%xlabel('Patient number')
-title('Colloidal nodule')
-fontsize(gcf,9,'points')
-xlabel(tl,'Patient number', 'FontSize',10)
-%%
-figure('Units','centimeters', 'Position',[5 5 12 10]), 
-tl = tiledlayout(2,2, TileSpacing="compact", Padding="compact");
-% ylabel(tl,'ACS [dB/cm/MHz]')
-% nexttile([1 2])
-% x = [dataThyroidTV{4};dataThyroidTV{6};dataThyroidTV{7};...
-%     dataThyroidTV{2};dataThyroidTV{5};dataThyroidTV{8}];
-% g1 = repmat({'1'},length(dataThyroidTV{4}),1);
-% g2 = repmat({'2'},length(dataThyroidTV{6}),1);
-% g3 = repmat({'3'},length(dataThyroidTV{7}),1);
-% g4 = repmat({'4'},length(dataThyroidTV{2}),1);
-% g5 = repmat({'5'},length(dataThyroidTV{5}),1);
-% g6 = repmat({'6'},length(dataThyroidTV{8}),1);
-% g = [g1; g2; g3; g4; g5; g6];
-% boxplot(x,g);
-% ylim([-0.5,2.5])
-% grid on
-
-nexttile,
-x = [dataThyroidWFR{2};dataThyroidWFR{5};dataThyroidWFR{8}];
-g1 = repmat({'1'},length(dataThyroidWFR{2}),1);
-g2 = repmat({'2'},length(dataThyroidWFR{5}),1);
-g3 = repmat({'3'},length(dataThyroidWFR{8}),1);
-g = [g1; g2; g3];
-boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
-ylim([-0.5,2.5])
-grid on
-ylabel('ACS [dB/cm/MHz]')
-title('Thyroid')
-
-nexttile,
-x = [dataThyroidWFR{1};dataThyroidWFR{4};dataThyroidWFR{6};dataThyroidWFR{7}];
-g0 = repmat({'4'},length(dataThyroidWFR{1}),1);
-g1 = repmat({'5'},length(dataThyroidWFR{4}),1);
-g2 = repmat({'6'},length(dataThyroidWFR{6}),1);
-g3 = repmat({'7'},length(dataThyroidWFR{7}),1);
-g = [g0; g1; g2; g3];
-boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
-ylim([-0.5,2.5])
-grid on
-title('Thyroid')
-fontsize(gcf,9,'points')
-xlabel(tl,'Patient number', 'FontSize',10)
-
-
-nexttile,
-x = [dataNoduleWFR{2};dataNoduleWFR{5};dataNoduleWFR{8}];
-g1 = repmat({'1'},length(dataNoduleWFR{2}),1);
-g2 = repmat({'2'},length(dataNoduleWFR{5}),1);
-g3 = repmat({'3'},length(dataNoduleWFR{8}),1);
-g = [g1; g2; g3];
-boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
-ylim([-0.5,2.5])
-grid on
-ylabel('ACS [dB/cm/MHz]')
-%xlabel('Patient number')
-title('Adenomatoid nodule')
-
-nexttile,
-x = [dataNoduleWFR{1};dataNoduleWFR{4};dataNoduleWFR{6};dataNoduleWFR{7}];
-g0 = repmat({'4'},length(dataNoduleWFR{1}),1);
-g1 = repmat({'5'},length(dataNoduleWFR{4}),1);
-g2 = repmat({'6'},length(dataNoduleWFR{6}),1);
-g3 = repmat({'7'},length(dataNoduleWFR{7}),1);
-g = [g0; g1; g2; g3];
-boxplot(x,g, 'OutlierSize',6, 'Symbol','r.');
-ylim([-0.5,2.5])
-grid on
-%xlabel('Patient number')
-title('Colloidal nodule')
-fontsize(gcf,9,'points')
-xlabel(tl,'Patient number', 'FontSize',10)
 
 %% NEW BOXPLOT
 g1 = repmat({'1'},length(dataThyroidTV{2}),1);
@@ -892,5 +748,5 @@ xlabel('Method')
 fontsize(gcf,9,'points')
 
 %%
-save_all_figures_to_directory(resultsDir,'clinicalBoxplot');
+save_all_figures_to_directory(resultsDir,'clinicalBoxplot','svg');
 close all
