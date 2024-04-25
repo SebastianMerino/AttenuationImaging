@@ -61,8 +61,8 @@ for iSim = 1:length(simuNames)
     rx = kgrid.y;
 
     background_std = 0.004;
-    background_alpha = 0.5 + 0.05*(iSim-1);       % [dB/(MHz^y cm)]
-
+    % background_alpha = 0.5 + 0.05*(iSim-1);       % [dB/(MHz^y cm)]
+    background_alpha = 0.6;
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
     medium.alpha_power = 1;

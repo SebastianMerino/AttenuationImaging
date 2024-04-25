@@ -6,13 +6,13 @@ clc, clear,
 
 
 baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\24_04_04'];
+    'Attenuation\simulations_processed\24_04_04_layered'];
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\Simulation\24_04_02'];
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
-resultsDir = [baseDir,'\results\24-02-04'];
+resultsDir = [baseDir,'\results\24-04-25'];
 mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -22,7 +22,7 @@ refFiles = dir([refDir,'\rf*.mat']);
 %%
 % SETTING PARAMETERS
 blocksize = 8;     % Block size in wavelengths
-freq_L = 3e6; freq_H = 8e6; % freq_L = 3.3e6; freq_H = 8.7e6;
+freq_L = 3.5e6; freq_H = 8.5e6; % freq_L = 3.3e6; freq_H = 8.7e6;
 
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
@@ -58,7 +58,7 @@ groundTruthBottom = [1,1,1];
 
 % Region for attenuation imaging
 x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.5; z_sup = 3.5;
+z_inf = 0.4; z_sup = 3.7;
 
 %% Setting up
 
@@ -113,7 +113,7 @@ m  = length(z0p);
 [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
 meanSpectrum = mean(pxx,2);
 % [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-figure,plot(fpxx/1e6,meanSpectrum)
+figure,plot(fpxx/1e6,db(meanSpectrum./max(meanSpectrum)))
 xline([freq_L,freq_H]/1e6)
 xlabel('Frequency [MHz]')
 ylabel('Magnitude')
@@ -135,15 +135,6 @@ fprintf('Diff x: %.2f mm, z: %.2f mm\n',wx*dx*1e3,wz*dz*1e3)
 fprintf('Region of interest rows: %i, col: %i\n\n',m,n);
 
 %% Generating Diffraction compensation
-% Generating references
-att_ref = referenceAtt*(f.^1.05)/(20*log10(exp(1)));
-att_ref_map = zeros(m,n,p);
-for jj=1:n
-    for ii=1:m
-        att_ref_map(ii,jj,:) = att_ref;
-    end
-end
-
 % Windows for spectrum
 windowing = tukeywin(nz/2,0.25);
 windowing = windowing*ones(1,nx);
@@ -152,11 +143,16 @@ windowing = windowing*ones(1,nx);
 Nref = length(refFiles);
 
 % Memory allocation
-Sp_ref = zeros(m,n,p,Nref);
-Sd_ref = zeros(m,n,p,Nref);
+Sp_ref = zeros(m,n,p);
+Sd_ref = zeros(m,n,p);
+compensation = zeros(m,n,p,Nref);
+
 for iRef = 1:Nref
     load(fullfile(refDir,refFiles(iRef).name),"rf","medium");
-    disp(mean(medium.alpha_coeff(:)))
+    acs_mean = medium.alpha_coeff(1,1);
+    att_ref = acs_mean*(f.^medium.alpha_power)/NptodB;
+    att_ref_map = repmat(reshape(att_ref,[1 1 p]),m,n,1);
+
     samRef = rf;
     samRef = samRef(ind_z,ind_x); % Cropping
     for jj=1:n
@@ -170,17 +166,14 @@ for iRef = 1:Nref
             [tempSp,~] = spectra(sub_block_p,windowing,0,nz/2,NFFT);
             [tempSd,~] = spectra(sub_block_d,windowing,0,nz/2,NFFT);
 
-            Sp_ref(ii,jj,:,iRef) = (tempSp(rang));
-            Sd_ref(ii,jj,:,iRef) = (tempSd(rang));
+            Sp_ref(ii,jj,:) = (tempSp(rang));
+            Sd_ref(ii,jj,:) = (tempSd(rang));
         end
     end
+    compensation(:,:,:,iRef) = log(Sp_ref) - log(Sd_ref) - 4*L*att_ref_map;
 end
 
-Sp = mean(Sp_ref,4); Sd = mean(Sd_ref,4);
-compensation = ( log(Sp) - log(Sd) ) - 4*L*att_ref_map;
-
-% Liberating memory to avoid killing my RAM
-clear Sp_ref Sd_ref
+compensation = mean(compensation,4);
 
 %% Spectrum
 Sp = zeros(m,n,p);
@@ -264,9 +257,8 @@ title('Ideal ACS')
 
 
 %% RSLD
-muB = 10.^(3:0.5:3.5);
-% muC = 10.^(1:2);
-muC = 10.^(1:3);
+muB = 10.^(2:0.5:3.5);
+muC = 10.^(1:0.5:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -302,7 +294,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD, \mu=',num2str(muBopt,2)])
+title(['RSLD, \mu_b=10^{',num2str(log10(muBopt),1),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -310,7 +302,7 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD, \mu=',num2str(muCopt,2)])
+title(['RSLD, \mu_c=10^{',num2str(log10(muCopt),1),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
@@ -349,9 +341,8 @@ desvMin = 15;
 w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 
-muB = 10.^(2.5:0.5:3);
-% muC = 10.^(0:2);
-muC = 10.^(0:3);
+muB = 10.^(2:0.5:3);
+muC = 10.^(0:0.5:3);
 
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -395,7 +386,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD, \mu=',num2str(muBopt,2)])
+title(['RSLD, \mu_b=10^{',num2str(log10(muBopt),1),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -403,7 +394,7 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD, \mu=',num2str(muCopt,2)])
+title(['RSLD, \mu_c=10^{',num2str(log10(muCopt),1),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
@@ -419,9 +410,8 @@ r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdBottom^2);
 MetricsSWTV(iAcq) = r;
 
 %% Minimizing BS log ratio
-muB = 10.^(3:0.5:4);
-%muC = 10.^(0:2);
-muC = 10.^(0:3);
+muB = 10.^(2.5:0.5:4);
+muC = 10.^(0:0.5:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -458,7 +448,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD-TVL1, \mu=',num2str(muBopt,2)])
+title(['RSLD-TVL1, \mu_b=10^{',num2str(log10(muBopt),1),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -466,7 +456,7 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD-TVL1, \mu=',num2str(muCopt,2)])
+title(['RSLD-TVL1, \mu_c=10^{',num2str(log10(muCopt),1),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
@@ -496,7 +486,6 @@ A2w = W*A2;
 
 
 muB = 10.^(2.5:0.5:4);
-% muC = 10.^(-0.5:0.5:2);
 muC = 10.^(-0.5:0.5:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -545,7 +534,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD-WFR, \mu=',num2str(muBopt,2)])
+title(['RSLD-WFR, \mu_b=10^{',num2str(log10(muBopt),1),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -553,7 +542,7 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD-WFR, \mu=',num2str(muCopt,2)])
+title(['RSLD-WFR, \mu_c=10^{',num2str(log10(muCopt),1),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 

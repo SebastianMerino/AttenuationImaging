@@ -10,27 +10,23 @@ baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-resultsDir = [baseDir,'\results'];
+resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-25';
 [~,~,~] = mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
 refFiles = dir([refDir,'\rf*.mat']);
+tableName = 'simuInc.xlsx';
 
-% BS=10 GIVES GOOD RESULTS
+%%
 blocksize = 8;     % Block size in wavelengths
 freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
-% Previous simulation
-% referenceAtt    = 0.7;
-% groundTruthTop = [0.6,0.6,0.6];
-% groundTruthBottom = [1.2,1.2,1.2];
-
 % New simu
 referenceAtt    = 0.6;
-groundTruthTop = [0.5,0.5,0.5];
-groundTruthBottom = [1,1,1];
+groundTruthBack = [0.5,0.5,0.5];
+groundTruthInc = [1,1,1];
 
 
 % Weights SWTV
@@ -50,6 +46,9 @@ attRange = [0.4,1.1];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
+% Region for attenuation imaging
+x_inf = -1.5; x_sup = 1.5;
+z_inf = 0.4; z_sup = 3.7;
 %% Setting up
 
 for iAcq = 1:3
@@ -58,18 +57,18 @@ switch iAcq
     case 1
         muBtv = 10^3.5; muCtv = 10^3;
         muBswtv = 10^3; muCswtv = 10^3;
-        muBtvl1 = 10^3; muCtvl1 = 10^2;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^2.5;
         muBwfr = 10^3.5; muCwfr = 10^2;
     case 2
-        muBtv = 10^3.5; muCtv = 10^2;
-        muBswtv = 10^3; muCswtv = 10^1;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
-        muBwfr = 10^4; muCwfr = 10^1.5;
+        muBtv = 10^3; muCtv = 10^1;
+        muBswtv = 10^2.5; muCswtv = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^0.5;
+        muBwfr = 10^3.5; muCwfr = 10^0.5;
     case 3
-        muBtv = 10^3.5; muCtv = 10^2;
-        muBswtv = 10^3; muCswtv = 10^2;
-        muBtvl1 = 10^3; muCtvl1 = 10^1;
-        muBwfr = 10^4; muCwfr = 10^2;
+        muBtv = 10^3; muCtv = 10^1;
+        muBswtv = 10^2.5; muCswtv = 10^0.5;
+        muBtvl1 = 10^3; muCtvl1 = 10^0.5;
+        muBwfr = 10^4; muCwfr = 10^1.5;
 end
 
 load(fullfile(targetDir,targetFiles(iAcq).name));
@@ -85,10 +84,6 @@ Bmode = db(hilbert(sam1));
 dynRange = [-50,0];
 
 %% Cropping and finding sample sizes
-% Region for attenuation imaging
-x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.5; z_sup = 3.5;
-
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
 ind_z = z_inf <= z & z <= z_sup;
@@ -143,15 +138,6 @@ fprintf('Blocksize in pixels nx: %i, nz: %i\n',nx,nz);
 fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 
 %% Generating Diffraction compensation
-% Generating references
-att_ref = referenceAtt*(f.^1.05)/(20*log10(exp(1)));
-att_ref_map = zeros(m,n,p);
-for jj=1:n
-    for ii=1:m
-        att_ref_map(ii,jj,:) = att_ref;
-    end
-end
-
 % Windows for spectrum
 windowing = tukeywin(nz/2,0.25);
 windowing = windowing*ones(1,nx);
@@ -160,11 +146,16 @@ windowing = windowing*ones(1,nx);
 Nref = length(refFiles);
 
 % Memory allocation
-Sp_ref = zeros(m,n,p,Nref);
-Sd_ref = zeros(m,n,p,Nref);
+Sp_ref = zeros(m,n,p);
+Sd_ref = zeros(m,n,p);
+compensation = zeros(m,n,p,Nref);
+
 for iRef = 1:Nref
     load(fullfile(refDir,refFiles(iRef).name),"rf","medium");
-    fprintf("Ref mean ACS: %.2f\n",mean(medium.alpha_coeff(:)));
+    acs_mean = medium.alpha_coeff(1,1);
+    att_ref = acs_mean*(f.^medium.alpha_power)/NptodB;
+    att_ref_map = repmat(reshape(att_ref,[1 1 p]),m,n,1);
+
     samRef = rf;
     samRef = samRef(ind_z,ind_x); % Cropping
     for jj=1:n
@@ -178,17 +169,14 @@ for iRef = 1:Nref
             [tempSp,~] = spectra(sub_block_p,windowing,0,nz/2,NFFT);
             [tempSd,~] = spectra(sub_block_d,windowing,0,nz/2,NFFT);
 
-            Sp_ref(ii,jj,:,iRef) = (tempSp(rang));
-            Sd_ref(ii,jj,:,iRef) = (tempSd(rang));
+            Sp_ref(ii,jj,:) = (tempSp(rang));
+            Sd_ref(ii,jj,:) = (tempSd(rang));
         end
     end
+    compensation(:,:,:,iRef) = log(Sp_ref) - log(Sd_ref) - 4*L*att_ref_map;
 end
 
-Sp = mean(Sp_ref,4); Sd = mean(Sd_ref,4);
-compensation = ( log(Sp) - log(Sd) ) - 4*L*att_ref_map;
-
-% Liberating memory to avoid killing my RAM
-clear Sp_ref Sd_ref
+compensation = mean(compensation,4);
 
 %% Spectrum
 Sp = zeros(m,n,p);
@@ -219,13 +207,19 @@ tol = 1e-3;
 clear mask
 mask = ones(m,n,p);
 
-% Creating reference
+% Creating masks and ideal map
+rInc = 0.7;
 [X,Z] = meshgrid(x_ACS,z_ACS);
-attIdeal = ones(size(Z));
-rInc = 0.8;
-inclusion = (X.^2 + (Z-2).^2)<= rInc^2;
-attIdeal(~inclusion) = groundTruthTop(iAcq);
-attIdeal(inclusion) = groundTruthBottom(iAcq); %incl = bottom
+[Xq,Zq] = meshgrid(x,z);
+inclusion = (Xq.^2 + (Zq-2).^2)<= rInc^2;
+attIdeal = ones(size(Xq));
+attIdeal(~inclusion) = groundTruthBack(iAcq);
+attIdeal(inclusion) = groundTruthInc(iAcq); %incl = inclusion
+
+inclusionACS = (X.^2 + (Z-2).^2)<= rInc^2;
+attIdealACS{iAcq} = ones(size(X));
+attIdealACS{iAcq}(~inclusionACS) = groundTruthBack(iAcq);
+attIdealACS{iAcq}(inclusionACS) = groundTruthInc(iAcq); %incl = inclusion
 
 %% TV
 [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
@@ -233,21 +227,17 @@ BRTV = reshape(Bn*NptodB,m,n);
 CRTV = reshape(Cn*NptodB,m,n);
 
 axialTV{iAcq} = mean(BRTV(:,20:27),2);
-[X,Z] = meshgrid(x_ACS,z_ACS);
-[Xq,Zq] = meshgrid(x,z);
-inclusion = (Xq.^2 + (Zq-2).^2)<= rInc^2;
-top = ~inclusion;
-bottom = inclusion;
+
 AttInterp = interp2(X,Z,BRTV,Xq,Zq);
-r.meanTop = mean(AttInterp(top),"omitnan");
-r.stdTop = std(AttInterp(top),"omitnan");
-r.meanBottom = mean(AttInterp(bottom),"omitnan");
-r.stdBottom = std(AttInterp(bottom),"omitnan");
-r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
-r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
-r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
-r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
-r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+r.meanBack = mean(AttInterp(~inclusion),"omitnan");
+r.stdBack = std(AttInterp(~inclusion),"omitnan");
+r.meanInc = mean(AttInterp(inclusion),"omitnan");
+r.stdInc = std(AttInterp(inclusion),"omitnan");
+r.biasBack = mean( AttInterp(~inclusion) - groundTruthBack(iAcq),"omitnan");
+r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
+r.rmseBack = sqrt(mean( (AttInterp(~inclusion) - groundTruthBack(iAcq)).^2,"omitnan"));
+r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
+r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 MetricsTV(iAcq) = r;
 %% SWTV
 % Calculating SNR
@@ -280,15 +270,15 @@ CRSWTV = reshape(Cn*NptodB,m,n);
 
 axialSWTV{iAcq} = mean(BRSWTV(:,20:27),2);
 AttInterp = interp2(X,Z,BRSWTV,Xq,Zq);
-r.meanTop = mean(AttInterp(top),"omitnan");
-r.stdTop = std(AttInterp(top),"omitnan");
-r.meanBottom = mean(AttInterp(bottom),"omitnan");
-r.stdBottom = std(AttInterp(bottom),"omitnan");
-r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
-r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
-r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
-r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
-r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+r.meanBack = mean(AttInterp(~inclusion),"omitnan");
+r.stdBack = std(AttInterp(~inclusion),"omitnan");
+r.meanInc = mean(AttInterp(inclusion),"omitnan");
+r.stdInc = std(AttInterp(inclusion),"omitnan");
+r.biasBack = mean( AttInterp(~inclusion) - groundTruthBack(iAcq),"omitnan");
+r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
+r.rmseBack = sqrt(mean( (AttInterp(~inclusion) - groundTruthBack(iAcq)).^2,"omitnan"));
+r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
+r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 MetricsSWTV(iAcq) = r;
 
 %% TVL1
@@ -298,15 +288,15 @@ CRTVL1 = reshape(Cn*NptodB,m,n);
 
 axialTVL1{iAcq} = mean(BRTVL1(:,20:27),2);
 AttInterp = interp2(X,Z,BRTVL1,Xq,Zq);
-r.meanTop = mean(AttInterp(top),"omitnan");
-r.stdTop = std(AttInterp(top),"omitnan");
-r.meanBottom = mean(AttInterp(bottom),"omitnan");
-r.stdBottom = std(AttInterp(bottom),"omitnan");
-r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
-r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
-r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
-r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
-r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+r.meanBack = mean(AttInterp(~inclusion),"omitnan");
+r.stdBack = std(AttInterp(~inclusion),"omitnan");
+r.meanInc = mean(AttInterp(inclusion),"omitnan");
+r.stdInc = std(AttInterp(inclusion),"omitnan");
+r.biasBack = mean( AttInterp(~inclusion) - groundTruthBack(iAcq),"omitnan");
+r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
+r.rmseBack = sqrt(mean( (AttInterp(~inclusion) - groundTruthBack(iAcq)).^2,"omitnan"));
+r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
+r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 MetricsTVL1(iAcq) = r;
 
 %% WFR
@@ -331,19 +321,19 @@ CRWFR = reshape(Cn*NptodB,m,n);
 
 axialWFR{iAcq} = mean(BRWFR(:,20:27),2);
 AttInterp = interp2(X,Z,BRWFR,Xq,Zq);
-r.meanTop = mean(AttInterp(top),"omitnan");
-r.stdTop = std(AttInterp(top),"omitnan");
-r.meanBottom = mean(AttInterp(bottom),"omitnan");
-r.stdBottom = std(AttInterp(bottom),"omitnan");
-r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
-r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
-r.rmseTop = sqrt(mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,"omitnan"));
-r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omitnan"));
-r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+r.meanBack = mean(AttInterp(~inclusion),"omitnan");
+r.stdBack = std(AttInterp(~inclusion),"omitnan");
+r.meanInc = mean(AttInterp(inclusion),"omitnan");
+r.stdInc = std(AttInterp(inclusion),"omitnan");
+r.biasBack = mean( AttInterp(~inclusion) - groundTruthBack(iAcq),"omitnan");
+r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
+r.rmseBack = sqrt(mean( (AttInterp(~inclusion) - groundTruthBack(iAcq)).^2,"omitnan"));
+r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
+r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 MetricsWFR(iAcq) = r;
 %% Plotting
-figure('Units','centimeters', 'Position',[5 5 25 4]);
-tl = tiledlayout(1,5, "Padding","tight");
+figure('Units','centimeters', 'Position',[5 5 22 4]);
+tiledlayout(1,6, "Padding","tight", 'TileSpacing','compact');
 
 t1 = nexttile;
 imagesc(x,z,Bmode,dynRange)
@@ -351,32 +341,44 @@ axis equal
 xlim([x_ACS(1) x_ACS(end)]),
 ylim([z_ACS(1) z_ACS(end)]),
 colormap(t1,gray)
-colorbar(t1, 'westoutside')
-title('Bmode')
+c = colorbar(t1, 'westoutside');
+c.Label.String = '[db]';
+title('B-mode')
+ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
+
+t2 = nexttile;
+imagesc(x,z,attIdeal,attRange)
+xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
+colormap(t2,turbo)
+axis equal
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+title('Ideal')
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRTV, attRange)
 colormap(t1,turbo)
 axis image
 title('TV')
-%c = colorbar;
-%c.Label.String = 'Att. [db/cm/MHz]';
+% ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRSWTV, attRange)
 colormap(t1,turbo)
 axis image
 title('SWTV')
-%c = colorbar;
-%c.Label.String = 'Att. [db/cm/MHz]';
+% ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRTVL1, attRange)
 colormap(t1,turbo)
 axis image
 title('TVL1')
-%c = colorbar;
-%c.Label.String = 'Att. [db/cm/MHz]';
+% ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
 
 t4 = nexttile; 
 imagesc(x_ACS,z_ACS,BRWFR, attRange)
@@ -384,63 +386,27 @@ colormap(t4,turbo)
 axis image
 title('WFR')
 c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
+c.Label.String = 'ACS [db/cm/MHz]';
+% ylabel('Axial [cm]')
+xlabel('Lateral [cm]')
 
+fontsize(gcf,8,'points')
+
+%%
+axialTV{iAcq} = mean(BRTV(:,41:49),2);
+axialSWTV{iAcq} = mean(BRSWTV(:,41:49),2);
+axialTVL1{iAcq} = mean(BRTVL1(:,41:49),2);
+axialWFR{iAcq} = mean(BRWFR(:,41:49),2);
+
+lateralTV{iAcq} = mean(BRTV(24:26,:),1);
+lateralSWTV{iAcq} = mean(BRSWTV(24:26,:),1);
+lateralTVL1{iAcq} = mean(BRTVL1(24:26,:),1);
+lateralWFR{iAcq} = mean(BRWFR(24:26,:),1);
 %%
 save_all_figures_to_directory(resultsDir,['simInc',num2str(iAcq),'Figure']);
 close all
 
 end
-
-%%
-% figure('Units','centimeters', 'Position',[5 5 15 5])
-% tiledlayout(1,2)
-% t2 = nexttile; 
-% imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
-% colormap(t2,parula)
-% axis image
-% title('TVL1')
-% c = colorbar;
-% c.Label.String = 'BS log ratio [dB]';
-% 
-% t3 = nexttile; 
-% imagesc(x_ACS,z_ACS,w, [0 1])
-% colormap(t3,parula)
-% axis image
-% title('Weights')
-% c = colorbar;
-% c.Label.String = '[a.u.]';
-
-% %% Axial profiles
-% figure('Units','centimeters', 'Position',[5 5 12 12])
-% tiledlayout(2,1)
-% nexttile,
-% plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
-% hold on
-% plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
-% plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
-% plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
-% plot(z_ACS,mean(attIdeal(:,20:27),2), 'k--')
-% hold off
-% grid on
-% ylim([0.4 1.4])
-% xlim([z_ACS(1) z_ACS(end)])
-% title('Axial profiles')
-% legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
-% 
-% nexttile,
-% plot(z_ACS, axialTV{3}, 'r:', 'LineWidth',1.5),
-% hold on
-% plot(z_ACS, axialSWTV{3}, 'r', 'LineWidth',1),
-% plot(z_ACS, axialTVL1{3}, 'b:', 'LineWidth',1.5),
-% plot(z_ACS, axialWFR{3}, 'b', 'LineWidth',1),
-% plot(z_ACS,mean(attIdeal(:,20:27),2), 'k--')
-% hold off
-% grid on
-% ylim([0.4 1.4])
-% xlim([z_ACS(1) z_ACS(end)])
-% title('Axial profiles')
-% legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
 
 
 %%
@@ -449,33 +415,197 @@ results2 = struct2table(MetricsSWTV);
 results3 = struct2table(MetricsTVL1);
 results4 = struct2table(MetricsWFR);
 
-disp('Bias Top')
-disp(results1.biasTop)
-disp(results2.biasTop)
-disp(results3.biasTop)
-disp(results4.biasTop)
+disp('Bias Back')
+disp(results1.biasBack)
+disp(results2.biasBack)
+disp(results3.biasBack)
+disp(results4.biasBack)
 
-disp('Bias Bottom')
-disp(results1.biasBottom)
-disp(results2.biasBottom)
-disp(results3.biasBottom)
-disp(results4.biasBottom)
+disp('Bias Inc')
+disp(results1.biasInc)
+disp(results2.biasInc)
+disp(results3.biasInc)
+disp(results4.biasInc)
 
-disp('RMSE Top')
-disp(results1.rmseTop)
-disp(results2.rmseTop)
-disp(results3.rmseTop)
-disp(results4.rmseTop)
+disp('RMSE Back')
+disp(results1.rmseBack)
+disp(results2.rmseBack)
+disp(results3.rmseBack)
+disp(results4.rmseBack)
 
-disp('RMSE Bottom')
-disp(results1.rmseBottom)
-disp(results2.rmseBottom)
-disp(results3.rmseBottom)
-disp(results4.rmseBottom)
+disp('RMSE Inc')
+disp(results1.rmseInc)
+disp(results2.rmseInc)
+disp(results3.rmseInc)
+disp(results4.rmseInc)
 
 disp('CNR')
 disp(results1.cnr)
 disp(results2.cnr)
 disp(results3.cnr)
 disp(results4.cnr)
+
+
+
+T = [results1;results2;results3;results4];
+writetable(T,fullfile(resultsDir,tableName),...
+     'WriteRowNames',true);
+
+%% Lateral and axial profiles
+layered = load('simuLayered.mat');
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile([1,2]),
+plot(layered.z_ACS, layered.axialTV{1}, 'r:', 'LineWidth',1.5),
+hold on
+plot(layered.z_ACS, layered.axialSWTV{1}, 'r', 'LineWidth',1),
+plot(layered.z_ACS, layered.axialTVL1{1}, 'b:', 'LineWidth',1.5),
+plot(layered.z_ACS, layered.axialWFR{1}, 'b', 'LineWidth',1),
+plot(layered.z_ACS,mean(layered.attIdeal,2), 'k--')
+hold off
+grid on
+ylim([0.4 1.1])
+xlim([layered.z_ACS(1) layered.z_ACS(end)])
+%title('Axial profile')
+xlabel('Axial [cm]')
+ylabel('ACS [dB/cm/MHz]')
+legend({'TV','SWTV','TVL1','WFR'}, 'Location','northwest') 
+
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile([1,2]),
+plot(layered.z_ACS, layered.axialTV{2}, 'r:', 'LineWidth',1.5),
+hold on
+plot(layered.z_ACS, layered.axialSWTV{2}, 'r', 'LineWidth',1),
+plot(layered.z_ACS, layered.axialTVL1{2}, 'b:', 'LineWidth',1.5),
+plot(layered.z_ACS, layered.axialWFR{2}, 'b', 'LineWidth',1),
+plot(layered.z_ACS,mean(layered.attIdeal,2), 'k--')
+hold off
+grid on
+ylim([0.4 1.1])
+xlim([layered.z_ACS(1) layered.z_ACS(end)])
+%title('Axial profile')
+xlabel('Axial [cm]')
+ylabel('ACS [dB/cm/MHz]')
+legend({'TV','SWTV','TVL1','WFR'}, 'Location','northwest') 
+
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile([1,2]),
+plot(layered.z_ACS, layered.axialTV{3}, 'r:', 'LineWidth',1.5),
+hold on
+plot(layered.z_ACS, layered.axialSWTV{3}, 'r', 'LineWidth',1),
+plot(layered.z_ACS, layered.axialTVL1{3}, 'b:', 'LineWidth',1.5),
+plot(layered.z_ACS, layered.axialWFR{3}, 'b', 'LineWidth',1),
+plot(layered.z_ACS,mean(layered.attIdeal,2), 'k--')
+hold off
+grid on
+ylim([0.4 1.1])
+xlim([layered.z_ACS(1) layered.z_ACS(end)])
+%title('Axial profile')
+ylabel('ACS [dB/cm/MHz]')
+xlabel('Axial [cm]')
+%legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+
+%%
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+% figure('Units','centimeters', 'Position',[5 5 12 12])
+nexttile,
+plot(z_ACS, axialTV{1}, 'r:', 'LineWidth',1.5),
+hold on
+plot(z_ACS, axialSWTV{1}, 'r', 'LineWidth',1),
+plot(z_ACS, axialTVL1{1}, 'b:', 'LineWidth',1.5),
+plot(z_ACS, axialWFR{1}, 'b', 'LineWidth',1),
+plot(z_ACS,mean(attIdealACS{1}(:,41:49),2), 'k--')
+hold off
+grid on
+ylim([0.4 1.1])
+xlim([z_ACS(1) z_ACS(end)])
+%title('Axial profile')
+ylabel('ACS [dB/cm/MHz]')
+xlabel('Axial [cm]')
+
+nexttile,
+plot(x_ACS, lateralTV{1}, 'r:', 'LineWidth',1.5),
+hold on
+plot(x_ACS, lateralSWTV{1}, 'r', 'LineWidth',1),
+plot(x_ACS, lateralTVL1{1}, 'b:', 'LineWidth',1.5),
+plot(x_ACS, lateralWFR{1}, 'b', 'LineWidth',1),
+plot(x_ACS,mean(attIdealACS{1}(24:26,:),1), 'k--')
+hold off
+grid on
+ylim([0.4 1.1])
+xlim([x_ACS(1) x_ACS(end)])
+%title('Lateral profile')
+xlabel('Lateral [cm]')
+
+
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile,
+plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
+hold on
+plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
+plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
+plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
+plot(z_ACS,mean(attIdealACS{2}(:,41:49),2), 'k--')
+hold off
+grid on
+ylim([0.4 1.1])
+xlim([z_ACS(1) z_ACS(end)])
+%title('Axial profile')
+ylabel('ACS [dB/cm/MHz]')
+xlabel('Axial [cm]')
+
+nexttile,
+plot(x_ACS, lateralTV{2}, 'r:', 'LineWidth',1.5),
+hold on
+plot(x_ACS, lateralSWTV{2}, 'r', 'LineWidth',1),
+plot(x_ACS, lateralTVL1{2}, 'b:', 'LineWidth',1.5),
+plot(x_ACS, lateralWFR{2}, 'b', 'LineWidth',1),
+plot(x_ACS,mean(attIdealACS{2}(24:26,:),1), 'k--')
+hold off
+grid on
+ylim([0.4 1.1])
+xlim([x_ACS(1) x_ACS(end)])
+% title('Lateral profile')
+xlabel('Lateral [cm]')
+
+
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile,
+plot(z_ACS, axialTV{3}, 'r:', 'LineWidth',1.5),
+hold on
+plot(z_ACS, axialSWTV{3}, 'r', 'LineWidth',1),
+plot(z_ACS, axialTVL1{3}, 'b:', 'LineWidth',1.5),
+plot(z_ACS, axialWFR{3}, 'b', 'LineWidth',1),
+plot(z_ACS,mean(attIdealACS{3}(:,41:49),2), 'k--')
+hold off
+grid on
+ylim([0.4 1.1])
+xlim([z_ACS(1) z_ACS(end)])
+%title('Axial profile')
+ylabel('ACS [dB/cm/MHz]')
+xlabel('Axial [cm]')
+
+nexttile,
+plot(x_ACS, lateralTV{3}, 'r:', 'LineWidth',1.5),
+hold on
+plot(x_ACS, lateralSWTV{3}, 'r', 'LineWidth',1),
+plot(x_ACS, lateralTVL1{3}, 'b:', 'LineWidth',1.5),
+plot(x_ACS, lateralWFR{3}, 'b', 'LineWidth',1),
+plot(x_ACS,mean(attIdealACS{3}(24:26,:),1), 'k--')
+hold off
+grid on
+ylim([0.4 1.1])
+xlim([x_ACS(1) x_ACS(end)])
+% title('Lateral profile')
+xlabel('Lateral [cm]')
+% legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+
+fontsize(gcf,8,'points')
+
+save_all_figures_to_directory(resultsDir,'SimAxialLat');
 

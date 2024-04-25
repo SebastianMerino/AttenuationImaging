@@ -18,7 +18,7 @@ refFiles = dir([refDir,'\rf*.mat']);
 
 % BS=10 GIVES GOOD RESULTS
 blocksize = 8;     % Block size in wavelengths
-freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
+freq_L = 3.5e6; freq_H = 8.5e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
@@ -52,7 +52,7 @@ NptodB = log10(exp(1))*20;
 
 % Region for attenuation imaging
 x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.5; z_sup = 3.5;
+z_inf = 0.4; z_sup = 3.7;
 
 %% Setting up
 
@@ -62,18 +62,18 @@ switch iAcq
     case 1
         muBtv = 10^3.5; muCtv = 10^3;
         muBswtv = 10^3; muCswtv = 10^3;
-        muBtvl1 = 10^3; muCtvl1 = 10^2;
-        muBwfr = 10^3.5; muCwfr = 10^2;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^3;
+        muBwfr = 10^3.5; muCwfr = 10^3;
     case 2
-        muBtv = 10^3.5; muCtv = 10^2;
-        muBswtv = 10^3; muCswtv = 10^1;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
-        muBwfr = 10^4; muCwfr = 10^1.5;
+        muBtv = 10^3; muCtv = 10^1;
+        muBswtv = 10^2.5; muCswtv = 10^0;
+        muBtvl1 = 10^3; muCtvl1 = 10^0;
+        muBwfr = 10^3.5; muCwfr = 10^0.5;
     case 3
-        muBtv = 10^3.5; muCtv = 10^2;
-        muBswtv = 10^3; muCswtv = 10^2;
-        muBtvl1 = 10^3; muCtvl1 = 10^1;
-        muBwfr = 10^4; muCwfr = 10^2;
+        muBtv = 10^3; muCtv = 10^1;
+        muBswtv = 10^2.5; muCswtv = 10^0.5;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
+        muBwfr = 10^3.5; muCwfr = 10^1.5;
 end
 
 load(fullfile(targetDir,targetFiles(iAcq).name));

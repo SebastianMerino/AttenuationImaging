@@ -8,7 +8,7 @@ targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
 
 % resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-03';
-resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-23';
+resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-25';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -19,11 +19,10 @@ tableName = 'simuLayered.xlsx';
 %% Generating cropped data
 % SETTING PARAMETERS
 blocksize = 8;     % Block size in wavelengths
-freq_L = 3e6; freq_H = 8e6; % freq_L = 3.3e6; freq_H = 8.7e6;
+freq_L = 3.5e6; freq_H = 8.5e6;
 
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
-referenceAtt    = 0.6;
 
 % Weight parameters
 muB = 10^3; muC = 10^0;
@@ -38,8 +37,7 @@ desvMin = 15;
 
 % Plotting
 dynRange = [-40,0];
-% attRange = [0.4,1.4];
-attRange = [0.4,1.7];
+attRange = [0.4,1.1];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
@@ -50,7 +48,7 @@ groundTruthBottom = [1,1,1];
 
 % Region for attenuation imaging
 x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.5; z_sup = 3.5;
+z_inf = 0.4; z_sup = 3.7;
 
 
 %% For looping
@@ -72,24 +70,24 @@ sam1 = rf(:,:,1);
 switch iAcq
     case 1
         % Regularization
-        muBtv = 10^3.5; muCtv = 10^3;
+        muBtv = 10^4; muCtv = 10^3;
         muBswtv = 10^3; muCswtv = 10^3;
-        muBtvl1 = 10^4; muCtvl1 = 10^2;
-        muBwfr = 10^4; muCwfr = 10^2;
+        muBtvl1 = 10^4; muCtvl1 = 10^3;
+        muBwfr = 10^4; muCwfr = 10^3;
 
     case 2
         % Regularization
-        muBtv = 10^3.5; muCtv = 10^1;
-        muBswtv = 10^3; muCswtv = 10^1;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^0;
+        muBtv = 10^4; muCtv = 10^1;
+        muBswtv = 10^3; muCswtv = 10^0;
+        muBtvl1 = 10^4; muCtvl1 = 10^0.5;
         muBwfr = 10^4; muCwfr = 10^1;
 
     case 3
         % Regularization
-        muBtv = 10^3.5; muCtv = 10^2;
+        muBtv = 10^4; muCtv = 10^2;
         muBswtv = 10^3; muCswtv = 10^2;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
-        muBwfr = 10^4; muCwfr = 10^1.5;
+        muBtvl1 = 10^4; muCtvl1 = 10^0.5;
+        muBwfr = 10^4; muCwfr = 10^2;
 end
 %% Cropping and finding sample sizes
 
@@ -154,30 +152,24 @@ fprintf('Blocksize in pixels nx: %i, nz: %i\n',nx,nz);
 fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 
 %% Generating Diffraction compensation
-
-% Generating references
-att_ref = referenceAtt*(f.^1.05)/(20*log10(exp(1)));
-att_ref_map = zeros(m,n,p);
-for jj=1:n
-    for ii=1:m
-        att_ref_map(ii,jj,:) = att_ref;
-    end
-end
-
 % Windows for spectrum
-% windowing = tukeywin(nz/2,0.25);
-windowing = hamming(nz/2);
+windowing = tukeywin(nz/2,0.25);
 windowing = windowing*ones(1,nx);
 
 % For looping
 Nref = length(refFiles);
 
 % Memory allocation
-Sp_ref = zeros(m,n,p,Nref);
-Sd_ref = zeros(m,n,p,Nref);
+Sp_ref = zeros(m,n,p);
+Sd_ref = zeros(m,n,p);
+compensation = zeros(m,n,p,Nref);
+
 for iRef = 1:Nref
     load(fullfile(refDir,refFiles(iRef).name),"rf","medium");
-    % disp(mean(medium.alpha_coeff(:)))
+    acs_mean = medium.alpha_coeff(1,1);
+    att_ref = acs_mean*(f.^medium.alpha_power)/NptodB;
+    att_ref_map = repmat(reshape(att_ref,[1 1 p]),m,n,1);
+
     samRef = rf;
     samRef = samRef(ind_z,ind_x); % Cropping
     for jj=1:n
@@ -191,32 +183,14 @@ for iRef = 1:Nref
             [tempSp,~] = spectra(sub_block_p,windowing,0,nz/2,NFFT);
             [tempSd,~] = spectra(sub_block_d,windowing,0,nz/2,NFFT);
 
-            Sp_ref(ii,jj,:,iRef) = (tempSp(rang));
-            Sd_ref(ii,jj,:,iRef) = (tempSd(rang));
+            Sp_ref(ii,jj,:) = (tempSp(rang));
+            Sd_ref(ii,jj,:) = (tempSd(rang));
         end
     end
+    compensation(:,:,:,iRef) = log(Sp_ref) - log(Sd_ref) - 4*L*att_ref_map;
 end
 
-Sp = mean(Sp_ref,4); Sd = mean(Sd_ref,4);
-compensation = ( log(Sp) - log(Sd) ) - 4*L*att_ref_map;
-
-% Liberating memory to avoid killing my RAM
-clear Sp_ref Sd_ref
-
-% %% Checking compensation
-% diffraction_xz = mean(compensation,3);
-% diffraction_zf = squeeze(mean(compensation,2));
-% figure, tiledlayout(1,2)
-% nexttile,
-% imagesc(x_ACS,z_ACS,diffraction_xz, [-1 1]);
-% title('Diffraction compensation'),
-% xlabel('x [cm]'), ylabel('z [cm]'),
-% colorbar
-% nexttile,
-% imagesc(f,z_ACS,diffraction_zf, [-1 1]);
-% title('Diffraction compensation'),
-% xlabel('f [MHz]'), ylabel('z [cm]'),
-% colorbar
+compensation = mean(compensation,4);
 
 
 %% Spectrum
@@ -468,11 +442,11 @@ end
 figure('Units','centimeters', 'Position',[5 5 12 12])
 tiledlayout(2,1)
 nexttile,
-plot(z_ACS, axialTV{1}, 'r:', 'LineWidth',1.5),
+plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
 hold on
-plot(z_ACS, axialSWTV{1}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{1}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{1}, 'b', 'LineWidth',1),
+plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
+plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
+plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
 plot(z_ACS,mean(attIdeal,2), 'k--')
 hold off
 grid on
@@ -482,11 +456,11 @@ title('Axial profile - L1')
 legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
 
 nexttile,
-plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
+plot(z_ACS, axialTV{3}, 'r:', 'LineWidth',1.5),
 hold on
-plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
+plot(z_ACS, axialSWTV{3}, 'r', 'LineWidth',1),
+plot(z_ACS, axialTVL1{3}, 'b:', 'LineWidth',1.5),
+plot(z_ACS, axialWFR{3}, 'b', 'LineWidth',1),
 plot(z_ACS,mean(attIdeal,2), 'k--')
 hold off
 grid on

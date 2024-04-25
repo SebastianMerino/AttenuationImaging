@@ -11,7 +11,7 @@ baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];
-resultsDir = [baseDir,'\results\opt-reg'];
+resultsDir = [baseDir,'\results\opt-reg-BW2'];
 [~,~,~] = mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -19,7 +19,8 @@ refFiles = dir([refDir,'\rf*.mat']);
 
 % BS=10 GIVES GOOD RESULTS
 blocksize = 8;     % Block size in wavelengths
-freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
+% freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
+freq_L = 3.5e6; freq_H = 8.5e6; 
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
@@ -53,7 +54,8 @@ attRange = [0.4 1.1];
 
 % Region for attenuation imaging
 x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.5; z_sup = 3.5;
+z_inf = 0.4; z_sup = 3.7;
+
 %% Setting up
 
 for iAcq = 1:length(targetFiles)
@@ -114,6 +116,7 @@ m  = length(z0p);
 % BW from spectrogram
 [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
 meanSpectrum = mean(pxx,2);
+meanSpectrum = db(meanSpectrum./max(meanSpectrum));
 % [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
 figure,plot(fpxx/1e6,meanSpectrum)
 xline([freq_L,freq_H]/1e6)
@@ -499,7 +502,6 @@ A2w = W*A2;
 
 
 muB = 10.^(2.5:0.5:4);
-% muC = 10.^(-0.5:0.5:2);
 muC = 10.^(-0.5:0.5:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
