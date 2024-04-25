@@ -270,9 +270,8 @@ legend('Inc','Back')
 
 
 %% RSLD
-muB = 10.^(3:0.5:3.5);
-% muC = 10.^(1:2);
-muC = 10.^(1:3);
+muB = 10.^(2:0.5:3.5);
+muC = 10.^(1:0.5:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -355,9 +354,8 @@ desvMin = 15;
 w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 
-muB = 10.^(2.5:0.5:3);
-% muC = 10.^(0:2);
-muC = 10.^(0:3);
+muB = 10.^(2:0.5:3);
+muC = 10.^(0:0.5:3);
 
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -425,9 +423,8 @@ r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdBottom^2);
 MetricsSWTV(iAcq) = r;
 
 %% Minimizing BS log ratio
-muB = 10.^(3:0.5:4);
-%muC = 10.^(0:2);
-muC = 10.^(0:3);
+muB = 10.^(2.5:0.5:4);
+muC = 10.^(0:0.5:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
