@@ -9,8 +9,8 @@ baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
     'Attenuation\simulations_processed\24_04_04_inc'];
 
 targetDir = [baseDir,'\raw'];
-refDir = [baseDir,'\ref'];
-resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-25';
+refDir = [baseDir,'\ref2'];
+resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 [~,~,~] = mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -19,7 +19,7 @@ tableName = 'simuInc.xlsx';
 
 %%
 blocksize = 8;     % Block size in wavelengths
-freq_L = 3e6; freq_H = 8e6; % original 3.3-8.7s
+freq_L = 3.5e6; freq_H = 8.5e6; % original 3.3-8.7s
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
@@ -57,18 +57,18 @@ switch iAcq
     case 1
         muBtv = 10^3.5; muCtv = 10^3;
         muBswtv = 10^3; muCswtv = 10^3;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^2.5;
-        muBwfr = 10^3.5; muCwfr = 10^2;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^3;
+        muBwfr = 10^3.5; muCwfr = 10^3;
     case 2
         muBtv = 10^3; muCtv = 10^1;
         muBswtv = 10^2.5; muCswtv = 10^0;
         muBtvl1 = 10^3; muCtvl1 = 10^0.5;
-        muBwfr = 10^3.5; muCwfr = 10^0.5;
+        muBwfr = 10^3.5; muCwfr = 10^1;
     case 3
         muBtv = 10^3; muCtv = 10^1;
         muBswtv = 10^2.5; muCswtv = 10^0.5;
         muBtvl1 = 10^3; muCtvl1 = 10^0.5;
-        muBwfr = 10^4; muCwfr = 10^1.5;
+        muBwfr = 10^4; muCwfr = 10^2;
 end
 
 load(fullfile(targetDir,targetFiles(iAcq).name));
@@ -118,11 +118,11 @@ m  = length(z0p);
 [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
 meanSpectrum = mean(pxx,2);
 % [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-figure,plot(fpxx/1e6,meanSpectrum)
-xline([freq_L,freq_H]/1e6)
-xlabel('Frequency [MHz]')
-ylabel('Magnitude')
-xlim([0 15])
+% figure,plot(fpxx/1e6,meanSpectrum)
+% xline([freq_L,freq_H]/1e6)
+% xlabel('Frequency [MHz]')
+% ylabel('Magnitude')
+% xlim([0 15])
 
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
@@ -150,7 +150,7 @@ Sp_ref = zeros(m,n,p);
 Sd_ref = zeros(m,n,p);
 compensation = zeros(m,n,p,Nref);
 
-for iRef = 1:Nref
+for iRef = 1:Nref %Nref
     load(fullfile(refDir,refFiles(iRef).name),"rf","medium");
     acs_mean = medium.alpha_coeff(1,1);
     att_ref = acs_mean*(f.^medium.alpha_power)/NptodB;
@@ -177,6 +177,7 @@ for iRef = 1:Nref
 end
 
 compensation = mean(compensation,4);
+% compensation = repmat(mean(compensation,3),1,1,p);
 
 %% Spectrum
 Sp = zeros(m,n,p);
@@ -211,14 +212,13 @@ mask = ones(m,n,p);
 rInc = 0.7;
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
-inclusion = (Xq.^2 + (Zq-2).^2)<= rInc^2;
-attIdeal = ones(size(Xq));
-attIdeal(~inclusion) = groundTruthBack(iAcq);
-attIdeal(inclusion) = groundTruthInc(iAcq); %incl = inclusion
+inclusion = (Xq.^2 + (Zq-2).^2)<= (rInc-0.1)^2;
+back = (Xq.^2 + (Zq-2).^2) >= (rInc+0.1)^2;
+attIdeal = ones(size(Xq))*groundTruthBack(iAcq);
+attIdeal((Xq.^2 + (Zq-2).^2)<= rInc^2) = groundTruthInc(iAcq);
 
 inclusionACS = (X.^2 + (Z-2).^2)<= rInc^2;
-attIdealACS{iAcq} = ones(size(X));
-attIdealACS{iAcq}(~inclusionACS) = groundTruthBack(iAcq);
+attIdealACS{iAcq} = ones(size(X))*groundTruthBack(iAcq);
 attIdealACS{iAcq}(inclusionACS) = groundTruthInc(iAcq); %incl = inclusion
 
 %% TV
@@ -229,13 +229,13 @@ CRTV = reshape(Cn*NptodB,m,n);
 axialTV{iAcq} = mean(BRTV(:,20:27),2);
 
 AttInterp = interp2(X,Z,BRTV,Xq,Zq);
-r.meanBack = mean(AttInterp(~inclusion),"omitnan");
-r.stdBack = std(AttInterp(~inclusion),"omitnan");
+r.meanBack = mean(AttInterp(back),"omitnan");
+r.stdBack = std(AttInterp(back),"omitnan");
 r.meanInc = mean(AttInterp(inclusion),"omitnan");
 r.stdInc = std(AttInterp(inclusion),"omitnan");
-r.biasBack = mean( AttInterp(~inclusion) - groundTruthBack(iAcq),"omitnan");
+r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
 r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-r.rmseBack = sqrt(mean( (AttInterp(~inclusion) - groundTruthBack(iAcq)).^2,"omitnan"));
+r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
 r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 MetricsTV(iAcq) = r;
@@ -270,13 +270,13 @@ CRSWTV = reshape(Cn*NptodB,m,n);
 
 axialSWTV{iAcq} = mean(BRSWTV(:,20:27),2);
 AttInterp = interp2(X,Z,BRSWTV,Xq,Zq);
-r.meanBack = mean(AttInterp(~inclusion),"omitnan");
-r.stdBack = std(AttInterp(~inclusion),"omitnan");
+r.meanBack = mean(AttInterp(back),"omitnan");
+r.stdBack = std(AttInterp(back),"omitnan");
 r.meanInc = mean(AttInterp(inclusion),"omitnan");
 r.stdInc = std(AttInterp(inclusion),"omitnan");
-r.biasBack = mean( AttInterp(~inclusion) - groundTruthBack(iAcq),"omitnan");
+r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
 r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-r.rmseBack = sqrt(mean( (AttInterp(~inclusion) - groundTruthBack(iAcq)).^2,"omitnan"));
+r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
 r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 MetricsSWTV(iAcq) = r;
@@ -288,13 +288,13 @@ CRTVL1 = reshape(Cn*NptodB,m,n);
 
 axialTVL1{iAcq} = mean(BRTVL1(:,20:27),2);
 AttInterp = interp2(X,Z,BRTVL1,Xq,Zq);
-r.meanBack = mean(AttInterp(~inclusion),"omitnan");
-r.stdBack = std(AttInterp(~inclusion),"omitnan");
+r.meanBack = mean(AttInterp(back),"omitnan");
+r.stdBack = std(AttInterp(back),"omitnan");
 r.meanInc = mean(AttInterp(inclusion),"omitnan");
 r.stdInc = std(AttInterp(inclusion),"omitnan");
-r.biasBack = mean( AttInterp(~inclusion) - groundTruthBack(iAcq),"omitnan");
+r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
 r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-r.rmseBack = sqrt(mean( (AttInterp(~inclusion) - groundTruthBack(iAcq)).^2,"omitnan"));
+r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
 r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 MetricsTVL1(iAcq) = r;
@@ -321,13 +321,13 @@ CRWFR = reshape(Cn*NptodB,m,n);
 
 axialWFR{iAcq} = mean(BRWFR(:,20:27),2);
 AttInterp = interp2(X,Z,BRWFR,Xq,Zq);
-r.meanBack = mean(AttInterp(~inclusion),"omitnan");
-r.stdBack = std(AttInterp(~inclusion),"omitnan");
+r.meanBack = mean(AttInterp(back),"omitnan");
+r.stdBack = std(AttInterp(back),"omitnan");
 r.meanInc = mean(AttInterp(inclusion),"omitnan");
 r.stdInc = std(AttInterp(inclusion),"omitnan");
-r.biasBack = mean( AttInterp(~inclusion) - groundTruthBack(iAcq),"omitnan");
+r.biasBack = mean( AttInterp(back) - groundTruthBack(iAcq),"omitnan");
 r.biasInc = mean( AttInterp(inclusion) - groundTruthInc(iAcq),"omitnan");
-r.rmseBack = sqrt(mean( (AttInterp(~inclusion) - groundTruthBack(iAcq)).^2,"omitnan"));
+r.rmseBack = sqrt(mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,"omitnan"));
 r.rmseInc = sqrt(mean( (AttInterp(inclusion) - groundTruthInc(iAcq)).^2,"omitnan"));
 r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdInc^2);
 MetricsWFR(iAcq) = r;
@@ -389,6 +389,43 @@ c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
+
+fontsize(gcf,8,'points')
+
+%%
+figure('Units','centimeters', 'Position',[5 5 10 8])
+tl = tiledlayout(2,2, "Padding","tight", 'TileSpacing','tight');
+t1 = nexttile;
+imagesc(x,z,Bmode,dynRange)
+axis equal
+xlim([x_ACS(1) x_ACS(end)]),
+ylim([z_ACS(1) z_ACS(end)]),
+colormap(t1,gray)
+c = colorbar(t1, 'eastoutside');
+c.Label.String = '[dB]';
+title('Bmode')
+xlabel('Lateral [cm]')
+ylabel('Axial [cm]')
+
+t2 = nexttile; 
+imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
+colormap(t2,parula)
+axis image
+title('\DeltaBSC')
+c = colorbar(t2, 'eastoutside');
+c.Label.String = '[dB/cm]';
+xlabel('Lateral [cm]')
+%ylabel('Axial [cm]')
+
+t3 = nexttile([1,2]); 
+imagesc(x_ACS,z_ACS,w, [0 1])
+colormap(t3,parula)
+axis image
+title('Weights')
+c = colorbar(t3, 'eastoutside');
+xlabel('Lateral [cm]')
+ylabel('Axial [cm]')
+c.Label.String = '[a.u.]';
 
 fontsize(gcf,8,'points')
 
@@ -609,3 +646,4 @@ fontsize(gcf,8,'points')
 
 save_all_figures_to_directory(resultsDir,'SimAxialLat');
 
+close all

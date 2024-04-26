@@ -10,8 +10,8 @@ baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
     'Attenuation\simulations_processed\24_04_04_inc'];
 
 targetDir = [baseDir,'\raw'];
-refDir = [baseDir,'\ref'];
-resultsDir = [baseDir,'\results\opt-reg-BW2'];
+refDir = [baseDir,'\ref2'];
+resultsDir = [baseDir,'\results\opt-reg-noBorder'];
 [~,~,~] = mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -24,13 +24,7 @@ freq_L = 3.5e6; freq_H = 8.5e6;
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
-% Previous simulation
-% referenceAtt    = 0.7;
-% groundTruthBack = [0.6,0.6,0.6];
-% groundTruthInc = [1.2,1.2,1.2];
-
 % New simu
-referenceAtt    = 0.6;
 groundTruthBack = [0.5,0.5,0.5];
 groundTruthInc = [1,1,1];
 
@@ -222,8 +216,8 @@ attIdeal = ones(size(Z));
 circle_inc = (X.^2 + (Z-2).^2)<= rInc^2;
 attIdeal(~circle_inc) = groundTruthBack(iAcq);
 attIdeal(circle_inc) = groundTruthInc(iAcq); %incl = bottom
-inc = (Xq.^2 + (Zq-2).^2)<= rInc^2;
-back = ~inc;
+inc = (Xq.^2 + (Zq-2).^2)<= (rInc-0.1)^2;
+back = (Xq.^2 + (Zq-2).^2) >= (rInc+0.1)^2;
 
 figure('Units','centimeters', 'Position',[5 5 20 6]);
 tiledlayout(1,2)
@@ -310,7 +304,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD, \mu=',num2str(muBopt,2)])
+title(['RSLD, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -318,7 +312,7 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD, \mu=',num2str(muCopt,2)])
+title(['RSLD, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
@@ -402,7 +396,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD, \mu=',num2str(muBopt,2)])
+title(['RSLD, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -410,7 +404,7 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD, \mu=',num2str(muCopt,2)])
+title(['RSLD, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
@@ -464,7 +458,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD-TVL1, \mu=',num2str(muBopt,2)])
+title(['RSLD-TVL1, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -472,7 +466,7 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD-TVL1, \mu=',num2str(muCopt,2)])
+title(['RSLD-TVL1, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
@@ -550,7 +544,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD-WFR, \mu=',num2str(muBopt,2)])
+title(['RSLD-WFR, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -558,7 +552,7 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD-WFR, \mu=',num2str(muCopt,2)])
+title(['RSLD-WFR, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 

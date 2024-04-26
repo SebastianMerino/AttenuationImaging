@@ -10,9 +10,9 @@ baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\Simulation\24_04_02'];
 targetDir = [baseDir,'\raw'];
-refDir = [baseDir,'\ref'];
+refDir = [baseDir,'\ref2'];
 
-resultsDir = [baseDir,'\results\24-04-25'];
+resultsDir = [baseDir,'\results\opt-reg'];
 mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -26,7 +26,6 @@ freq_L = 3.5e6; freq_H = 8.5e6; % freq_L = 3.3e6; freq_H = 8.7e6;
 
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
-referenceAtt    = 0.6;
 
 % Weight parameters
 muB = 10^3; muC = 10^0;
@@ -42,15 +41,9 @@ desvMin = 15;
 % Plotting
 dynRange = [-40,0];
 % attRange = [0.4,1.4];
-attRange = [0.4,1.7];
+attRange = [0.4,1.1];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
-
-% Regularization
-muBtv = 10^3; muCtv = 10^1.5;
-muBswtv = 10^2.5; muCswtv = 10^1;
-muBtvl1 = 10^3.5; muCtvl1 = 10^1.5;
-muBwfr = 10^4.5; muCwfr = 10^2;
 
 % GT
 groundTruthTop = [0.5,0.5,0.5];
@@ -206,12 +199,12 @@ mask = ones(m,n,p);
 
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
-% [back,inc] = getRegionMasks(x,z,c1x,c1z,roiL,roiD,roiLz);
+% [top,bottom] = getRegionMasks(x,z,c1x,c1z,roiL,roiD,roiLz);
 
 attIdeal = ones(size(Zq))*groundTruthTop(iAcq);
 attIdeal(Zq>2) = groundTruthBottom(iAcq);
-inc = Zq>2;
-back = ~inc;
+top = Zq < 1.9; % 0.1 cm interface
+bottom = Zq > 2.1;
 
 figure('Units','centimeters', 'Position',[5 5 20 6]);
 tiledlayout(1,2)
@@ -234,8 +227,8 @@ title('Ideal ACS')
 
 % %% Spectrum
 % % Heterogeneous
-% region1 = (X.^2 + (Z-2).^2) <= rInc^2;
-% region2 = (X.^2 + (Z-2).^2) >= rInc^2;
+% region1 = (X.^2 + (Z-2).^2) <= rBottom^2;
+% region2 = (X.^2 + (Z-2).^2) >= rBottom^2;
 % sld1 = squeeze(sum(sum(b.*region1,1),2))/sum(region1(:)) * NptodB /4/L;
 % acs1 = f\sld1;
 % fprintf('Attenuation is %.2f\n',acs1)
@@ -253,7 +246,7 @@ title('Ideal ACS')
 % xlabel('Frequency [MHz]')
 % ylabel('Att. [dB/cm]')
 % title('Mean SLD')
-% legend('Inc','Back')
+% legend('bottom','top')
 
 
 %% RSLD
@@ -271,11 +264,11 @@ for mmB = 1:length(muB)
         % RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
 
         AttInterp = interp2(X,Z,BR,Xq,Zq);
-        RmseInc = mean( (AttInterp(inc) - groundTruthBottom(iAcq)).^2,...
+        RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
             "omitnan") ;
-        RmseBack = mean( (AttInterp(back) - groundTruthTop(iAcq)).^2,...
+        RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
             "omitnan");
-        RMSE = sqrt((RmseInc + RmseBack)/2);
+        RMSE = sqrt((RmseBottom + RmseTop)/2);
         if RMSE<minRMSE
             minRMSE = RMSE;
             muBopt = muB(mmB);
@@ -294,7 +287,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD, \mu_b=10^{',num2str(log10(muBopt),1),'}'])
+title(['RSLD, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -302,19 +295,19 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD, \mu_c=10^{',num2str(log10(muCopt),1),'}'])
+title(['RSLD, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
 
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);
-r.meanBack = mean(AttInterp(back),"omitnan");
-r.stdBack = std(AttInterp(back),"omitnan");
-r.meanInc = mean(AttInterp(inc),"omitnan");
-r.stdBottom = std(AttInterp(inc),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthTop(iAcq),"omitnan");
-r.biasInc = mean( AttInterp(inc) - groundTruthBottom(iAcq),"omitnan");
-r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdBottom^2);
+r.meanTop = mean(AttInterp(top),"omitnan");
+r.stdTop = std(AttInterp(top),"omitnan");
+r.meanBottom = mean(AttInterp(bottom),"omitnan");
+r.stdBottom = std(AttInterp(bottom),"omitnan");
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsTV(iAcq) = r;
 
 %% British Columbia Approach
@@ -356,11 +349,11 @@ for mmB = 1:length(muB)
         % RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
 
         AttInterp = interp2(X,Z,BR,Xq,Zq);
-        RmseInc = mean( (AttInterp(inc) - groundTruthBottom(iAcq)).^2,...
+        RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
             "omitnan") ;
-        RmseBack = mean( (AttInterp(back) - groundTruthTop(iAcq)).^2,...
+        RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
             "omitnan");
-        RMSE = sqrt((RmseInc + RmseBack)/2);
+        RMSE = sqrt((RmseBottom + RmseTop)/2);
 
         if RMSE<minRMSE
             minRMSE = RMSE;
@@ -386,7 +379,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD, \mu_b=10^{',num2str(log10(muBopt),1),'}'])
+title(['RSLD, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -394,19 +387,19 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD, \mu_c=10^{',num2str(log10(muCopt),1),'}'])
+title(['RSLD, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
 
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);
-r.meanBack = mean(AttInterp(back),"omitnan");
-r.stdBack = std(AttInterp(back),"omitnan");
-r.meanInc = mean(AttInterp(inc),"omitnan");
-r.stdBottom = std(AttInterp(inc),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthTop(iAcq),"omitnan");
-r.biasInc = mean( AttInterp(inc) - groundTruthBottom(iAcq),"omitnan");
-r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdBottom^2);
+r.meanTop = mean(AttInterp(top),"omitnan");
+r.stdTop = std(AttInterp(top),"omitnan");
+r.meanBottom = mean(AttInterp(bottom),"omitnan");
+r.stdBottom = std(AttInterp(bottom),"omitnan");
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsSWTV(iAcq) = r;
 
 %% Minimizing BS log ratio
@@ -424,11 +417,11 @@ for mmB = 1:length(muB)
         % RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         AttInterp = interp2(X,Z,BR,Xq,Zq);
 
-        RmseInc = mean( (AttInterp(inc) - groundTruthBottom(iAcq)).^2,...
+        RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
             "omitnan") ;
-        RmseBack = mean( (AttInterp(back) - groundTruthTop(iAcq)).^2,...
+        RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
             "omitnan");
-        RMSE = sqrt((RmseInc + RmseBack)/2);
+        RMSE = sqrt((RmseBottom + RmseTop)/2);
 
         if RMSE<minRMSE
             minRMSE = RMSE;
@@ -448,7 +441,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD-TVL1, \mu_b=10^{',num2str(log10(muBopt),1),'}'])
+title(['RSLD-TVL1, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -456,18 +449,18 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD-TVL1, \mu_c=10^{',num2str(log10(muCopt),1),'}'])
+title(['RSLD-TVL1, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);
-r.meanBack = mean(AttInterp(back),"omitnan");
-r.stdBack = std(AttInterp(back),"omitnan");
-r.meanInc = mean(AttInterp(inc),"omitnan");
-r.stdBottom = std(AttInterp(inc),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthTop(iAcq),"omitnan");
-r.biasInc = mean( AttInterp(inc) - groundTruthBottom(iAcq),"omitnan");
-r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdBottom^2);
+r.meanTop = mean(AttInterp(top),"omitnan");
+r.stdTop = std(AttInterp(top),"omitnan");
+r.meanBottom = mean(AttInterp(bottom),"omitnan");
+r.stdBottom = std(AttInterp(bottom),"omitnan");
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsTVL1(iAcq) = r;
 
 %% Minimizing BS log ratio and WEIGHTS
@@ -496,17 +489,13 @@ for mmB = 1:length(muB)
 
         BR = reshape(Bn*NptodB,m,n);
         CR = (reshape(Cn*NptodB,m,n));
-%        RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
         AttInterp = interp2(X,Z,BR,Xq,Zq);
 
-        RmseInc = mean( (AttInterp(inc) - groundTruthBottom(iAcq)).^2,...
+        RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
             "omitnan") ;
-        RmseBack = mean( (AttInterp(back) - groundTruthTop(iAcq)).^2,...
+        RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
             "omitnan");
-        % disp('RMSE INC BACK')
-        % disp(sqrt(RmseInc))
-        % disp(sqrt(RmseBack))
-        RMSE = sqrt((RmseInc + RmseBack)/2);
+        RMSE = sqrt((RmseBottom + RmseTop)/2);
 
         if RMSE<minRMSE
             minRMSE = RMSE;
@@ -534,7 +523,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD-WFR, \mu_b=10^{',num2str(log10(muBopt),1),'}'])
+title(['RSLD-WFR, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -542,20 +531,20 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD-WFR, \mu_c=10^{',num2str(log10(muCopt),1),'}'])
+title(['RSLD-WFR, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
 
 AttInterp = interp2(X,Z,BRopt,Xq,Zq);
-r.meanBack = mean(AttInterp(back),"omitnan");
-r.stdBack = std(AttInterp(back),"omitnan");
-r.meanInc = mean(AttInterp(inc),"omitnan");
-r.stdBottom = std(AttInterp(inc),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthTop(iAcq),"omitnan");
-r.biasInc = mean( AttInterp(inc) - groundTruthBottom(iAcq),"omitnan");
+r.meanTop = mean(AttInterp(top),"omitnan");
+r.stdTop = std(AttInterp(top),"omitnan");
+r.meanBottom = mean(AttInterp(bottom),"omitnan");
+r.stdBottom = std(AttInterp(bottom),"omitnan");
+r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
 
-r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdBottom^2);
+r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsWFR(iAcq) = r;
 
 %%
@@ -570,16 +559,16 @@ results3 = struct2table(MetricsTVL1);
 results4 = struct2table(MetricsWFR);
 
 disp('Bias Top')
-disp(results1.biasBack)
-disp(results2.biasBack)
-disp(results3.biasBack)
-disp(results4.biasBack)
+disp(results1.biasTop)
+disp(results2.biasTop)
+disp(results3.biasTop)
+disp(results4.biasTop)
 
 disp('Bias Bottom')
-disp(results1.biasInc)
-disp(results2.biasInc)
-disp(results3.biasInc)
-disp(results4.biasInc)
+disp(results1.biasBottom)
+disp(results2.biasBottom)
+disp(results3.biasBottom)
+disp(results4.biasBottom)
 
 disp('CNR')
 disp(results1.cnr)

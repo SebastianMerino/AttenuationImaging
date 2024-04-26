@@ -5,10 +5,10 @@ baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 % baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 %     'Attenuation\Simulation\24_04_02'];
 targetDir = [baseDir,'\raw'];
-refDir = [baseDir,'\ref'];
+refDir = [baseDir,'\ref2'];
 
 % resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-03';
-resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-25';
+resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -70,24 +70,24 @@ sam1 = rf(:,:,1);
 switch iAcq
     case 1
         % Regularization
-        muBtv = 10^4; muCtv = 10^3;
+        muBtv = 10^3.5; muCtv = 10^3;
         muBswtv = 10^3; muCswtv = 10^3;
         muBtvl1 = 10^4; muCtvl1 = 10^3;
         muBwfr = 10^4; muCwfr = 10^3;
 
     case 2
         % Regularization
-        muBtv = 10^4; muCtv = 10^1;
+        muBtv = 10^3.5; muCtv = 10^1;
         muBswtv = 10^3; muCswtv = 10^0;
-        muBtvl1 = 10^4; muCtvl1 = 10^0.5;
-        muBwfr = 10^4; muCwfr = 10^1;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
+        muBwfr = 10^4; muCwfr = 10^1.5;
 
     case 3
         % Regularization
-        muBtv = 10^4; muCtv = 10^2;
+        muBtv = 10^3.5; muCtv = 10^1.5;
         muBswtv = 10^3; muCswtv = 10^2;
-        muBtvl1 = 10^4; muCtvl1 = 10^0.5;
-        muBwfr = 10^4; muCwfr = 10^2;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
+        muBwfr = 10^4; muCwfr = 10^1.5;
 end
 %% Cropping and finding sample sizes
 
@@ -224,21 +224,22 @@ clear mask
 mask = ones(m,n,p);
 
 % Creating reference
-[~,Z] = meshgrid(x_ACS,z_ACS);
+[X,Z] = meshgrid(x_ACS,z_ACS);
+[Xq,Zq] = meshgrid(x,z);
+
 attIdeal = ones(size(Z));
 attIdeal(Z<=2) = groundTruthTop(iAcq);
 attIdeal(Z>2) = groundTruthBottom(iAcq);
 
+top = Zq < 1.9; % 0.1 cm interface
+bottom = Zq > 2.1;
 %% TV
 [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
 BRTV = reshape(Bn*NptodB,m,n);
 CRTV = reshape(Cn*NptodB,m,n);
 
 axialTV{iAcq} = mean(BRTV,2);
-[X,Z] = meshgrid(x_ACS,z_ACS);
-[Xq,Zq] = meshgrid(x,z);
-top = Zq < 1.9;
-bottom = Zq > 2.1;
+
 AttInterp = interp2(X,Z,BRTV,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
 r.stdTop = std(AttInterp(top),"omitnan");
