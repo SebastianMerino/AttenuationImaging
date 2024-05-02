@@ -9,7 +9,7 @@ refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 tableName = 'clinical.xlsx';
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-24';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-02-final';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 T = readtable('params.xlsx');
@@ -35,7 +35,7 @@ desvMin = 15;
 
 % Plotting constants
 dynRange = [-50,0];
-attRange = [0.4,1.9];
+attRange = [0,2];
 bsRange = [-15 15];
 
 iAcq = 6;
@@ -453,12 +453,19 @@ fprintf("\nHeterogeneous results: \n TOP\n")
 fprintf("Mean: %.2f, Std: %.2f\n",mean(dataTV(:)),std(dataTV(:)))
 fprintf("Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
 
-%%
-fprintf("Homogeneous results: \n")
-fprintf("Median: %.2f, IQR: %.2f\n",median(dataRoi{2}.TV(:)),...
-    iqr(dataRoi{2}.TV(:)))
-fprintf("Median: %.2f, IQR: %.2f\n",median(dataRoi{2}.WFR(:)),...
-    iqr(dataRoi{2}.WFR(:)))
+
+
+fprintf("D ACS, TV: %.2f\n",...
+    mean(dataRoi{2}.TV(:)) - mean(dataTV(:)) );
+fprintf("D ACS, WFR: %.2f\n",...
+    mean(dataRoi{2}.WFR(:)) - mean(dataWFR(:)) );
+
+% %%
+% fprintf("Homogeneous results: \n")
+% fprintf("Median: %.2f, IQR: %.2f\n",median(dataRoi{2}.TV(:)),...
+%     iqr(dataRoi{2}.TV(:)))
+% fprintf("Median: %.2f, IQR: %.2f\n",median(dataRoi{2}.WFR(:)),...
+%     iqr(dataRoi{2}.WFR(:)))
 
 %%
 

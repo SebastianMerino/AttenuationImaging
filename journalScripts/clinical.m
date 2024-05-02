@@ -9,7 +9,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Thyroid_Data_PUCP_UTD'];
 refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\REFERENCES'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-24';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-02-final';
 
 tableName = 'clinical.xlsx';
 T = readtable('params.xlsx');
@@ -27,10 +27,11 @@ ratio_zx        = 12/8;
 
 % weights FINAL VERSION
 muB0 = 1e3; muC0 = 10^0;
-ratioCutOff     = 10;
+ratioCutOff = 10;
 order = 5;
 reject = 0.3;
-extension = 3; % 1 or 3
+extension = 3;
+
 
 % reg FINAL VERSION
 % muBtv = 10^3; muCtv = 10^1;
@@ -45,7 +46,7 @@ desvMin = 15;
 
 % Plotting constants
 dynRange = [-50,0];
-attRange = [0.4,1.9];
+attRange = [0,2];
 bsRange = [-15 15];
 
 dataCols = zeros(height(T),16);
@@ -330,22 +331,16 @@ CRSWTV = reshape(Cn*NptodB,m,n);
 BRTVL1 = reshape(Bn*NptodB,m,n);
 
 %% WFR
+% weights FINAL VERSION
+% ratioCutOff     = 15;
+% order = 5;
+% reject = 0.1;
+% extension = 3; % 1 or 3
+% muBwfr = 10^3; muCwfr = 10^0;
 
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB0,muC0,m,n,tol,mask(:));
 bscMap = reshape(Cn,m,n)*NptodB;
-% if strcmp(patient,'134135')||strcmp(patient,'199031')||strcmp(patient,'254581')
-% % if strcmp(patient,'134135')
-%     ratioCutOff = 15;
-% else
-%     ratioCutOff = 10;
-% end
-% if strcmp(patient,'199031')
-%     muBwfr = 10^3.5; muCwfr = 10^0.5;
-% else
-%     muBwfr = 10^3; muCwfr = 10^0;
-% end
 
-%%
 w = (1-reject)* (1./((bscMap/ratioCutOff).^(2*order) + 1)) + reject;
 w = movmin(w,extension);
 
@@ -359,7 +354,7 @@ A2w = W*A2;
 [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 BRWFR = reshape(Bn*NptodB,m,n);
 
-%% Weight map
+% Weight map
 figure('Units','centimeters', 'Position',[5 5 18 4]);
 tl = tiledlayout(1,3, 'TileSpacing','tight', 'Padding','compact');
 
@@ -390,49 +385,6 @@ c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
 
 
-%%
-% figure('Units','centimeters', 'Position',[5 5 12 12]);
-% tl = tiledlayout(2,2);
-% title(tl,{'Comparison'})
-% subtitle(tl,{['Patient ',patient],''})
-% 
-% t2 = nexttile; 
-% imagesc(x_ACS,z_ACS,BRTV, attRange)
-% colormap(t2,turbo)
-% axis equal tight
-% title('TV')
-% % subtitle(['\mu_b=',num2str(muBtv,2),', \mu_c=',num2str(muCtv,2)])
-% c = colorbar;
-% c.Label.String = 'Att. [db/cm/MHz]';
-% 
-% t2 = nexttile; 
-% imagesc(x_ACS,z_ACS,BRSWTV, attRange)
-% colormap(t2,turbo)
-% axis equal tight
-% title('SWTV')
-% % subtitle(['\mu_b=',num2str(muBwfr,2),', \mu_c=',num2str(muCwfr,2)])
-% c = colorbar;
-% c.Label.String = 'Att. [db/cm/MHz]';
-% 
-% 
-% t2 = nexttile; 
-% imagesc(x_ACS,z_ACS,BRTVL1, attRange)
-% colormap(t2,turbo)
-% axis equal tight
-% title('TV-L1')
-% % subtitle(['\mu_b=',num2str(muBtvl1,2),', \mu_c=',num2str(muCtvl1,2)])
-% c = colorbar;
-% c.Label.String = 'Att. [db/cm/MHz]';
-% 
-% t2 = nexttile; 
-% imagesc(x_ACS,z_ACS,BRWFR, attRange)
-% colormap(t2,turbo)
-% axis equal tight
-% title('WFR')
-% % subtitle(['\mu_b=',num2str(muBwfr,2),', \mu_c=',num2str(muCwfr,2)])
-% c = colorbar;
-% c.Label.String = 'Att. [db/cm/MHz]';
-
 
 %% Mascaras
 load(fullfile('newMasks',[patient,'.mat']));
@@ -446,7 +398,7 @@ se = strel('diamond',1);
 maskThyroidACS = imerode(maskThyroidACS,se);
 maskNoduleACS = imerode(maskNoduleACS,se);
 %figure, imagesc(x_ACS,z_ACS,maskThyroidACS|maskNoduleACS)
-%%
+
 patCol(iAcq) = {patient}; 
 classCol(iAcq) = {class};
 dataCols(iAcq,:) = [mean(BRTV(maskNoduleACS)), std(BRTV(maskNoduleACS)),...
@@ -464,6 +416,10 @@ dataThyroidWFR{iAcq} = BRWFR(maskThyroidACS);
 dataNoduleTV{iAcq} = BRTV(maskNoduleACS);
 dataNoduleWFR{iAcq} = BRWFR(maskNoduleACS);
 
+fprintf("D ACS, TV: %.2f\n",...
+    mean(BRTV(maskThyroidACS)) - mean(BRTV(maskNoduleACS)));
+fprintf("D ACS, WFR: %.2f\n",...
+    mean(BRWFR(maskThyroidACS)) - mean(BRWFR(maskNoduleACS)));
 %% Overlay
 [X,Z] = meshgrid(xFull,zFull);
 roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);

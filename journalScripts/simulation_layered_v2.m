@@ -1,15 +1,13 @@
 clear,clc
 
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\24_04_04_layered'];
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\24_04_02'];
-targetDir = [baseDir,'\raw'];
-refDir = [baseDir,'\ref2'];
+targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\24_04_04_layered'];
+refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\24_04_25_ref'];
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-26';
+% resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 
-% resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-03';
-resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
-if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
+[~,~] = mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
 refFiles = dir([refDir,'\rf*.mat']);
@@ -36,7 +34,7 @@ aSNR = 1; bSNR = 0.1;
 desvMin = 15;
 
 % Plotting
-dynRange = [-40,0];
+dynRange = [-50,0];
 attRange = [0.4,1.1];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
@@ -436,13 +434,34 @@ ylabel('Axial [cm]')
 % c.Label.String = '[a.u.]';
 
 fontsize(gcf,8,'points')
-
+%%
+save_all_figures_to_directory(resultsDir,['simLayered',num2str(iAcq),'Fig'],'svg');
+close all
 
 end
-%% Axial profiles
-figure('Units','centimeters', 'Position',[5 5 12 12])
-tiledlayout(2,1)
-nexttile,
+
+%% Lateral and axial profiles
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile([1,2]),
+plot(z_ACS, axialTV{1}, 'r:', 'LineWidth',1.5),
+hold on
+plot(z_ACS, axialSWTV{1}, 'r', 'LineWidth',1),
+plot(z_ACS, axialTVL1{1}, 'b:', 'LineWidth',1.5),
+plot(z_ACS, axialWFR{1}, 'b', 'LineWidth',1),
+plot(z_ACS,mean(attIdeal,2), 'k--')
+hold off
+grid on
+ylim([0.4 1.1])
+xlim([z_ACS(1) z_ACS(end)])
+%title('Axial profile')
+xlabel('Axial [cm]')
+ylabel('ACS [dB/cm/MHz]')
+legend({'TV','SWTV','TVL1','WFR'}, 'Location','northwest') 
+
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile([1,2]),
 plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
 hold on
 plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
@@ -451,12 +470,16 @@ plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
 plot(z_ACS,mean(attIdeal,2), 'k--')
 hold off
 grid on
-ylim([0.4 1.4])
+ylim([0.4 1.1])
 xlim([z_ACS(1) z_ACS(end)])
-title('Axial profile - L1')
-legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+%title('Axial profile')
+xlabel('Axial [cm]')
+ylabel('ACS [dB/cm/MHz]')
+legend({'TV','SWTV','TVL1','WFR'}, 'Location','northwest') 
 
-nexttile,
+figure('Units','centimeters', 'Position',[5 5 10 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile([1,2]),
 plot(z_ACS, axialTV{3}, 'r:', 'LineWidth',1.5),
 hold on
 plot(z_ACS, axialSWTV{3}, 'r', 'LineWidth',1),
@@ -465,36 +488,13 @@ plot(z_ACS, axialWFR{3}, 'b', 'LineWidth',1),
 plot(z_ACS,mean(attIdeal,2), 'k--')
 hold off
 grid on
-ylim([0.4 1.4])
+ylim([0.4 1.1])
 xlim([z_ACS(1) z_ACS(end)])
-title('Axial profile - L2')
-legend({'TV','SWTV','TVL1','WFR'}, 'Location','northeastoutside') 
+%title('Axial profile')
+ylabel('ACS [dB/cm/MHz]')
+xlabel('Axial [cm]')
 
-
-% %%
-% figure('Units','centimeters', 'Position',[5 5 15 5])
-% tiledlayout(1,2)
-% 
-% t2 = nexttile; 
-% imagesc(x_ACS,z_ACS,CRTVL1, bsRange)
-% colormap(t2,parula)
-% axis image
-% title('TVL1')
-% c = colorbar;
-% c.Label.String = 'BS log ratio [dB]';
-% 
-% t3 = nexttile; 
-% imagesc(x_ACS,z_ACS,w, [0 1])
-% colormap(t3,parula)
-% axis image
-% title('Weights')
-% c = colorbar;
-% c.Label.String = '[a.u.]';
-save('simuLayered.mat','axialTV','axialSWTV','axialTVL1','axialWFR',...
-    'z_ACS','attIdeal');
-
-%%
-save_all_figures_to_directory(resultsDir,'layeredSimFig');
+save_all_figures_to_directory(resultsDir,'simLayeredProfile','svg');
 close all
 
 %%

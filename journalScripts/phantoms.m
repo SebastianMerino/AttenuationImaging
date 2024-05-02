@@ -6,7 +6,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID316V2\06-08-2023-Generic'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID544V2\06-08-2023-Generic'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-19';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-26';
 
 % targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
@@ -390,7 +390,7 @@ title('B-mode')
 %subtitle(' ')
 c = colorbar('Location', 'westoutside');
 c.Label.String = 'dB';
-fontsize(gcf,8,'points')
+% fontsize(gcf,8,'points')
 
 t2 = nexttile;
 imagesc(x_ACS,z_ACS,BR, attRange)
@@ -398,7 +398,7 @@ xlabel('Lateral [cm]'), ylabel('Axial [cm]')
 colormap(t2,turbo)
 axis image
 title('TV')
-fontsize(gcf,8,'points')
+% fontsize(gcf,8,'points')
 hold on 
 rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
 rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
@@ -413,7 +413,7 @@ xlabel('Lateral [cm]'), ylabel('Axial [cm]')
 colormap(t3,turbo)
 axis image
 title('SWTV')
-fontsize(gcf,8,'points')
+% fontsize(gcf,8,'points')
 hold on 
 rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
 rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
@@ -428,7 +428,7 @@ xlabel('Lateral [cm]'), ylabel('Axial [cm]')
 colormap(t4,turbo)
 axis image
 title('TVL1')
-fontsize(gcf,8,'points')
+% fontsize(gcf,8,'points')
 hold on 
 rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
 rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
@@ -445,7 +445,7 @@ axis image
 title('WFR')
 c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
-fontsize(gcf,8,'points')
+% fontsize(gcf,8,'points')
 hold on 
 rectangle('Position',[x0mask z0mask roiL roiLz], 'LineStyle','--', 'LineWidth',1)
 rectangle('Position',[x0mask-roiD-roiL/2 z0mask roiL/2 roiLz],...
@@ -456,7 +456,7 @@ hold off
 end
 
 %%
-save_all_figures_to_directory(resultsDir,'phantom');
+save_all_figures_to_directory(resultsDir,'phantom','svg');
 close all
 %%
 results1 = struct2table(MetricsTV);

@@ -13,23 +13,15 @@ addpath('./journalScripts/');
 %     'Attenuation\simulations_processed\inc_journal'];
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-02-20\BS_8_12';
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_01_30'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-03-12';
-
-targetDir = [baseDir,'\raw'];
-refDir = [baseDir,'\ref'];
-
-
-tableName = 'simuInc.xlsx';
+targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\24_04_04_inc'];
+refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\24_04_25_ref'];
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-29';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\rf*.mat']);
-targetFiles = targetFiles(2:3);
 refFiles = dir([refDir,'\rf*.mat']);
-
-if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
-
 %% Generating cropped data
 % SETTING PARAMETERS
 blocksize = 8;     % Block size in wavelengths
@@ -58,7 +50,7 @@ groundTruthThyroid = [0.8,1.5];
 groundTruthNodule = [1.5,0.8];
 
 %attRange = [0.6 1.7];
-attRange = [0.4,1.7];
+attRange = [0.4,1.1];
 
 % Plotting
 dynRange = [-60,0];
@@ -69,26 +61,14 @@ NptodB = log10(exp(1))*20;
 % figure('Units','centimeters', 'Position',[5 5 25 8]);
 % tl = tiledlayout(2,5, "Padding","tight");
 
-iAcq = 1;
+iAcq = 2;
 
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
-switch iAcq
-    % OPTIMAL WEIGHTS FOR BS 8x12
-    case 1
-        muBtv = 10^3; muCtv = 10^1;
-        muBswtv = 10^2.5; muCswtv = 10^0;
-        muBtvl1 = 10^3; muCtvl1 = 10^1;
-        muBwfr = 10^4; muCwfr = 10^1.5;
-        % muBwfr = 10^3.5; muCwfr = 10^1.5; % WRONG WINDOW
-    case 2
-        muBtv = 10^3; muCtv = 10^1;
-        muBswtv = 10^2.5; muCswtv = 10^0;
-        muBtvl1 = 10^3; muCtvl1 = 10^0;
-        muBwfr = 10^3.5; muCwfr = 10^-0.5;
-        % muBwfr = 10^3; muCwfr = 10^-0.5; % WRONG WINDOW
-
-end
+muBtv = 10^3; muCtv = 10^1;
+muBswtv = 10^2.5; muCswtv = 10^0;
+muBtvl1 = 10^3; muCtvl1 = 10^0.5;
+muBwfr = 10^3.5; muCwfr = 10^1;
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 dx = x(2)-x(1);
@@ -101,7 +81,7 @@ sam1 = rf(:,:,1);
 %% Cropping and finding sample sizes
 % Region for attenuation imaging
 x_inf = -1.5; x_sup = 1.5;
-z_inf = 0.3; z_sup = 3.9;
+z_inf = 0.4; z_sup = 3.7;
 
 % Limits for ACS estimation
 ind_x = x_inf <= x & x <= x_sup;
@@ -167,16 +147,6 @@ fprintf('Blocksize in pixels nx: %i, nz: %i\n',nx,nz);
 fprintf('Region of interest rows: %i, col: %i\n\n',m,n);
 
 %% Generating Diffraction compensation
-
-% Generating references
-att_ref = referenceAtt*(f.^1.05)/(20*log10(exp(1)));
-att_ref_map = zeros(m,n,p);
-for jj=1:n
-    for ii=1:m
-        att_ref_map(ii,jj,:) = att_ref;
-    end
-end
-
 % Windows for spectrum
 windowing = tukeywin(nz/2,0.25);
 windowing = windowing*ones(1,nx);
@@ -185,11 +155,16 @@ windowing = windowing*ones(1,nx);
 Nref = length(refFiles);
 
 % Memory allocation
-Sp_ref = zeros(m,n,p,Nref);
-Sd_ref = zeros(m,n,p,Nref);
-for iRef = 1:Nref
+Sp_ref = zeros(m,n,p);
+Sd_ref = zeros(m,n,p);
+compensation = zeros(m,n,p,Nref);
+
+for iRef = 1:Nref %Nref
     load(fullfile(refDir,refFiles(iRef).name),"rf","medium");
-    % disp(mean(medium.alpha_coeff(:)))
+    acs_mean = medium.alpha_coeff(1,1);
+    att_ref = acs_mean*(f.^medium.alpha_power)/NptodB;
+    att_ref_map = repmat(reshape(att_ref,[1 1 p]),m,n,1);
+
     samRef = rf;
     samRef = samRef(ind_z,ind_x); % Cropping
     for jj=1:n
@@ -203,17 +178,14 @@ for iRef = 1:Nref
             [tempSp,~] = spectra(sub_block_p,windowing,0,nz/2,NFFT);
             [tempSd,~] = spectra(sub_block_d,windowing,0,nz/2,NFFT);
 
-            Sp_ref(ii,jj,:,iRef) = (tempSp(rang));
-            Sd_ref(ii,jj,:,iRef) = (tempSd(rang));
+            Sp_ref(ii,jj,:) = (tempSp(rang));
+            Sd_ref(ii,jj,:) = (tempSd(rang));
         end
     end
+    compensation(:,:,:,iRef) = log(Sp_ref) - log(Sd_ref) - 4*L*att_ref_map;
 end
 
-Sp = mean(Sp_ref,4); Sd = mean(Sd_ref,4);
-compensation = ( log(Sp) - log(Sd) ) - 4*L*att_ref_map;
-
-% Liberating memory to avoid killing my RAM
-clear Sp_ref Sd_ref
+compensation = mean(compensation,4);
 
 
 %% Spectrum
@@ -270,7 +242,7 @@ sldLine = mean(sldLine)'*NptodB;
 
 %fit1 = f\sldLine;
 fit2 = [f ones(length(f),1)]\sldLine;
-figure('Units','centimeters', 'Position',[5 5 6 12]),
+figure('Units','centimeters', 'Position',[5 5 5 10]),
 
 tl = tiledlayout(3,1, "Padding","compact", 'TileSpacing','compact');
 
@@ -296,7 +268,7 @@ plot(f,fit2(1)*f + fit2(2), 'k--')
 hold off,
 grid on,
 xlim([freq_L,freq_H]/1e6),
-ylim([1 5]),
+ylim([1 3.5]),
 xlabel('Frequency [MHz]')
 ylabel('Att. [dB/cm]')
 title('SLD')
@@ -344,7 +316,7 @@ CRWFR = reshape(Cn*NptodB,m,n);
 
 
 %% Plotting
-figure('Units','centimeters', 'Position',[5 5 5 5]);
+figure('Units','centimeters', 'Position',[5 5 4 4]);
 imagesc(x_ACS,z_ACS,BRTVL1, attRange)
 colormap(turbo)
 axis image
@@ -353,7 +325,7 @@ c = colorbar;
 % c.Label.String = '[db/cm/MHz]';
 fontsize(gcf,10,'points')
 
-figure('Units','centimeters', 'Position',[5 5 5 5]);
+figure('Units','centimeters', 'Position',[5 5 4 4]);
 imagesc(x_ACS,z_ACS,bscMap, [-20 20])
 colormap(parula)
 axis image
@@ -362,7 +334,7 @@ c = colorbar;
 % c.Label.String = '[db/cm/MHz]';
 fontsize(gcf,10,'points')
 
-figure('Units','centimeters', 'Position',[5 5 5 5]);
+figure('Units','centimeters', 'Position',[5 5 4 4]);
 imagesc(x_ACS,z_ACS,w, [0 1])
 colormap(parula)
 axis image
@@ -382,6 +354,6 @@ fontsize(gcf,10,'points')
 
 %%
 
-save_all_figures_to_directory(resultsDir,'abstract');
+save_all_figures_to_directory(resultsDir,'abstract','svg');
 close all
 
