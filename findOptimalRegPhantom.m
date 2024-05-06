@@ -4,15 +4,15 @@
 % ====================================================================== %
 clc, clear,
 
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+
 % targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
 %     '\ID316V2\06-08-2023-Generic'];
 % refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
 %     '\ID544V2\06-08-2023-Generic'];
-
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
 
 rawFiles = dir([targetDir,'\*.rf']);
 
@@ -20,7 +20,7 @@ resultsDir = fullfile(targetDir,'results','24-05-06');
 if ~exist(resultsDir,"dir"); mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\*.mat']);
-targetFiles = targetFiles(end-2:end); % selecting last 3
+targetFiles = targetFiles(1:end); % selecting last 3
 
 blocksize = 8;     % Block size in wavelengths
 freq_L = 2.5e6; freq_H = 7.5e6; 
@@ -58,7 +58,7 @@ z_inf = 0.2; z_sup = 3.5;
 
 %% Setting up
 
-for iAcq = 1:length(targetFiles)
+for iAcq = 6:length(targetFiles)
 fprintf("Phantom no. %i, %s\n",iAcq,targetFiles(iAcq).name);
 load(fullfile(targetDir,targetFiles(iAcq).name));
 
@@ -120,7 +120,7 @@ fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 
 
 %% Generating Diffraction compensation
-if iAcq == 1
+if iAcq == 6
     % Generating references
     att_ref = 0.53*f/NptodB; % From phantom especifications
     att_ref_map = zeros(m,n,p);
