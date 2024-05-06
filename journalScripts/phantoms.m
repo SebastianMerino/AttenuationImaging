@@ -23,7 +23,7 @@ tableName = 'phantoms.xlsx';
 %% Constants
 blocksize = 8;     % Block size in wavelengths
 freq_L = 2.5e6; freq_H = 7.5e6;
-freq_C = 4.5e6;
+freq_C = 5e6;
 
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
@@ -246,12 +246,12 @@ r.meanInc = mean(AttInterp(inc),"omitnan");
 r.stdInc = std(AttInterp(inc),"omitnan");
 r.meanBack = mean(AttInterp(back),"omitnan");
 r.stdBack = std(AttInterp(back),"omitnan");
-r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
-    "omitnan") );
+r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
+r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
     "omitnan") );
-r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
+r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") );
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 r.method = 'TV';
 MetricsTV(iAcq) = r;
@@ -290,12 +290,12 @@ r.meanInc = mean(AttInterp(inc),"omitnan");
 r.stdInc = std(AttInterp(inc),"omitnan");
 r.meanBack = mean(AttInterp(back),"omitnan");
 r.stdBack = std(AttInterp(back),"omitnan");
-r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
-    "omitnan") );
+r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
+r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
     "omitnan") );
-r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
+r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") );
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 r.method = 'SWTV';
 MetricsSWTV(iAcq) = r;
@@ -313,12 +313,12 @@ r.meanInc = mean(AttInterp(inc),"omitnan");
 r.stdInc = std(AttInterp(inc),"omitnan");
 r.meanBack = mean(AttInterp(back),"omitnan");
 r.stdBack = std(AttInterp(back),"omitnan");
-r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
-    "omitnan") );
+r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
+r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
     "omitnan") );
-r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
+r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") );
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 r.method = 'TVL1';
 MetricsTVL1(iAcq) = r;
@@ -347,12 +347,12 @@ r.meanInc = mean(AttInterp(inc),"omitnan");
 r.stdInc = std(AttInterp(inc),"omitnan");
 r.meanBack = mean(AttInterp(back),"omitnan");
 r.stdBack = std(AttInterp(back),"omitnan");
-r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
-    "omitnan") );
+r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
+r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
 r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
     "omitnan") );
-r.biasInc = mean( AttInterp(inc) - groundTruthTargets(iAcq),"omitnan");
-r.biasBack = mean( AttInterp(back) - groundTruthTargets(end),"omitnan");
+r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
+    "omitnan") );
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
 r.method = 'WFR';
 MetricsWFR(iAcq) = r;
