@@ -9,18 +9,18 @@ clc, clear,
 % refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
 %     '\ID544V2\06-08-2023-Generic'];
 
-targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
-refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+    '\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+    '\ID544V2\06-08-2023-Generic'];
 
 rawFiles = dir([targetDir,'\*.rf']);
 
-resultsDir = fullfile(targetDir,'results','24-02-20','BS_8_12');
+resultsDir = fullfile(targetDir,'results','24-05-06','BS_8_12');
 if ~exist(resultsDir,"dir"); mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\*.mat']);
-targetFiles = targetFiles(1:end);
+targetFiles = targetFiles(end-2:end); % selecting last 3
 
 blocksize = 8;     % Block size in wavelengths
 freq_L = 2.5e6; freq_H = 7.5e6; 
@@ -122,7 +122,7 @@ fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 %% Generating Diffraction compensation
 if iAcq == 1
     % Generating references
-    att_ref = 0.53*f/8.686; % From phantom especifications
+    att_ref = 0.53*f/NptodB; % From phantom especifications
     att_ref_map = zeros(m,n,p);
     for jj=1:n
         for ii=1:m
@@ -230,8 +230,8 @@ z0mask = c1z - roiLz/2;
 
 
 %% RSLD
-muB = 10.^(3:0.5:3.5);
-muC = 10.^(1:3);
+muB = 10.^(2:0.5:3.5);
+muC = 10.^(1:0.5:3);
 % muB = 10^ 3.5;
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -315,8 +315,8 @@ desvMin = 15;
 w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 
-muB = 10.^(2.5:0.5:3);
-muC = 10.^(0:2);
+muB = 10.^(2:0.5:3);
+muC = 10.^(0:0.5:3);
 
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -384,8 +384,8 @@ r.cnr = abs(r.meanInc - r.meanBack)/sqrt(r.stdBack^2 + r.stdBottom^2);
 MetricsSWTV(iAcq) = r;
 
 %% Minimizing BS log ratio
-muB = 10.^(3:0.5:4);
-muC = 10.^(0:1:2);
+muB = 10.^(2.5:0.5:4);
+muC = 10.^(0:0.5:3);
 
 minRMSE = 100;
 for mmB = 1:length(muB)
@@ -461,7 +461,7 @@ A2w = W*A2;
 
 
 muB = 10.^(2.5:0.5:4);
-muC = 10.^(-0.5:0.5:2);
+muC = 10.^(-0.5:0.5:3);
 % muB = 10.^(4);
 % muC = 10.^(1.5);
 

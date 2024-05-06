@@ -74,24 +74,6 @@ switch iAcq
         muBtvl1 = 10^3; muCtvl1 = 10^0;
         muBwfr = 10^3.5; muCwfr = 10^1;
 
-%     % Optimal reg for NEW BS 8x12
-%     case 1
-%         muBtv = 10^3.5; muCtv = 10^3;
-%         muBswtv = 10^3; muCswtv = 10^2;
-%         muBtvl1 = 10^3.5; muCtvl1 = 10^2;
-%         muBwfr = 10^3; muCwfr = 10^1.5;
-%     case 2
-%         muBtv = 10^3.5; muCtv = 10^2;
-%         muBswtv = 10^3; muCswtv = 10^0;
-%         muBtvl1 = 10^3; muCtvl1 = 10^1;
-%         muBwfr = 10^3.5; muCwfr = 10^1.5;
-%     case 3
-%         muBtv = 10^3; muCtv = 10^1;
-%         muBswtv = 10^2.5; muCswtv = 10^0;
-%         muBtvl1 = 10^3; muCtvl1 = 10^0;
-%         muBwfr = 10^3.5; muCwfr = 10^1;
-
-
 end
 
 %%
