@@ -12,7 +12,7 @@ clear,clc
 
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\inc_journal'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-02';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-13';
 
 targetDir = [baseDir,'\raw'];
 refDir = [baseDir,'\ref'];

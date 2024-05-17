@@ -6,7 +6,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID316V2\06-08-2023-Generic'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID544V2\06-08-2023-Generic'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-06-newReg';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-07';
 
 % targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
@@ -58,23 +58,6 @@ roiLz = 1.5;
 for iAcq = 1:3
 switch iAcq
     % Optimal reg for BS 8x12, rectangular ROIs
-%     case 1
-%         muBtv = 10^3.5; muCtv = 10^3;
-%         muBswtv = 10^3; muCswtv = 10^3;
-%         muBtvl1 = 10^3.5; muCtvl1 = 10^2;
-%         muBwfr = 10^3.5; muCwfr = 10^2;
-%     case 2
-%         muBtv = 10^3.5; muCtv = 10^2;
-%         muBswtv = 10^3; muCswtv = 10^0;
-%         muBtvl1 = 10^3; muCtvl1 = 10^0.5;
-%         muBwfr = 10^4; muCwfr = 10^1;
-%     case 3
-%         muBtv = 10^3.5; muCtv = 10^1;
-%         muBswtv = 10^2.5; muCswtv = 10^0.5;
-%         muBtvl1 = 10^3; muCtvl1 = 10^0.5;
-%         muBwfr = 10^3.5; muCwfr = 10^1;
-
-    % Optimal reg for BS 8x12, circular ROI
     case 1
         muBtv = 10^3.5; muCtv = 10^3;
         muBswtv = 10^3; muCswtv = 10^3;
@@ -83,17 +66,40 @@ switch iAcq
     case 2
         muBtv = 10^3.5; muCtv = 10^2;
         muBswtv = 10^3; muCswtv = 10^0;
-        muBtvl1 = 10^3; muCtvl1 = 10^1;
+        muBtvl1 = 10^3; muCtvl1 = 10^0.5;
         muBwfr = 10^4; muCwfr = 10^1;
     case 3
-        muBtv = 10^3.5; muCtv = 10^1;
-        muBswtv = 10^3; muCswtv = 10^0;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^0;
+        muBtv = 10^3.5; muCtv = 10^1.5;
+        muBswtv = 10^2.5; muCswtv = 10^0.5;
+        muBtvl1 = 10^3; muCtvl1 = 10^0.5;
         muBwfr = 10^3.5; muCwfr = 10^1;
 
-
+    % Optimal reg for BS 8x12, circular ROI
+    % case 1
+    %     muBtv = 10^3.5; muCtv = 10^3;
+    %     muBswtv = 10^3; muCswtv = 10^3;
+    %     muBtvl1 = 10^3.5; muCtvl1 = 10^2;
+    %     muBwfr = 10^3.5; muCwfr = 10^2;
+    % case 2
+    %     muBtv = 10^3.5; muCtv = 10^2;
+    %     muBswtv = 10^3; muCswtv = 10^0;
+    %     muBtvl1 = 10^3; muCtvl1 = 10^1;
+    %     muBwfr = 10^4; muCwfr = 10^1;
+    % case 3
+    %     muBtv = 10^3.5; muCtv = 10^1;
+    %     muBswtv = 10^3; muCswtv = 10^0;
+    %     muBtvl1 = 10^3.5; muCtvl1 = 10^0;
+    %     muBwfr = 10^3.5; muCwfr = 10^1;
 end
 
+switch iAcq
+    case 1
+        c1x = 1.85; c1z = 1.9;
+    case 2
+        c1x = 1.95; c1z = 1.95;
+    case 3
+        c1x = 1.85; c1z = 1.9;
+end
 %%
 fprintf("Phantom no. %i, %s\n",iAcq,targetFiles(iAcq).name);
 load(fullfile(targetDir,targetFiles(iAcq).name));
@@ -242,8 +248,8 @@ rInc = 0.95;
 inc = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
 back = ((Xq-c1x).^2 + (Zq-c1z).^2) >= (rInc+0.1)^2;
 
-% x0mask = c1x - roiL/2; 
-% z0mask = c1z - roiLz/2;
+x0mask = c1x - roiL/2; 
+z0mask = c1z - roiLz/2;
 % [back,inc] = getRegionMasks(x,z,c1x,c1z,roiL,roiD,roiLz);
 
 % Setting up

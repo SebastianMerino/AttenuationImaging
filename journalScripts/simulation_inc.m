@@ -4,7 +4,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_04_04_inc'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_04_25_ref'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-02-05-newW';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-15';
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 
 [~,~] = mkdir(resultsDir);
@@ -110,14 +110,16 @@ m  = length(z0p);
 
 %% Spectrum
 % BW from spectrogram
-[pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
-meanSpectrum = mean(pxx,2);
-% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
+% [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
+% meanSpectrum = mean(pxx,2);
+% [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, 0.1);
+% meanSpectrum = db(meanSpectrum./max(meanSpectrum));
 % figure,plot(fpxx/1e6,meanSpectrum)
 % xline([freq_L,freq_H]/1e6)
 % xlabel('Frequency [MHz]')
 % ylabel('Magnitude')
 % xlim([0 15])
+% grid on
 
 % Frequency samples
 NFFT = 2^(nextpow2(nz/2)+2);
@@ -484,15 +486,17 @@ writetable(T,fullfile(resultsDir,tableName),...
      'WriteRowNames',true);
 
 %% Lateral and axial profiles
-figure('Units','centimeters', 'Position',[5 5 10 4])
+lineColors = [0.75 0.05 0.05; 0.1 0.75 0.95];
+
+figure('Units','centimeters', 'Position',[5 5 14 4])
 tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
 % figure('Units','centimeters', 'Position',[5 5 12 12])
 nexttile,
-plot(z_ACS, axialTV{1}, 'r:', 'LineWidth',1.5),
+plot(z_ACS, axialTV{1}, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
 hold on
-plot(z_ACS, axialSWTV{1}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{1}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{1}, 'b', 'LineWidth',1),
+plot(z_ACS, axialSWTV{1}, '-', 'LineWidth',1, 'Color',lineColors(1,:)),
+plot(z_ACS, axialTVL1{1}, ':', 'LineWidth',1.5, 'Color',lineColors(2,:)),
+plot(z_ACS, axialWFR{1}, '-', 'LineWidth',1, 'Color',lineColors(2,:)),
 plot(z_ACS,mean(attIdealACS{1}(:,41:49),2), 'k--')
 hold off
 grid on
@@ -503,11 +507,11 @@ ylabel('ACS [dB/cm/MHz]')
 xlabel('Axial [cm]')
 
 nexttile,
-plot(x_ACS, lateralTV{1}, 'r:', 'LineWidth',1.5),
+plot(x_ACS, lateralTV{1}, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
 hold on
-plot(x_ACS, lateralSWTV{1}, 'r', 'LineWidth',1),
-plot(x_ACS, lateralTVL1{1}, 'b:', 'LineWidth',1.5),
-plot(x_ACS, lateralWFR{1}, 'b', 'LineWidth',1),
+plot(x_ACS, lateralSWTV{1}, '-', 'LineWidth',1, 'Color',lineColors(1,:)),
+plot(x_ACS, lateralTVL1{1}, ':', 'LineWidth',1.5, 'Color',lineColors(2,:)),
+plot(x_ACS, lateralWFR{1}, '-', 'LineWidth',1, 'Color',lineColors(2,:)),
 plot(x_ACS,mean(attIdealACS{1}(24:26,:),1), 'k--')
 hold off
 grid on
@@ -517,14 +521,14 @@ xlim([x_ACS(1) x_ACS(end)])
 xlabel('Lateral [cm]')
 
 
-figure('Units','centimeters', 'Position',[5 5 10 4])
+figure('Units','centimeters', 'Position',[5 5 14 4])
 tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
 nexttile,
-plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
+plot(z_ACS, axialTV{2}, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
 hold on
-plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
+plot(z_ACS, axialSWTV{2}, '-', 'LineWidth',1, 'Color',lineColors(1,:)),
+plot(z_ACS, axialTVL1{2}, ':', 'LineWidth',1.5, 'Color',lineColors(2,:)),
+plot(z_ACS, axialWFR{2}, '-', 'LineWidth',1, 'Color',lineColors(2,:)),
 plot(z_ACS,mean(attIdealACS{2}(:,41:49),2), 'k--')
 hold off
 grid on
@@ -535,11 +539,11 @@ ylabel('ACS [dB/cm/MHz]')
 xlabel('Axial [cm]')
 
 nexttile,
-plot(x_ACS, lateralTV{2}, 'r:', 'LineWidth',1.5),
+plot(x_ACS, lateralTV{2}, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
 hold on
-plot(x_ACS, lateralSWTV{2}, 'r', 'LineWidth',1),
-plot(x_ACS, lateralTVL1{2}, 'b:', 'LineWidth',1.5),
-plot(x_ACS, lateralWFR{2}, 'b', 'LineWidth',1),
+plot(x_ACS, lateralSWTV{2}, '-', 'LineWidth',1, 'Color',lineColors(1,:)),
+plot(x_ACS, lateralTVL1{2}, ':', 'LineWidth',1.5, 'Color',lineColors(2,:)),
+plot(x_ACS, lateralWFR{2}, '-', 'LineWidth',1, 'Color',lineColors(2,:)),
 plot(x_ACS,mean(attIdealACS{2}(24:26,:),1), 'k--')
 hold off
 grid on
@@ -549,14 +553,14 @@ xlim([x_ACS(1) x_ACS(end)])
 xlabel('Lateral [cm]')
 
 
-figure('Units','centimeters', 'Position',[5 5 10 4])
+figure('Units','centimeters', 'Position',[5 5 14 4])
 tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
 nexttile,
-plot(z_ACS, axialTV{3}, 'r:', 'LineWidth',1.5),
+plot(z_ACS, axialTV{3}, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
 hold on
-plot(z_ACS, axialSWTV{3}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{3}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{3}, 'b', 'LineWidth',1),
+plot(z_ACS, axialSWTV{3}, '-', 'LineWidth',1, 'Color',lineColors(1,:)),
+plot(z_ACS, axialTVL1{3}, ':', 'LineWidth',1.5, 'Color',lineColors(2,:)),
+plot(z_ACS, axialWFR{3}, '-', 'LineWidth',1, 'Color',lineColors(2,:)),
 plot(z_ACS,mean(attIdealACS{3}(:,41:49),2), 'k--')
 hold off
 grid on
@@ -567,11 +571,11 @@ ylabel('ACS [dB/cm/MHz]')
 xlabel('Axial [cm]')
 
 nexttile,
-plot(x_ACS, lateralTV{3}, 'r:', 'LineWidth',1.5),
+plot(x_ACS, lateralTV{3}, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
 hold on
-plot(x_ACS, lateralSWTV{3}, 'r', 'LineWidth',1),
-plot(x_ACS, lateralTVL1{3}, 'b:', 'LineWidth',1.5),
-plot(x_ACS, lateralWFR{3}, 'b', 'LineWidth',1),
+plot(x_ACS, lateralSWTV{3}, '-', 'LineWidth',1, 'Color',lineColors(1,:)),
+plot(x_ACS, lateralTVL1{3}, ':', 'LineWidth',1.5, 'Color',lineColors(2,:)),
+plot(x_ACS, lateralWFR{3}, '-', 'LineWidth',1, 'Color',lineColors(2,:)),
 plot(x_ACS,mean(attIdealACS{3}(24:26,:),1), 'k--')
 hold off
 grid on

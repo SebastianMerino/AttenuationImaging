@@ -9,7 +9,7 @@ refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 tableName = 'clinical.xlsx';
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-02-final';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-13';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 T = readtable('params.xlsx');
@@ -35,7 +35,7 @@ desvMin = 15;
 
 % Plotting constants
 dynRange = [-50,0];
-attRange = [0,2];
+attRange = [0.2,2];
 bsRange = [-15 15];
 
 iAcq = 6;

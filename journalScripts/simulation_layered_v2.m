@@ -4,7 +4,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_04_04_layered'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_04_25_ref'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-04-26';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-15';
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 
 [~,~] = mkdir(resultsDir);
@@ -119,6 +119,7 @@ m  = length(z0p);
 %% BW and spectrogram
 % [pxx,fpxx] = pwelch(sam1-mean(sam1),500,400,500,fs);
 % meanSpectrum = mean(pxx,2);
+% meanSpectrum = db(meanSpectrum./max(meanSpectrum));
 % figure,plot(fpxx/1e6,meanSpectrum)
 % xline([freq_L,freq_H]/1e6)
 % xlim([0 15])
@@ -441,14 +442,15 @@ close all
 end
 
 %% Lateral and axial profiles
-figure('Units','centimeters', 'Position',[5 5 10 4])
+lineColors = [0.75 0.05 0.05; 0.1 0.75 0.95];
+figure('Units','centimeters', 'Position',[5 5 8 4])
 tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
 nexttile([1,2]),
-plot(z_ACS, axialTV{1}, 'r:', 'LineWidth',1.5),
+plot(z_ACS, axialTV{1}, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
 hold on
-plot(z_ACS, axialSWTV{1}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{1}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{1}, 'b', 'LineWidth',1),
+plot(z_ACS, axialSWTV{1}, '-', 'LineWidth',1, 'Color',lineColors(1,:)),
+plot(z_ACS, axialTVL1{1}, ':', 'LineWidth',1.5, 'Color',lineColors(2,:)),
+plot(z_ACS, axialWFR{1}, '-', 'LineWidth',1, 'Color',lineColors(2,:)),
 plot(z_ACS,mean(attIdeal,2), 'k--')
 hold off
 grid on
@@ -459,14 +461,14 @@ xlabel('Axial [cm]')
 ylabel('ACS [dB/cm/MHz]')
 legend({'TV','SWTV','TVL1','WFR'}, 'Location','northwest') 
 
-figure('Units','centimeters', 'Position',[5 5 10 4])
+figure('Units','centimeters', 'Position',[5 5 8 4])
 tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
 nexttile([1,2]),
-plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5),
+plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
 hold on
-plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1),
+plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1, 'Color',lineColors(1,:) ),
+plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
+plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1, 'Color',lineColors(2,:) ),
 plot(z_ACS,mean(attIdeal,2), 'k--')
 hold off
 grid on
@@ -477,14 +479,14 @@ xlabel('Axial [cm]')
 ylabel('ACS [dB/cm/MHz]')
 legend({'TV','SWTV','TVL1','WFR'}, 'Location','northwest') 
 
-figure('Units','centimeters', 'Position',[5 5 10 4])
+figure('Units','centimeters', 'Position',[5 5 8 4])
 tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
 nexttile([1,2]),
-plot(z_ACS, axialTV{3}, 'r:', 'LineWidth',1.5),
+plot(z_ACS, axialTV{3}, 'r:', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
 hold on
-plot(z_ACS, axialSWTV{3}, 'r', 'LineWidth',1),
-plot(z_ACS, axialTVL1{3}, 'b:', 'LineWidth',1.5),
-plot(z_ACS, axialWFR{3}, 'b', 'LineWidth',1),
+plot(z_ACS, axialSWTV{3}, 'r', 'LineWidth',1, 'Color',lineColors(1,:) ),
+plot(z_ACS, axialTVL1{3}, 'b:', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
+plot(z_ACS, axialWFR{3}, 'b', 'LineWidth',1, 'Color',lineColors(2,:) ),
 plot(z_ACS,mean(attIdeal,2), 'k--')
 hold off
 grid on

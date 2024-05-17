@@ -9,7 +9,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Thyroid_Data_PUCP_UTD'];
 refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\REFERENCES'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-02-final';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-14-newBW';
 
 tableName = 'clinical.xlsx';
 T = readtable('params.xlsx');
@@ -19,9 +19,8 @@ if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 blocksize = 8;     % Block size in wavelengths
 fixedBW = true;
 ratio = db2mag(-30);
-freq_L = 3.5e6; freq_H = 8e6;
-% freq_L = 3e6; freq_H = 8e6;
-% freq_L = 3e6; freq_H = 8.5e6;
+%freq_L = 3.5e6; freq_H = 8e6;
+freq_L = 2.5e6; freq_H = 7.5e6;
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
@@ -46,7 +45,7 @@ desvMin = 15;
 
 % Plotting constants
 dynRange = [-50,0];
-attRange = [0,2];
+attRange = [0.2,2];
 bsRange = [-15 15];
 
 dataCols = zeros(height(T),16);
