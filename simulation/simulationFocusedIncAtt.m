@@ -1,13 +1,13 @@
 
-% This example simulates an inclusion of pure attenuation. Std of density
-% and sound speed are varied.
-% Created on April 24th, 2024
+% This example simulates an inclusion with fixed ACS and BSC. Radius is
+% varied across samples.
+% Created on June 5th, 2024
 % Author: Sebastian Merino
 
 function [] = simulationFocusedIncAtt(BaseDir)
 
 addpath(genpath(pwd))
-simuNames = {'incAtt1','incAtt2','incAtt3','incAtt4','incAtt5'};
+simuNames = {'incAtt1','incAtt2','incAtt3','incAtt4'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -61,17 +61,18 @@ for iSim = 1:length(simuNames)
     rz = kgrid.x - translation(1);
     rx = kgrid.y;
 
-    background_std = 0.001 * 2.^(iSim-1);
+    % Background
+    background_std = 0.002;
     background_alpha = 0.5;       % [dB/(MHz^y cm)]
-
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
-
-    inc_std = background_std;
-    inc_alpha = 1;
-    cz = 20e-3; cx = 0; r = 7e-3;
+    
+    % Inclusion
+    cz = 20e-3; cx = 0; 
+    r = (iSim+1)*1e-3; % VARYING RADIUS
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    % maskLayer = rz>2e-2;
+    inc_std = background_std*4;
+    inc_alpha = 1;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
         inc_alpha,maskNodule);
 
@@ -79,30 +80,30 @@ for iSim = 1:length(simuNames)
     medium.alpha_mode = 'no_dispersion';
     medium.sound_speed_ref = 1540;
 
-    figure('Units','centimeters', 'Position',[5 5 25 10]),
-    tiledlayout(1,3),
-    nexttile,
-    imagesc(100*rx(1,:),100*rz(:,1),medium.sound_speed)
-    xlabel('x [cm]'), ylabel('z [cm]')
-    title('Sound speed')
-    c = colorbar; ylabel(c,'m/s')
-    axis image
-    
-    nexttile,
-    imagesc(100*rx(1,:),100*rz(:,1),medium.density)
-    xlabel('x [cm]'), ylabel('z [cm]')
-    title('Density')
-    c = colorbar; ylabel(c,'kg/m^3')
-    colorbar,
-    axis image
-    
-    t3 = nexttile;
-    imagesc(100*rx(1,:),100*rz(:,1),medium.alpha_coeff, [0.4 1.7])
-    xlabel('x [cm]'), ylabel('z [cm]')
-    title('Absorption')
-    c = colorbar; ylabel(c,'dB/cm/MHz')
-    axis image
-    colormap(t3,"turbo")
+    % figure('Units','centimeters', 'Position',[5 5 25 10]),
+    % tiledlayout(1,3),
+    % nexttile,
+    % imagesc(100*rx(1,:),100*rz(:,1),medium.sound_speed)
+    % xlabel('x [cm]'), ylabel('z [cm]')
+    % title('Sound speed')
+    % c = colorbar; ylabel(c,'m/s')
+    % axis image
+    % 
+    % nexttile,
+    % imagesc(100*rx(1,:),100*rz(:,1),medium.density)
+    % xlabel('x [cm]'), ylabel('z [cm]')
+    % title('Density')
+    % c = colorbar; ylabel(c,'kg/m^3')
+    % colorbar,
+    % axis image
+    % 
+    % t3 = nexttile;
+    % imagesc(100*rx(1,:),100*rz(:,1),medium.alpha_coeff, [0.4 1.7])
+    % xlabel('x [cm]'), ylabel('z [cm]')
+    % title('Absorption')
+    % c = colorbar; ylabel(c,'dB/cm/MHz')
+    % axis image
+    % colormap(t3,"turbo")
 
     %% SOURCE
     aperture = source_focus/focal_number;
