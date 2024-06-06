@@ -7,7 +7,8 @@
 function [] = simulationFocusedIncAtt(BaseDir)
 
 addpath(genpath(pwd))
-simuNames = {'incAtt1','incAtt2','incAtt3','incAtt4'};
+% simuNames = {'incAtt1','incAtt2','incAtt3','incAtt4'};
+simuNames = {'incAtt5'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -69,7 +70,7 @@ for iSim = 1:length(simuNames)
     
     % Inclusion
     cz = 20e-3; cx = 0; 
-    r = (iSim+1)*1e-3; % VARYING RADIUS
+    r = (iSim)*1e-3; % VARYING RADIUS
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
     inc_std = background_std*4;
     inc_alpha = 1;
@@ -80,30 +81,30 @@ for iSim = 1:length(simuNames)
     medium.alpha_mode = 'no_dispersion';
     medium.sound_speed_ref = 1540;
 
-    % figure('Units','centimeters', 'Position',[5 5 25 10]),
-    % tiledlayout(1,3),
-    % nexttile,
-    % imagesc(100*rx(1,:),100*rz(:,1),medium.sound_speed)
-    % xlabel('x [cm]'), ylabel('z [cm]')
-    % title('Sound speed')
-    % c = colorbar; ylabel(c,'m/s')
-    % axis image
-    % 
-    % nexttile,
-    % imagesc(100*rx(1,:),100*rz(:,1),medium.density)
-    % xlabel('x [cm]'), ylabel('z [cm]')
-    % title('Density')
-    % c = colorbar; ylabel(c,'kg/m^3')
-    % colorbar,
-    % axis image
-    % 
-    % t3 = nexttile;
-    % imagesc(100*rx(1,:),100*rz(:,1),medium.alpha_coeff, [0.4 1.7])
-    % xlabel('x [cm]'), ylabel('z [cm]')
-    % title('Absorption')
-    % c = colorbar; ylabel(c,'dB/cm/MHz')
-    % axis image
-    % colormap(t3,"turbo")
+    figure('Units','centimeters', 'Position',[5 5 25 10]),
+    tiledlayout(1,3),
+    nexttile,
+    imagesc(100*rx(1,:),100*rz(:,1),medium.sound_speed)
+    xlabel('x [cm]'), ylabel('z [cm]')
+    title('Sound speed')
+    c = colorbar; ylabel(c,'m/s')
+    axis image
+
+    nexttile,
+    imagesc(100*rx(1,:),100*rz(:,1),medium.density)
+    xlabel('x [cm]'), ylabel('z [cm]')
+    title('Density')
+    c = colorbar; ylabel(c,'kg/m^3')
+    colorbar,
+    axis image
+
+    t3 = nexttile;
+    imagesc(100*rx(1,:),100*rz(:,1),medium.alpha_coeff, [0.4 1.7])
+    xlabel('x [cm]'), ylabel('z [cm]')
+    title('Absorption')
+    c = colorbar; ylabel(c,'dB/cm/MHz')
+    axis image
+    colormap(t3,"turbo")
 
     %% SOURCE
     aperture = source_focus/focal_number;
@@ -209,7 +210,7 @@ for iSim = 1:length(simuNames)
 %     colormap gray
 
     save(fullfile(BaseDir,['rf_',simuNames{iSim},'.mat']),...
-        'rf','x','z','fs','medium');
+        'rf','x','z','fs','medium','rx','rz');
 
 end
 
