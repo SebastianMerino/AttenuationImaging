@@ -1,14 +1,13 @@
 
 % This example simulates an inclusion with fixed ACS and BSC. Radius is
-% varied across samples.
+% varied across samples. Hypoechoic inclusions
 % Created on June 5th, 2024
 % Author: Sebastian Merino
 
 function [] = simulationFocusedIncAtt(BaseDir)
 
 addpath(genpath(pwd))
-% simuNames = {'incAtt1','incAtt2','incAtt3','incAtt4'};
-simuNames = {'incAtt5'};
+simuNames = {'incAtt1','incAtt2','incAtt3','incAtt4','incAtt5'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -63,7 +62,7 @@ for iSim = 1:length(simuNames)
     rx = kgrid.y;
 
     % Background
-    background_std = 0.002;
+    background_std = 0.008;
     background_alpha = 0.5;       % [dB/(MHz^y cm)]
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
@@ -72,7 +71,7 @@ for iSim = 1:length(simuNames)
     cz = 20e-3; cx = 0; 
     r = (iSim)*1e-3; % VARYING RADIUS
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    inc_std = background_std*4;
+    inc_std = background_std/4;
     inc_alpha = 1;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
         inc_alpha,maskNodule);
@@ -109,27 +108,27 @@ for iSim = 1:length(simuNames)
     %% SOURCE
     aperture = source_focus/focal_number;
     element_num = floor(aperture/element_pitch);
-    
+
     % set indices for each element
     ids = (0:element_num-1) - (element_num-1)/2;
-    
+
     % set time delays for each element to focus at source_focus
     time_delays = -(sqrt((ids .* element_pitch).^2 + source_focus.^2) - source_focus) ./ c0;
     time_delays = time_delays - min(time_delays);
-    
+
     % create time varying source signals (one for each physical element)
     source_sig = source_amp .* toneBurst(1/kgrid.dt, source_f0, ...
         source_cycles, 'SignalOffset', round(time_delays / kgrid.dt));
-    
+
     % create empty kWaveArray
     karray = kWaveArray('BLITolerance', 0.05, 'UpsamplingRate', 10);
-    
+
     % add rectangular elements
     for ind = 1:element_num
-        
+
         % set element y position
         y_pos = 0 - (element_num * element_pitch/2 - element_pitch/2) + (ind-1) * element_pitch;
-        
+
         % add element (set rotation angle to match the global rotation angle)
         karray.addRectElement([0, y_pos], element_width/4, element_width, rotation);
     end
@@ -143,24 +142,24 @@ for iSim = 1:length(simuNames)
         % move the array
         translation(2) = yCords(iLine);
         karray.setArrayPosition(translation, rotation)
-    
+
         % assign binary mask
         source.p_mask = karray.getArrayBinaryMask(kgrid);
-            
+
         % assign source signals
         source.p = karray.getDistributedSourceSignal(kgrid, source_sig);
         clc
         disp(['Line: ',num2str(iLine),' of ',num2str(nLines)]);
-    
+
         %% SENSOR
-        
+
         % set sensor mask to record central plane
         sensor.mask = karray.getArrayBinaryMask(kgrid);
         sensor.directivity_size = 10*kgrid.dx;
         sensor.directivity_angle = zeros(size(sensor.mask));
-        
+
         %% SIMULATION
-        
+
         % set input options
         input_args = {...
             'PMLInside', false, ...
@@ -168,7 +167,7 @@ for iSim = 1:length(simuNames)
             'DataCast', DATA_CAST, ...
             'DataRecast', true, ...
             'PlotSim', false};
-        
+
         % MATLAB CPU
         sensor_data = kspaceFirstOrder2D(kgrid, medium, source, sensor, ...
             input_args{:});
@@ -188,14 +187,14 @@ for iSim = 1:length(simuNames)
     %% VISUALISATION
     % offset = 60;
     offset = 400;
-    
+
     axAxis = 0:size(bf_data_final,1)-1; axAxis = axAxis*kgrid.dt*c0/2;
     latAxis = 0:nLines-1; latAxis = latAxis-mean(latAxis); latAxis = latAxis *element_pitch;
-    
+
     rf = bf_data_final(offset:end,:);
     z = axAxis(offset:end);
     x = latAxis;
-    
+
     % plot the pressure field 
 %     Bmode = db(hilbert(rf));
 %     Bmode = Bmode - max(Bmode(:));
