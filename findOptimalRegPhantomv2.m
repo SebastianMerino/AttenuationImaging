@@ -213,19 +213,19 @@ end
 rInc = 0.95;
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
+back = (Xq-c1x).^2 + (Zq-c1z).^2 > (rInc+0.1)^2;
+inc = (Xq-c1x).^2 + (Zq-c1z).^2 < (rInc-0.1)^2;
 
-attIdeal = ones(size(Z));
-circle_inc = (X.^2 + (Z-2).^2)<= rInc^2;
-attIdeal(~circle_inc) = groundTruthBack(iAcq);
-attIdeal(circle_inc) = groundTruthInc(iAcq); %incl = bottom
-inc = ((Xq-c1x).^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
-back = ((Xq-c1x).^2 + (Zq-c1z).^2) >= (rInc+0.1)^2;
+attIdeal = getIdealAcsInc([c1x,c1z],rInc,groundTruthBack(iAcq), ...
+    groundTruthInc(iAcq),x_ACS,z_ACS,[blocksize blocksize*ratio_zx]*wl*100);
 
 % x0mask = c1x - roiL/2; 
 % z0mask = c1z - roiLz/2;
 % [back,inc] = getRegionMasks(x,z,c1x,c1z,roiL,roiD,roiLz);
 
 figure,
+tiledlayout(1,2)
+nexttile
 imagesc(x,z,Bmode,dynRange)
 xlim([x_ACS(1) x_ACS(end)]),
 ylim([z_ACS(1) z_ACS(end)]),
@@ -242,6 +242,12 @@ contour(x,z,inc,1,'w--')
 contour(x,z,back,1,'w--')
 hold off
 
+t2 = nexttile;
+imagesc(x_ACS,z_ACS, attIdeal, attRange)
+axis image
+colormap(t2,turbo)
+colorbar
+title('Ideal ACS map')
 
 %% RSLD
 muB = 10.^(1:0.5:3.5);
@@ -255,12 +261,13 @@ for mmB = 1:length(muB)
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
 
-        AttInterp = interp2(X,Z,BR,Xq,Zq);
-        RmseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
-            "omitnan") ;
-        RmseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
-            "omitnan");
-        RMSE = sqrt((RmseInc + RmseBack)/2);
+        % mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
+        %     "omitnan") ;
+        % mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
+        %     "omitnan");
+        % RMSE = sqrt((mseInc + mseBack)/2);
+
+        RMSE = sqrt( mean( (BR - attIdeal).^2, "omitnan") );
         if RMSE<minRMSE
             minRMSE = RMSE;
             muBopt = muB(mmB);
@@ -338,14 +345,13 @@ for mmB = 1:length(muB)
         toc
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
-        % RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
 
-        AttInterp = interp2(X,Z,BR,Xq,Zq);
-        RmseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
-            "omitnan") ;
-        RmseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
-            "omitnan");
-        RMSE = sqrt((RmseInc + RmseBack)/2);
+        % mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
+        %     "omitnan") ;
+        % mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
+        %     "omitnan");
+        % RMSE = sqrt((mseInc + mseBack)/2);
+        RMSE = sqrt( mean( (BR - attIdeal).^2, "omitnan") );
 
         if RMSE<minRMSE
             minRMSE = RMSE;
@@ -484,11 +490,12 @@ for mmB = 1:length(muB)
 
         % Interp and RMSE
         AttInterp = interp2(X,Z,BR,Xq,Zq);
-        RmseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
-            "omitnan") ;
-        RmseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
-            "omitnan");
-        RMSE = sqrt((RmseInc + RmseBack)/2);
+        % mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
+        %     "omitnan") ;
+        % mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
+        %     "omitnan");
+        % RMSE = sqrt((mseInc + mseBack)/2);
+        RMSE = sqrt( mean( (BR - attIdeal).^2, "omitnan") );
 
         if RMSE<minRMSE
             minRMSE = RMSE;
