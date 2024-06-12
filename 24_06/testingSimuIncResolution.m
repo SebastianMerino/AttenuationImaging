@@ -211,8 +211,8 @@ mask = ones(m,n,p);
 rInc = 0.7;
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
-inclusion = (Xq.^2 + (Zq-2).^2)<= (rInc-0.1)^2;
-back = (Xq.^2 + (Zq-2).^2) >= (rInc+0.1)^2;
+inclusion = (Xq.^2 + (Zq-2).^2)<= (rInc-0.05)^2;
+back = (Xq.^2 + (Zq-2).^2) >= (rInc+0.05)^2;
 
 % attIdeal = interp2(rx*100,rz*100,medium.alpha_coeff,Xq,Zq);
 attIdealACS{iAcq} = interp2(rx*100,rz*100,medium.alpha_coeff,X,Z);

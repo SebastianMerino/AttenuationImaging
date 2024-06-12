@@ -4,15 +4,12 @@
 % ====================================================================== %
 clc, clear,
 
+targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\24_04_04_layered'];
+refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Simulation\24_04_25_ref'];
 
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\24_04_04_layered'];
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Simulation\24_04_02'];
-targetDir = [baseDir,'\raw'];
-refDir = [baseDir,'\ref2'];
-
-resultsDir = [baseDir,'\results\opt-reg'];
+resultsDir = [targetDir,'\results\opt-reg'];
 mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -31,11 +28,11 @@ ratio_zx        = 12/8;
 muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
 order = 5;
-reject = 0.1;
+reject = 0.2;
 extension = 3;
 
 % SWTV
-aSNR = 1; bSNR = 0.1;
+aSNR = 5; bSNR = 0.09;
 desvMin = 15;
 
 % Plotting
@@ -250,18 +247,16 @@ title('Ideal ACS')
 
 
 %% RSLD
-muB = 10.^(2:0.5:3.5);
-muC = 10.^(1:0.5:3);
+muB = 10.^(1:0.5:3.5);
+% muC = 10.^(1:0.5:3);
 minRMSE = 100;
 for mmB = 1:length(muB)
-    for mmC = 1:length(muC)
+    % for mmC = 1:length(muC)
         tic
-        [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
+        [Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muB(mmB),muB(mmB),m,n,tol,mask(:));
         toc
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
-
-        % RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
 
         AttInterp = interp2(X,Z,BR,Xq,Zq);
         RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
@@ -272,11 +267,11 @@ for mmB = 1:length(muB)
         if RMSE<minRMSE
             minRMSE = RMSE;
             muBopt = muB(mmB);
-            muCopt = muC(mmC);
+            muCopt = muB(mmB);
             BRopt = BR;
             CRopt = CR;
         end
-    end
+    % end
 end
 
 figure('Units','centimeters', 'Position',[5 5 15 6]);
@@ -330,7 +325,6 @@ end
 
 SNRopt = sqrt(1/(4/pi - 1));
 desvSNR = abs(SNR-SNRopt)/SNRopt*100;
-desvMin = 15;
 w = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
 
 
@@ -402,95 +396,96 @@ r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsSWTV(iAcq) = r;
 
-%% Minimizing BS log ratio
-muB = 10.^(2.5:0.5:4);
-muC = 10.^(0:0.5:3);
-minRMSE = 100;
-for mmB = 1:length(muB)
-    for mmC = 1:length(muC)
-        tic
-        [Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
-        toc
-        BR = reshape(Bn*NptodB,m,n);
-        CR = reshape(Cn*NptodB,m,n);
-
-        % RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
-        AttInterp = interp2(X,Z,BR,Xq,Zq);
-
-        RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
-            "omitnan") ;
-        RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
-            "omitnan");
-        RMSE = sqrt((RmseBottom + RmseTop)/2);
-
-        if RMSE<minRMSE
-            minRMSE = RMSE;
-            muBopt = muB(mmB);
-            muCopt = muC(mmC);
-            BRopt = BR;
-            CRopt = CR;
-        end
-    end
-end
 %%
-figure('Units','centimeters', 'Position',[5 5 15 6]);
-tl = tiledlayout(1,2, "Padding","tight");
-title(tl,'RSLD with TV(B)+||C||_1')
+% %% Minimizing BS log ratio
+% muB = 10.^(2.5:0.5:4);
+% muC = 10.^(0:0.5:3);
+% minRMSE = 100;
+% for mmB = 1:length(muB)
+%     for mmC = 1:length(muC)
+%         tic
+%         [Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
+%         toc
+%         BR = reshape(Bn*NptodB,m,n);
+%         CR = reshape(Cn*NptodB,m,n);
+% 
+%         % RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
+%         AttInterp = interp2(X,Z,BR,Xq,Zq);
+% 
+%         RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
+%             "omitnan") ;
+%         RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
+%             "omitnan");
+%         RMSE = sqrt((RmseBottom + RmseTop)/2);
+% 
+%         if RMSE<minRMSE
+%             minRMSE = RMSE;
+%             muBopt = muB(mmB);
+%             muCopt = muC(mmC);
+%             BRopt = BR;
+%             CRopt = CR;
+%         end
+%     end
+% end
 
-t2 = nexttile; 
-imagesc(x_ACS,z_ACS,BRopt, attRange)
-colormap(t2,turbo)
-axis image
-title(['RSLD-TVL1, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
-c = colorbar;
-c.Label.String = 'Att. [db/cm/MHz]';
-
-t3 = nexttile; 
-imagesc(x_ACS,z_ACS,CRopt, bsRange)
-colormap(t3,parula)
-axis image
-title(['RSLD-TVL1, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
-c = colorbar;
-c.Label.String = 'BS log ratio [dB]';
-
-AttInterp = interp2(X,Z,BRopt,Xq,Zq);
-r.meanTop = mean(AttInterp(top),"omitnan");
-r.stdTop = std(AttInterp(top),"omitnan");
-r.meanBottom = mean(AttInterp(bottom),"omitnan");
-r.stdBottom = std(AttInterp(bottom),"omitnan");
-r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
-r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
-r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
-MetricsTVL1(iAcq) = r;
+% figure('Units','centimeters', 'Position',[5 5 15 6]);
+% tl = tiledlayout(1,2, "Padding","tight");
+% title(tl,'RSLD with TV(B)+||C||_1')
+% 
+% t2 = nexttile; 
+% imagesc(x_ACS,z_ACS,BRopt, attRange)
+% colormap(t2,turbo)
+% axis image
+% title(['RSLD-TVL1, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
+% c = colorbar;
+% c.Label.String = 'Att. [db/cm/MHz]';
+% 
+% t3 = nexttile; 
+% imagesc(x_ACS,z_ACS,CRopt, bsRange)
+% colormap(t3,parula)
+% axis image
+% title(['RSLD-TVL1, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
+% c = colorbar;
+% c.Label.String = 'BS log ratio [dB]';
+% 
+% AttInterp = interp2(X,Z,BRopt,Xq,Zq);
+% r.meanTop = mean(AttInterp(top),"omitnan");
+% r.stdTop = std(AttInterp(top),"omitnan");
+% r.meanBottom = mean(AttInterp(bottom),"omitnan");
+% r.stdBottom = std(AttInterp(bottom),"omitnan");
+% r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
+% r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
+% r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
+% MetricsTVL1(iAcq) = r;
 
 %% Minimizing BS log ratio and WEIGHTS
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),10^3,1,m,n,tol,mask(:));
-bscMap = reshape(Cn*NptodB,m,n);
-
-w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
-w = movmin(w,extension);
-
-
-W = repmat(w,[1 1 p]);
-W = spdiags(W(:),0,m*n*p,m*n*p);
-bw = W*b(:);        
-A1w = W*A1;
-A2w = W*A2;
-
-
 muB = 10.^(2.5:0.5:4);
-muC = 10.^(-0.5:0.5:3);
+muC = 10.^(-0.5:0.5:2);
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
-        %tic
-        [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muB(mmB),muC(mmC),m,n,tol,mask(:),w);
-        %toc
+        % First iteration
+        [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(mmB),muC(mmC),m,n,tol,mask(:));
+        bscMap = reshape(Cn*NptodB,m,n);
+        
+        % Weight map
+        w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
+        w = movmin(w,extension);
 
+        % Weight matrices and new system
+        W = repmat(w,[1 1 p]);
+        W = spdiags(W(:),0,m*n*p,m*n*p);
+        bw = W*b(:);        
+        A1w = W*A1;
+        A2w = W*A2;
+
+        % Second iteration
+        [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muB(mmB),muC(mmC),m,n,tol,mask(:),w);
         BR = reshape(Bn*NptodB,m,n);
         CR = (reshape(Cn*NptodB,m,n));
-        AttInterp = interp2(X,Z,BR,Xq,Zq);
 
+        % Interp and RMSE
+        AttInterp = interp2(X,Z,BR,Xq,Zq);
         RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
             "omitnan") ;
         RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
@@ -523,7 +518,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRopt, attRange)
 colormap(t2,turbo)
 axis image
-title(['RSLD-WFR, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
+title(['RSLD-SWIFT, \mu_b=10^{',num2str(log10(muBopt),2),'}'])
 c = colorbar;
 c.Label.String = 'Att. [db/cm/MHz]';
 
@@ -531,7 +526,7 @@ t3 = nexttile;
 imagesc(x_ACS,z_ACS,CRopt, bsRange)
 colormap(t3,parula)
 axis image
-title(['RSLD-WFR, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
+title(['RSLD-SWIFT, \mu_c=10^{',num2str(log10(muCopt),2),'}'])
 c = colorbar;
 c.Label.String = 'BS log ratio [dB]';
 
@@ -545,7 +540,7 @@ r.biasTop = mean( AttInterp(top) - groundTruthTop(iAcq),"omitnan");
 r.biasBottom = mean( AttInterp(bottom) - groundTruthBottom(iAcq),"omitnan");
 
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
-MetricsWFR(iAcq) = r;
+MetricsSWIFT(iAcq) = r;
 
 %%
 save_all_figures_to_directory(resultsDir,['sim',num2str(iAcq),'Figure']);
@@ -553,25 +548,25 @@ close all
 
 end
 
-results1 = struct2table(MetricsTV);
-results2 = struct2table(MetricsSWTV);
-results3 = struct2table(MetricsTVL1);
-results4 = struct2table(MetricsWFR);
-
-disp('Bias Top')
-disp(results1.biasTop)
-disp(results2.biasTop)
-disp(results3.biasTop)
-disp(results4.biasTop)
-
-disp('Bias Bottom')
-disp(results1.biasBottom)
-disp(results2.biasBottom)
-disp(results3.biasBottom)
-disp(results4.biasBottom)
-
-disp('CNR')
-disp(results1.cnr)
-disp(results2.cnr)
-disp(results3.cnr)
-disp(results4.cnr)
+% results1 = struct2table(MetricsTV);
+% results2 = struct2table(MetricsSWTV);
+% results3 = struct2table(MetricsTVL1);
+% results4 = struct2table(MetricsSWIFT);
+% 
+% disp('Bias Top')
+% disp(results1.biasTop)
+% disp(results2.biasTop)
+% disp(results3.biasTop)
+% disp(results4.biasTop)
+% 
+% disp('Bias Bottom')
+% disp(results1.biasBottom)
+% disp(results2.biasBottom)
+% disp(results3.biasBottom)
+% disp(results4.biasBottom)
+% 
+% disp('CNR')
+% disp(results1.cnr)
+% disp(results2.cnr)
+% disp(results3.cnr)
+% disp(results4.cnr)

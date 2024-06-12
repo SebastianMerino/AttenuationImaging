@@ -25,7 +25,7 @@ overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
 %% Loading case
-iAcq = 4; % 1,4,6
+iAcq = 6; % 1,4,6
 patient = num2str(T.patient(iAcq));
 class = T.clase(iAcq);
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
@@ -136,9 +136,9 @@ switch iAcq
     case 1
         z0 = 1.8; zf = 1.9;
         % z0 = 2; zf = 2.2;
-    case 2
+    case 4
         z0 = 2.7; zf = 3;
-    case 3
+    case 6
         % z0 = 1.3; zf = 2;
         z0 = 1.5; zf = 2.5;
     otherwise
@@ -162,10 +162,10 @@ switch iAcq
         x0Inc = 1.5; xfInc = 3;
         % x0Inc = 2; xfInc = 3.1;
         x0Out = 0.2; xfOut = 0.9;
-    case 2
+    case 4
         x0Inc = 2.3; xfInc = 3;
         x0Out = 0.6; xfOut = 1.6;
-    case 3
+    case 6
         x0Inc = 1.4; xfInc = 2.1;
         % x0Out = 2.5; xfOut = 3.5;
         x0Out = 2.3; xfOut = 3.2;
@@ -191,9 +191,9 @@ xline(xfOut, 'r--', 'LineWidth',2)
 switch iAcq
     case 1
         incDiameter = 1;
-    case 2
+    case 4
         incDiameter = 1.3; % before 1.2
-    case 3
+    case 6
         incDiameter = 0.85;
     otherwise
         % 
