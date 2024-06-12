@@ -13,7 +13,7 @@ targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
     'Attenuation\simulations_processed\24_04_25_ref'];
 
-resultsDir = [targetDir,'\results\opt-reg-2'];
+resultsDir = [targetDir,'\results\opt-reg-5'];
 mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);
@@ -58,6 +58,7 @@ z_inf = 0.4; z_sup = 3.7;
 
 for iAcq = 1:length(targetFiles)
 load(fullfile(targetDir,targetFiles(iAcq).name));
+z = z-0.05/100;
 
 fprintf("Acquisition no. %i, patient %s\n",iAcq,targetFiles(iAcq).name);
 dx = x(2)-x(1);
@@ -279,13 +280,14 @@ for mmB = 1:length(muB)
         toc
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
-
-        % mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
-        %     "omitnan") ;
-        % mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
-        %     "omitnan");
-        % RMSE = sqrt((mseInc + mseBack)/2);
-        RMSE = sqrt( mean( (BR - attIdeal).^2, "omitnan") );
+        
+        AttInterp = interp2(X,Z,BR,Xq,Zq);
+        mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
+            "omitnan") ;
+        mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
+            "omitnan");
+        RMSE = sqrt((mseInc + mseBack)/2);
+        % RMSE = sqrt( mean( (BR - attIdeal).^2, "omitnan") );
 
         if RMSE<minRMSE
             minRMSE = RMSE;
@@ -363,13 +365,13 @@ for mmB = 1:length(muB)
         BR = reshape(Bn*NptodB,m,n);
         CR = reshape(Cn*NptodB,m,n);
 
-        % mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
-        %     "omitnan") ;
-        % mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
-        %     "omitnan");
-        % RMSE = sqrt((mseInc + mseBack)/2);
-
-        RMSE = sqrt( mean( (BR - attIdeal).^2, "omitnan") );
+        AttInterp = interp2(X,Z,BR,Xq,Zq);
+        mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
+            "omitnan") ;
+        mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
+            "omitnan");
+        RMSE = sqrt((mseInc + mseBack)/2);
+        % RMSE = sqrt( mean( (BR - attIdeal).^2, "omitnan") );
         if RMSE<minRMSE
             minRMSE = RMSE;
             muBopt = muB(mmB);
@@ -479,8 +481,12 @@ MetricsSWTV(iAcq) = r;
 % MetricsTVL1(iAcq) = r;
 
 %% Minimizing BS log ratio and WEIGHTS
-muB = 10.^(2.5:0.5:4);
-muC = 10.^(-0.5:0.5:2);
+% muB = 10.^(2.5:0.5:4);
+% muC = 10.^(-0.5:0.5:2);
+
+muB = 10.^(3.5);
+muC = 10.^(1:0.5:1.5);
+
 minRMSE = 100;
 for mmB = 1:length(muB)
     for mmC = 1:length(muC)
@@ -505,12 +511,41 @@ for mmB = 1:length(muB)
         CR = (reshape(Cn*NptodB,m,n));
 
         % Interp and RMSE
-        % mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
-        %     "omitnan") ;
-        % mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
-        %     "omitnan");
-        % RMSE = sqrt((mseInc + mseBack)/2);
-        RMSE = sqrt( mean( (BR - attIdeal).^2, "omitnan") );
+        AttInterp = interp2(X,Z,BR,Xq,Zq);
+        mseInc = mean( (AttInterp(inc) - groundTruthInc(iAcq)).^2,...
+            "omitnan") ;
+        mseBack = mean( (AttInterp(back) - groundTruthBack(iAcq)).^2,...
+            "omitnan");
+        RMSE = sqrt((mseInc + mseBack)/2);
+
+        % RMSE = sqrt( mean( (BR - attIdeal).^2, "omitnan") );
+%         figure('Units','centimeters', 'Position',[5 5 22 6]);
+%         tl = tiledlayout(1,3, "Padding","tight");
+%         title(tl,'Weighted Fidelity and Regularization') 
+%         
+%         t1 = nexttile; 
+%         imagesc(x_ACS,z_ACS,w, [0 1])
+%         colormap(t1,parula)
+%         axis image
+%         title('Weights')
+%         c = colorbar;
+%         %c.Label.String = 'BS log ratio [dB]';
+%         
+%         t2 = nexttile; 
+%         imagesc(x_ACS,z_ACS,BR, attRange)
+%         colormap(t2,turbo)
+%         axis image
+%         title(['RSLD-SWIFT, \mu_b=10^{',num2str(log10(muB(mmB)),2),'}'])
+%         c = colorbar;
+%         c.Label.String = 'Att. [db/cm/MHz]';
+%         
+%         t3 = nexttile; 
+%         imagesc(x_ACS,z_ACS,CR, bsRange)
+%         colormap(t3,parula)
+%         axis image
+%         title(['RSLD-SWIFT, \mu_c=10^{',num2str(log10(muC(mmC)),2),'}'])
+%         c = colorbar;
+%         c.Label.String = 'BS log ratio [dB]';
 
         if RMSE<minRMSE
             minRMSE = RMSE;
@@ -519,6 +554,7 @@ for mmB = 1:length(muB)
             BRopt = BR;
             CRopt = CR;
         end
+        pause(0.1)
     end
 end
 %%

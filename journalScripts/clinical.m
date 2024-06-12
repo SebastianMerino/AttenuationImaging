@@ -24,24 +24,23 @@ freq_L = 3.5e6; freq_H = 8e6;
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
-% weights FINAL VERSION
-muB0 = 1e3; muC0 = 10^0;
+% Weight parameters
+muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
 order = 5;
-reject = 0.3;
+reject = 0.1;
 extension = 3;
 
+% SWTV
+aSNR = 5; bSNR = 0.09;
+desvMin = 15;
 
 % reg FINAL VERSION
 % muBtv = 10^3; muCtv = 10^1;
-muBtv = 10^3; muCtv = 10^1.5;
-muBswtv = 10^2.5; muCswtv = 10^1;
+muBtv = 10^3; muCtv = 10^3;
+muBswtv = 10^2.5; muCswtv = 10^0;
 muBtvl1 = 10^3; muCtvl1 = 10^0;
-muBwfr = 10^3; muCwfr = 10^0;
-
-% swtv weights
-aSNR = 1; bSNR = 0.1;
-desvMin = 15;
+muBwfr = 10^3.5; muCwfr = 10^1;
 
 % Plotting constants
 dynRange = [-50,0];
