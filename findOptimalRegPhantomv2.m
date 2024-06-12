@@ -4,19 +4,19 @@
 % ====================================================================== %
 clc, clear,
 
-% targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
-% refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-%     'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\phantoms\ID544V2\06-08-2023-Generic'];
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID316V2\06-08-2023-Generic'];
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
-    '\ID544V2\06-08-2023-Generic'];
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID316V2\06-08-2023-Generic'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
+%     '\ID544V2\06-08-2023-Generic'];
 
 rawFiles = dir([targetDir,'\*.rf']);
 
-resultsDir = fullfile(targetDir,'results','24-06-12-opt-reg');
+resultsDir = fullfile(targetDir,'results','24-06-12-opt-reg-2');
 if ~exist(resultsDir,"dir"); mkdir(resultsDir); end
 
 targetFiles = dir([targetDir,'\*.mat']);

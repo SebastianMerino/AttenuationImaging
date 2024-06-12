@@ -4,12 +4,16 @@
 % ====================================================================== %
 clc, clear,
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_04_04_inc'];
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_04_25_ref'];
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\24_04_04_inc'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\24_04_25_ref'];
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\24_04_04_inc'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\24_04_25_ref'];
 
-resultsDir = [targetDir,'\results\opt-reg'];
+resultsDir = [targetDir,'\results\opt-reg-2'];
 mkdir(resultsDir);
 
 targetFiles = dir([targetDir,'\rf*.mat']);

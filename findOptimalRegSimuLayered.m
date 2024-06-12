@@ -4,11 +4,14 @@
 % ====================================================================== %
 clc, clear,
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_04_04_layered'];
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_04_25_ref'];
-
+% targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\24_04_04_layered'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\24_04_25_ref'];
+targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\24_04_04_layered'];
+refDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\simulations_processed\24_04_25_ref'];
 resultsDir = [targetDir,'\results\opt-reg'];
 mkdir(resultsDir);
 
@@ -241,7 +244,7 @@ title('Ideal ACS')
 % grid on,
 % xlim([0,max(f)]), ylim([0 15]),
 % xlabel('Frequency [MHz]')
-% ylabel('Att. [dB/cm]')
+% ylabel('Att. [dB/cm]')mseTop
 % title('Mean SLD')
 % legend('bottom','top')
 
@@ -259,11 +262,11 @@ for mmB = 1:length(muB)
         CR = reshape(Cn*NptodB,m,n);
 
         AttInterp = interp2(X,Z,BR,Xq,Zq);
-        RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
+        mseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
             "omitnan") ;
-        RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
+        mseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
             "omitnan");
-        RMSE = sqrt((RmseBottom + RmseTop)/2);
+        RMSE = sqrt((mseBottom + mseTop)/2);
         if RMSE<minRMSE
             minRMSE = RMSE;
             muBopt = muB(mmB);
@@ -343,11 +346,11 @@ for mmB = 1:length(muB)
         % RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
 
         AttInterp = interp2(X,Z,BR,Xq,Zq);
-        RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
+        mseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
             "omitnan") ;
-        RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
+        mseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
             "omitnan");
-        RMSE = sqrt((RmseBottom + RmseTop)/2);
+        RMSE = sqrt((mseBottom + mseTop)/2);
 
         if RMSE<minRMSE
             minRMSE = RMSE;
@@ -412,11 +415,11 @@ MetricsSWTV(iAcq) = r;
 %         % RMSE = sqrt(mean((BR-attIdeal).^2,'all'));
 %         AttInterp = interp2(X,Z,BR,Xq,Zq);
 % 
-%         RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
+%         mseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
 %             "omitnan") ;
-%         RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
+%         mseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
 %             "omitnan");
-%         RMSE = sqrt((RmseBottom + RmseTop)/2);
+%         RMSE = sqrt((mseBottom + mseTop)/2);
 % 
 %         if RMSE<minRMSE
 %             minRMSE = RMSE;
@@ -486,11 +489,11 @@ for mmB = 1:length(muB)
 
         % Interp and RMSE
         AttInterp = interp2(X,Z,BR,Xq,Zq);
-        RmseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
+        mseBottom = mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,...
             "omitnan") ;
-        RmseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
+        mseTop = mean( (AttInterp(top) - groundTruthTop(iAcq)).^2,...
             "omitnan");
-        RMSE = sqrt((RmseBottom + RmseTop)/2);
+        RMSE = sqrt((mseBottom + mseTop)/2);
 
         if RMSE<minRMSE
             minRMSE = RMSE;
