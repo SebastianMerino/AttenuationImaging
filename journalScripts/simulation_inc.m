@@ -50,20 +50,20 @@ for iAcq = 1:3
 % Regularization
 switch iAcq
     case 1
-        muBtv = 10^3.5; muCtv = 10^3;
+        muBtv = 10^3.5; muCtv = 10^3.5;
         muBswtv = 10^3; muCswtv = 10^3;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^3;
-        muBwfr = 10^3.5; muCwfr = 10^3;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^2;
+        muBwfr = 10^3.5; muCwfr = 10^2;
     case 2
-        muBtv = 10^3; muCtv = 10^1;
+        muBtv = 10^2.5; muCtv = 10^2.5;
         muBswtv = 10^2.5; muCswtv = 10^0;
         muBtvl1 = 10^3; muCtvl1 = 10^0.5;
         muBwfr = 10^3.5; muCwfr = 10^1;
     case 3
-        muBtv = 10^3; muCtv = 10^1;
-        muBswtv = 10^2.5; muCswtv = 10^0.5;
+        muBtv = 10^3.5; muCtv = 10^3.5;
+        muBswtv = 10^2.5; muCswtv = 10^0;
         muBtvl1 = 10^3; muCtvl1 = 10^0.5;
-        muBwfr = 10^4; muCwfr = 10^2;
+        muBwfr = 10^3.5; muCwfr = 10^1;
 end
 
 load(fullfile(targetDir,targetFiles(iAcq).name));

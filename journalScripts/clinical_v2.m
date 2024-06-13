@@ -37,7 +37,7 @@ desvMin = 15;
 
 % reg FINAL VERSION
 muBtv = 10^2.5; muCtv = 10^2.5;
-muBswtv = 10^2; muCswtv = 10^-0.5;
+muBswtv = 10^2.5; muCswtv = 10^-0.5;
 muBtvl1 = 10^2.5; muCtvl1 = 10^-0.5;
 muBwfr = 10^3; muCwfr = 10^0.5;
 
@@ -328,29 +328,25 @@ CRSWTV = reshape(Cn*NptodB,m,n);
 BRTVL1 = reshape(Bn*NptodB,m,n);
 
 %% WFR
-% weights FINAL VERSION
-% ratioCutOff     = 15;
-% order = 5;
-% reject = 0.1;
-% extension = 3; % 1 or 3
-% muBwfr = 10^3; muCwfr = 10^0;
 
-% [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB0,muC0,m,n,tol,mask(:));
+% First iteration
 [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBwfr,muCwfr,m,n,tol,mask(:));
-bscMap = reshape(Cn,m,n)*NptodB;
+bscMap = reshape(Cn*NptodB,m,n);
 
-w = (1-reject)* (1./((bscMap/ratioCutOff).^(2*order) + 1)) + reject;
+% Weight map
+w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
 wExt = movmin(w,extension);
 
-% New equations
+% Weight matrices and new system
 W = repmat(wExt,[1 1 p]);
 W = spdiags(W(:),0,m*n*p,m*n*p);
-bw = W*b(:);
+bw = W*b(:);        
 A1w = W*A1;
 A2w = W*A2;
-% WTV + WL1
+
+% Second iteration
 [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
-BRWFR = reshape(Bn*NptodB,m,n);
+BR = reshape(Bn*NptodB,m,n);
 
 % Weight map
 figure('Units','centimeters', 'Position',[5 5 18 4]);

@@ -68,22 +68,22 @@ sam1 = rf(:,:,1);
 switch iAcq
     case 1
         % Regularization
-        muBtv = 10^3.5; muCtv = 10^3;
-        muBswtv = 10^3; muCswtv = 10^3;
+        muBtv = 10^3.5; muCtv = 10^3.5;
+        muBswtv = 10^3; muCswtv = 10^2;
         muBtvl1 = 10^4; muCtvl1 = 10^3;
-        muBwfr = 10^4; muCwfr = 10^3;
+        muBwfr = 10^3.5; muCwfr = 10^2;
 
     case 2
         % Regularization
-        muBtv = 10^3.5; muCtv = 10^1;
+        muBtv = 10^3.5; muCtv = 10^3.5;
         muBswtv = 10^3; muCswtv = 10^0;
         muBtvl1 = 10^3.5; muCtvl1 = 10^1;
         muBwfr = 10^4; muCwfr = 10^1.5;
 
     case 3
         % Regularization
-        muBtv = 10^3.5; muCtv = 10^1.5;
-        muBswtv = 10^3; muCswtv = 10^2;
+        muBtv = 10^3.5; muCtv = 10^3.5;
+        muBswtv = 10^3; muCswtv = 10^1;
         muBtvl1 = 10^3.5; muCtvl1 = 10^1;
         muBwfr = 10^4; muCwfr = 10^1.5;
 end
