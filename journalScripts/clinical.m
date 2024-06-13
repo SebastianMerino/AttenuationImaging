@@ -9,7 +9,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Thyroid_Data_PUCP_UTD'];
 refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\REFERENCES'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-26';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-12-v1';
 
 tableName = 'clinical.xlsx';
 T = readtable('params.xlsx');
@@ -336,7 +336,8 @@ BRTVL1 = reshape(Bn*NptodB,m,n);
 % extension = 3; % 1 or 3
 % muBwfr = 10^3; muCwfr = 10^0;
 
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB0,muC0,m,n,tol,mask(:));
+% [~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB0,muC0,m,n,tol,mask(:));
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBwfr,muCwfr,m,n,tol,mask(:));
 bscMap = reshape(Cn,m,n)*NptodB;
 
 w = (1-reject)* (1./((bscMap/ratioCutOff).^(2*order) + 1)) + reject;

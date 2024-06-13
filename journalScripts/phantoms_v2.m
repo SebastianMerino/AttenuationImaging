@@ -6,7 +6,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID316V2\06-08-2023-Generic'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID544V2\06-08-2023-Generic'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-07-circROI';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-13';
 
 % targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
@@ -31,16 +31,16 @@ x_inf = 0.1; x_sup = 3.8;
 z_inf = 0.2; z_sup = 3.5;
 NptodB = log10(exp(1))*20;
 
-% Weights SWTV
-aSNR = 1; bSNR = 0.1;
-desvMin = 15;
-
-% Weight map
+% Weight parameters
 muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
 order = 5;
 reject = 0.1;
 extension = 3;
+
+% SWTV
+aSNR = 5; bSNR = 0.09;
+desvMin = 15;
 
 groundTruthTargets = [0.97,0.95,0.95,0.55];
 
@@ -353,12 +353,14 @@ r.method = 'TVL1';
 MetricsTVL1(iAcq) = r;
 
 %% NEW WEIGHTS
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB,muC,m,n,tol,mask(:));
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBwfr,muCwfr,m,n,tol,mask(:));
 bscMap = reshape(Cn,m,n)*NptodB;
-w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
-w = movmin(w,extension);
 
-W = repmat(w,[1 1 p]);
+w = (1-reject)* (1./((bscMap/ratioCutOff).^(2*order) + 1)) + reject;
+wExt = movmin(w,extension);
+
+% New equations
+W = repmat(wExt,[1 1 p]);
 W = spdiags(W(:),0,m*n*p,m*n*p);
 bw = W*b(:);
 A1w = W*A1;
