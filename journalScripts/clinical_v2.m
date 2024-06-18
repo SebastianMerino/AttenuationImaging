@@ -9,7 +9,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Thyroid_Data_PUCP_UTD'];
 refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\REFERENCES'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-12-v4';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-13';
 
 tableName = 'clinical.xlsx';
 T = readtable('params.xlsx');
@@ -346,7 +346,7 @@ A2w = W*A2;
 
 % Second iteration
 [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
-BR = reshape(Bn*NptodB,m,n);
+BRWFR = reshape(Bn*NptodB,m,n);
 
 % Weight map
 figure('Units','centimeters', 'Position',[5 5 18 4]);
@@ -373,7 +373,7 @@ t2 = nexttile;
 imagesc(x_ACS,z_ACS,BRWFR, attRange)
 colormap(t2,turbo)
 axis equal tight
-title('WFR')
+title('SWIFT')
 % subtitle(['\mu_b=',num2str(muBtvl1,2),', \mu_c=',num2str(muCtvl1,2)])
 c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
@@ -418,7 +418,7 @@ fprintf("D ACS, WFR: %.2f\n",...
 [X,Z] = meshgrid(xFull,zFull);
 roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 
-figure('Units','centimeters', 'Position',[5 5 20 5])
+figure('Units','centimeters', 'Position',[5 5 24 4.6])
 tiledlayout(1,4, 'TileSpacing','compact', 'Padding','compact')
 t1 = nexttile();
 imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
@@ -429,11 +429,14 @@ contour(xFull,zFull,roi,1,'w--')
 hold off
 xlabel('Lateral [cm]')
 ylabel('Axial [cm]')
+hBm = colorbar;
+hBm.Label.String = 'dB';
+hBm.Location = 'westoutside';
 
 nexttile,
-[~,hB,hColor] = imOverlayInterp(BmodeFull,BRTV,dynRange,attRange,0.7,...
+[~,~,hColor] = imOverlayInterp(BmodeFull,BRTV,dynRange,attRange,0.7,...
     x_ACS,z_ACS,roi,xFull,zFull);
-title('TV')
+title('RSLD')
 colorbar off
 ylim([0.1, 3])
 hold on
@@ -447,7 +450,7 @@ xlabel('Lateral [cm]')
 nexttile,
 [~,hB,hColor] = imOverlayInterp(BmodeFull,BRSWTV,dynRange,attRange,0.7,...
     x_ACS,z_ACS,roi,xFull,zFull);
-title('SWTV')
+title('SWTV-ACE')
 colorbar off
 ylim([0.1, 3])
 hold on
@@ -462,8 +465,8 @@ xlabel('Lateral [cm]')
 nexttile,
 [~,hB,hColor] = imOverlayInterp(BmodeFull,BRWFR,dynRange,attRange,0.7,...
     x_ACS,z_ACS,roi,xFull,zFull);
-title('WFR')
-colorbar off
+title('SWIFT')
+% colorbar off
 ylim([0.1, 3])
 hold on
 contour(xFull,zFull,roi,1,'w--')
@@ -472,6 +475,7 @@ hold off
 xlabel('Lateral [cm]')
 % hColor.Location = 'northoutside';
 % hColor.Layout.Tile = 'northoutside';
+hColor.Label.String = 'ACS [dB/cm/MHz]';
 colormap(t1,'gray')
 fontsize(gcf,9,'points')
 
@@ -583,7 +587,7 @@ yline(0:0.5:2, 'Color',[0.8,0.8,0.8])
 hold off
 legend({'Nodule','Thyroid'}, 'Location','southwest')
 ylabel('ACS [dB/cm/MHz]')
-title('TV')
+title('RSLD')
 fontsize(gcf,9,'points')
 
 % h = get(gca,'Children');
@@ -607,7 +611,7 @@ hold off
 legend({'Nodule','Thyroid'}, 'Location','southwest')
 ylabel('ACS [dB/cm/MHz]')
 xlabel('Patient number')
-title('WFR')
+title('SWIFT')
 fontsize(gcf,9,'points')
 
 %%
@@ -627,7 +631,7 @@ medAcs = [mean(dataThyroidTV{2}); mean(dataThyroidTV{5});...
     mean(dataNoduleWFR{8}); mean(dataNoduleWFR{1});...
     mean(dataNoduleWFR{4}); mean(dataNoduleWFR{6});...
     mean(dataNoduleWFR{7})];
-gMethod = categorical([repmat({'TV'},14,1);repmat({'WFR'},14,1)]);
+gMethod = categorical([repmat({'RSLD'},14,1);repmat({'SWIFT'},14,1)]);
 gRegion = [repmat({'T'},7,1);repmat({'AN'},3,1);repmat({'CN'},4,1)];
 gRegion = categorical([gRegion;gRegion]);
 %%

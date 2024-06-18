@@ -66,12 +66,12 @@ switch iAcq
     case 2
         muBtv = 10^3; muCtv = 10^3;
         muBswtv = 10^3; muCswtv = 10^0;
-        muBtvl1 = 10^3; muCtvl1 = 10^0.5;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
         muBwfr = 10^3.5; muCwfr = 10^1;
     case 3
         muBtv = 10^3.5; muCtv = 10^3.5;
         muBswtv = 10^3; muCswtv = 10^0;
-        muBtvl1 = 10^3; muCtvl1 = 10^0.5;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
         muBwfr = 10^3.5; muCwfr = 10^1;
 
     % Optimal reg for BS 8x12, circular ROI
@@ -370,10 +370,9 @@ A2w = W*A2;
 tic
 [Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 toc
-BRWTik = (reshape(Bn*NptodB,m,n));
-CRWTik = (reshape(Cn,m,n));
+BRWFR = (reshape(Bn*NptodB,m,n));
 
-AttInterp = interp2(X,Z,BRWTik,Xq,Zq);
+AttInterp = interp2(X,Z,BRWFR,Xq,Zq);
 r.meanInc = mean(AttInterp(inc),"omitnan");
 r.stdInc = std(AttInterp(inc),"omitnan");
 r.meanBack = mean(AttInterp(back),"omitnan");
@@ -385,80 +384,89 @@ r.rmseBack = sqrt( mean( (AttInterp(back) - groundTruthTargets(end)).^2,...
 r.rmseInc = sqrt( mean( (AttInterp(inc) - groundTruthTargets(iAcq)).^2,...
     "omitnan") );
 r.cnr = abs(r.meanBack - r.meanInc)/sqrt(r.stdInc^2 + r.stdBack^2);
-r.method = 'WFR';
+r.method = 'SWIFT';
 MetricsWFR(iAcq) = r;
 
 %%
-figure('Units','centimeters', 'Position',[5 5 25 4]);
-tl = tiledlayout(1,5, "Padding","tight");
+figure('Units','centimeters', 'Position',[5 2 6 16]);
+tl = tiledlayout(4,1, "Padding","tight");
 
 t1 = nexttile;
 imagesc(x,z,Bmode,dynRange)
 xlim([x_ACS(1) x_ACS(end)]),
 ylim([z_ACS(1) z_ACS(end)]),
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+% xlabel('Lateral [cm]'),
+ylabel('Axial [cm]')
 axis image
 colormap(t1,gray)
 title('B-mode')
 %subtitle(' ')
-c = colorbar('Location', 'westoutside');
+c = colorbar;
 c.Label.String = 'dB';
-hold on 
-rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1)
-hold off
+% hold on 
+% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+%     'LineWidth',1, 'Curvature',1)
+% hold off
 
 % fontsize(gcf,8,'points')
 
 t2 = nexttile;
 imagesc(x_ACS,z_ACS,BR, attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+% xlabel('Lateral [cm]'),
+ylabel('Axial [cm]')
 colormap(t2,turbo)
 axis image
-title('TV')
-% fontsize(gcf,8,'points')
-hold on 
-rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1)
-hold off
-
-t3 = nexttile;
-imagesc(x_ACS,z_ACS,BRBC, attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-colormap(t3,turbo)
-axis image
-title('SWTV')
-% fontsize(gcf,8,'points')
-hold on 
-rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1)
-hold off
-
-t4 = nexttile;
-imagesc(x_ACS,z_ACS,BRTik, attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-colormap(t4,turbo)
-axis image
-title('TVL1')
-% fontsize(gcf,8,'points')
-hold on 
-rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1)
-hold off
-
-t5 = nexttile;
-imagesc(x_ACS,z_ACS,BRWTik, attRange)
-xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-colormap(t5,turbo)
-axis image
-title('WFR')
+title('RSLD')
 c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
 % fontsize(gcf,8,'points')
-hold on 
-rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-    'LineWidth',1, 'Curvature',1)
-hold off
+% hold on 
+% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+%     'LineWidth',1, 'Curvature',1)
+% hold off
+
+t3 = nexttile;
+imagesc(x_ACS,z_ACS,BRBC, attRange)
+% xlabel('Lateral [cm]'),
+ylabel('Axial [cm]')
+colormap(t3,turbo)
+axis image
+title('SWTV-ACE')
+c = colorbar;
+c.Label.String = 'ACS [dB/cm/MHz]';
+% fontsize(gcf,8,'points')
+% hold on 
+% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+%     'LineWidth',1, 'Curvature',1)
+% hold off
+
+% t4 = nexttile;
+% imagesc(x_ACS,z_ACS,BRTik, attRange)
+% xlabel('Lateral [cm]'), ylabel('Axial [cm]')
+% colormap(t4,turbo)
+% axis image
+% title('TVL1')
+% % fontsize(gcf,8,'points')
+% hold on 
+% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+%     'LineWidth',1, 'Curvature',1)
+% hold off
+
+t5 = nexttile;
+imagesc(x_ACS,z_ACS,BRWFR, attRange)
+xlabel('Lateral [cm]'),
+ylabel('Axial [cm]')
+colormap(t5,turbo)
+axis image
+title('SWIFT')
+c = colorbar;
+c.Label.String = 'ACS [dB/cm/MHz]';
+
+% fontsize(gcf,8,'points')
+% hold on 
+% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+%     'LineWidth',1, 'Curvature',1)
+% hold off
 end
 
 %%

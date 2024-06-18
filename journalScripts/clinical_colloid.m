@@ -9,7 +9,7 @@ refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 tableName = 'clinical.xlsx';
 
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-13';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-13';
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 
 T = readtable('params.xlsx');
@@ -22,15 +22,15 @@ freq_L = 3.5e6; freq_H = 8e6;
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
-% weights FINAL VERSION
-muB0 = 1e3; muC0 = 10^0;
-ratioCutOff     = 10;
+% Weight parameters
+muB = 10^3; muC = 10^0;
+ratioCutOff = 10;
 order = 5;
-reject = 0.3;
-extension = 3; % 1 or 3
+reject = 0.1;
+extension = 3;
 
-% swtv weights
-aSNR = 1; bSNR = 0.1;
+% SWTV
+aSNR = 5; bSNR = 0.09;
 desvMin = 15;
 
 % Plotting constants
@@ -66,14 +66,20 @@ BmodeFull = BmodeFull - max(BmodeFull(:));
 
 if iRoi == 1
     rect = [1.03; 0.49; 1.6; 1.69]; % Previous rectangle
-    % rect = [1.03; 0.4; 1.6; 1.8];
-    muBtv = 10^3; muCtv = 10^1.5;
+    % reg FINAL VERSION
+    muBtv = 10^2.5; muCtv = 10^2.5;
+    muBswtv = 10^2.5; muCswtv = 10^-0.5;
     muBwfr = 10^3; muCwfr = 10^0;
 else
     rect = [2.63; 0.49; 1.6; 1.69]; % Previous rectangle
     % rect = [2.63; 0.4; 1.6; 1.8];
-    muBtv = 10^3.5; muCtv = 10^2;
+    muBtv = 10^3; muCtv = 10^3;
+    muBswtv = 10^3; muCswtv = 10^0;
     muBwfr = 10^3.5; muCwfr = 10^0.5;
+    %     muBtv = 10^2.5; muCtv = 10^2.5;
+    % muBswtv = 10^2.5; muCswtv = 10^-0.5;
+    % muBwfr = 10^3; muCwfr = 10^0.5;
+
 end
 % hold on
 % rectangle('Position',rect)
@@ -198,7 +204,7 @@ for jj=1:n
     end
 end
 
-%% RSLD-TV
+%% Setup
 
 b = (log(Sp) - log(Sd)) - (compensation);
 A1 = kron( 4*L*f , speye(m*n) );
@@ -211,54 +217,67 @@ NptodB = log10(exp(1))*20;
 roiACS{iRoi} = X >= x_ACS(1) & X <= x_ACS(end) & ...
     Z >= z_ACS(1) & Z <= z_ACS(end);
 
-tic
-[Bn,Cn] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
-toc
-BR = (reshape(Bn*NptodB,m,n));
-CR = (reshape(Cn,m,n));
 
-%% NEW WEIGHTS
-tol = 1e-3;
-mask = ones(m,n,p);
-[Bn,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBwfr,muCwfr,m,n,tol,mask(:));
-bscMap = reshape(Cn,m,n)*NptodB;
-% w = 1./((bscMap/10).^2 + 1);
+%% RSLD-TV
+[Bn,~] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
+BRTV = reshape(Bn*NptodB,m,n);
 
-% Weight function
+%% SWTV
+% Calculating SNR
+envelope = abs(hilbert(sam1));
+SNR = zeros(m,n);
+for jj=1:n
+    for ii=1:m
+        xw = x0(jj) ;   % x window
+        zp = z0p(ii);
+        zd = z0d(ii);
+
+        sub_block_p = envelope(zp:zp+nz/2-1,xw:xw+nx-1);
+        sub_block_d = envelope(zd:zd+nz/2-1,xw:xw+nx-1);
+        
+        temp = [sub_block_p(:);sub_block_d(:)];
+        SNR(ii,jj) = mean(temp)/std(temp);
+    end
+end
+
+% Calculating weights
+SNRopt = sqrt(1/(4/pi - 1));
+desvSNR = abs(SNR-SNRopt)/SNRopt*100;
+wSNR = aSNR./(1 + exp(bSNR.*(desvSNR - desvMin)));
+
+% Method
+[Bn,Cn] = AlterOptiAdmmAnisWeighted(A1,A2,b(:),muBswtv,muCswtv,...
+m,n,tol,mask(:),wSNR);
+BRSWTV = reshape(Bn*NptodB,m,n);
+CRSWTV = reshape(Cn*NptodB,m,n);
+
+%% WFR
+% First iteration
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBwfr,muCwfr,m,n,tol,mask(:));
+bscMap = reshape(Cn*NptodB,m,n);
+
+% Weight map
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
-w = movmin(w,extension);
+wExt = movmin(w,extension);
 
-% figure, imagesc(w)
-
-% Weighting equation and regularizations
-b = (log(Sp) - log(Sd)) - (compensation);
-
-A1 = kron( 4*L*f , speye(m*n) );
-A2 = kron( ones(size(f)) , speye(m*n) );
-A = [A1 A2];
-
-W = repmat(w,[1 1 p]);
+% Weight matrices and new system
+W = repmat(wExt,[1 1 p]);
 W = spdiags(W(:),0,m*n*p,m*n*p);
-% W = speye(m*n*p);
-bw = W*b(:);
-
+bw = W*b(:);        
 A1w = W*A1;
 A2w = W*A2;
 
-% Regularization: Au = b
-tol = 1e-3;
+% Second iteration
+[Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),wExt);
+BRWFR = reshape(Bn*NptodB,m,n);
 
-tic
-[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
-toc
-BRWTik = (reshape(Bn*NptodB,m,n));
-CRWTik = (reshape(Cn,m,n));
-
+%% Saving
 imageData.x = x_ACS;
 imageData.z = z_ACS;
 imageData.roi = roi;
-imageData.TV = BR;
-imageData.WFR = BRWTik;
+imageData.TV = BRTV;
+imageData.SWTV = BRSWTV;
+imageData.WFR = BRWFR;
 dataRoi{iRoi} = imageData;
 
 end
@@ -277,90 +296,10 @@ se = strel('diamond',1);
 maskThyroidACS = imerode(maskThyroidACS,se);
 maskNoduleACS = imerode(maskNoduleACS,se);
 
-% % FIGURE VERSION 1 
-% figure('Units','centimeters', 'Position',[5 5 14 7])
-% tiledlayout(2,3, 'TileSpacing','tight', 'Padding','compact')
-% t1 = nexttile([2,2]);
-% imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
-% title('B-mode')
-% ylim([0.1, 3])
-% hold on
-% contour(xFull,zFull,roiACS{1},1,'w--')
-% contour(xFull,zFull,roiACS{2},1,'w--')
-% hold off
-% xlabel('Lateral [cm]')
-% ylabel('Axial [cm]')
-% 
-% 
-% t2 = nexttile;
-% iRoi = 1;
-% [~,hB,hColor] = imOverlayInterp(BmodeFull,dataRoi{iRoi}.TV,dynRange,attRange,alpha_img,...
-%     dataRoi{iRoi}.x,dataRoi{iRoi}.z,dataRoi{iRoi}.roi,xFull,zFull);
-% % Interpolation
-% iRoi = 2;
-% [X,Z] = meshgrid(dataRoi{iRoi}.x,dataRoi{iRoi}.z);
-% [Xq,Zq] = meshgrid(xFull,zFull);
-% imgInterp = interp2(X,Z,dataRoi{iRoi}.TV,Xq,Zq);
-% emptyRegion = isnan(imgInterp);
-% newRoi = ~emptyRegion & dataRoi{iRoi}.roi;
-% % Overlap
-% hold on;
-% iRoi = 2;
-% hF = imagesc(dataRoi{iRoi}.x,dataRoi{iRoi}.z,imgInterp,attRange);
-% set(hF,'XData',get(hB,'XData'),'YData',get(hB,'YData'))
-% alphadata = alpha_img.*(newRoi);
-% set(hF,'AlphaData',alphadata);
-% 
-% contour(xFull,zFull,roiACS{1},1,'w--')
-% contour(xFull,zFull,roiACS{2},1,'w--')
-% contour(x,z,maskThyroid,1,'w--')
-% hold off
-% 
-% ylim([zlim1 zlim2])
-% xlim([xlim1 xlim2])
-% % xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-% title('TV')
-% hColor.Label.String = 'ACS [dB/cm/MHz]';
-% fontsize(gcf,8,'points')
-% colorbar off
-% 
-% nexttile,
-% iRoi = 1;
-% [~,hB,hColor] = imOverlayInterp(BmodeFull,dataRoi{iRoi}.WFR,dynRange,attRange,alpha_img,...
-%     dataRoi{iRoi}.x,dataRoi{iRoi}.z,dataRoi{iRoi}.roi,xFull,zFull);
-% % Interpolation
-% iRoi = 2;
-% [X,Z] = meshgrid(dataRoi{iRoi}.x,dataRoi{iRoi}.z);
-% [Xq,Zq] = meshgrid(xFull,zFull);
-% imgInterp = interp2(X,Z,dataRoi{iRoi}.WFR,Xq,Zq);
-% emptyRegion = isnan(imgInterp);
-% newRoi = ~emptyRegion & dataRoi{iRoi}.roi;
-% % Overlap
-% hold on;
-% iRoi = 2;
-% hF = imagesc(dataRoi{iRoi}.x,dataRoi{iRoi}.z,imgInterp,attRange);
-% set(hF,'XData',get(hB,'XData'),'YData',get(hB,'YData'))
-% alphadata = alpha_img.*(newRoi);
-% set(hF,'AlphaData',alphadata);
-% 
-% contour(xFull,zFull,roiACS{1},1,'w--')
-% contour(xFull,zFull,roiACS{2},1,'w--')
-% contour(x,z,maskThyroid,1,'w--')
-% hold off
-% ylim([zlim1 zlim2])
-% xlim([xlim1 xlim2])
-% xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
-% title('WFR')
-% 
-% hColor.Layout.Tile = 'east';
-% hColor.Label.String = 'ACS [dB/cm/MHz]';
-% colormap(t1,'gray')
-% fontsize(gcf,8,'points')
 
 
-
-figure('Units','centimeters', 'Position',[5 5 14 5])
-tiledlayout(1,3, 'TileSpacing','compact', 'Padding','tight')
+figure('Units','centimeters', 'Position',[5 5 24 4.6])
+tiledlayout(1,4, 'TileSpacing','compact', 'Padding','compact')
 t1 = nexttile;
 imagesc(xFull,zFull,BmodeFull,dynRange); axis image; 
 title('B-mode')
@@ -371,6 +310,9 @@ contour(xFull,zFull,roiACS{2},1,'w--')
 hold off
 xlabel('Lateral [cm]')
 ylabel('Axial [cm]')
+hBm = colorbar;
+hBm.Label.String = 'dB';
+hBm.Location = 'westoutside';
 
 
 t2 = nexttile;
@@ -398,7 +340,35 @@ hold off
 
 ylim([0.1, 3])
 xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
-title('TV')
+title('RSLD')
+colorbar off
+
+t2 = nexttile;
+iRoi = 1;
+[~,hB,hColor] = imOverlayInterp(BmodeFull,dataRoi{iRoi}.SWTV,dynRange,attRange,alpha_img,...
+    dataRoi{iRoi}.x,dataRoi{iRoi}.z,dataRoi{iRoi}.roi,xFull,zFull);
+% Interpolation
+iRoi = 2;
+[X,Z] = meshgrid(dataRoi{iRoi}.x,dataRoi{iRoi}.z);
+[Xq,Zq] = meshgrid(xFull,zFull);
+imgInterp = interp2(X,Z,dataRoi{iRoi}.SWTV,Xq,Zq);
+emptyRegion = isnan(imgInterp);
+newRoi = ~emptyRegion & dataRoi{iRoi}.roi;
+% Overlap
+hold on;
+hF = imagesc(dataRoi{iRoi}.x,dataRoi{iRoi}.z,imgInterp,attRange);
+set(hF,'XData',get(hB,'XData'),'YData',get(hB,'YData'))
+alphadata = alpha_img.*(newRoi);
+set(hF,'AlphaData',alphadata);
+
+contour(xFull,zFull,roiACS{1},1,'w--')
+contour(xFull,zFull,roiACS{2},1,'w--')
+contour(x,z,maskThyroid,1,'w--')
+hold off
+
+ylim([0.1, 3])
+xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
+title('SWTV-ACE')
 colorbar off
 
 nexttile,
@@ -425,11 +395,11 @@ contour(x,z,maskThyroid,1,'w--')
 hold off
 ylim([0.1, 3])
 xlabel('Lateral [cm]'), % ylabel('Axial [cm]')
-title('WFR')
+title('SWIFT')
 
-% hColor.Layout.Tile = 'east';
-% hColor.Label.String = 'ACS [dB/cm/MHz]';
-colorbar off
+hColor.Layout.Tile = 'east';
+hColor.Label.String = 'ACS [dB/cm/MHz]';
+% colorbar off
 colormap(t1,'gray')
 fontsize(gcf,9,'points')
 
@@ -438,25 +408,33 @@ fontsize(gcf,9,'points')
 fprintf("Homogeneous results: \n")
 fprintf("Mean: %.2f, Std: %.2f\n",mean(dataRoi{2}.TV(:)),...
     std(dataRoi{2}.TV(:)))
+fprintf("Mean: %.2f, Std: %.2f\n",mean(dataRoi{2}.SWTV(:)),...
+    std(dataRoi{2}.SWTV(:)))
 fprintf("Mean: %.2f, Std: %.2f\n",mean(dataRoi{2}.WFR(:)),...
     std(dataRoi{2}.WFR(:)))
 
 dataTV = dataRoi{1}.TV(maskThyroidACS);
+dataSWTV = dataRoi{1}.SWTV(maskThyroidACS);
 dataWFR = dataRoi{1}.WFR(maskThyroidACS);
 fprintf("\nHeterogeneous results: \n BOTTOM\n")
 fprintf("Mean: %.2f, Std: %.2f\n",mean(dataTV(:)),std(dataTV(:)))
+fprintf("Mean: %.2f, Std: %.2f\n",mean(dataSWTV(:)),std(dataSWTV(:)))
 fprintf("Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
 
 dataTV = dataRoi{1}.TV(maskNoduleACS);
+dataSWTV = dataRoi{1}.SWTV(maskNoduleACS);
 dataWFR = dataRoi{1}.WFR(maskNoduleACS);
 fprintf("\nHeterogeneous results: \n TOP\n")
 fprintf("Mean: %.2f, Std: %.2f\n",mean(dataTV(:)),std(dataTV(:)))
+fprintf("Mean: %.2f, Std: %.2f\n",mean(dataSWTV(:)),std(dataSWTV(:)))
 fprintf("Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
 
 
 
 fprintf("D ACS, TV: %.2f\n",...
     mean(dataRoi{2}.TV(:)) - mean(dataTV(:)) );
+fprintf("D ACS, SWTV: %.2f\n",...
+    mean(dataRoi{2}.SWTV(:)) - mean(dataSWTV(:)) );
 fprintf("D ACS, WFR: %.2f\n",...
     mean(dataRoi{2}.WFR(:)) - mean(dataWFR(:)) );
 

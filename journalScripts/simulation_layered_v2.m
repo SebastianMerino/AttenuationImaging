@@ -4,7 +4,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_04_04_layered'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_04_25_ref'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-05-15';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-13';
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 
 [~,~] = mkdir(resultsDir);
@@ -68,23 +68,23 @@ sam1 = rf(:,:,1);
 switch iAcq
     case 1
         % Regularization
-        muBtv = 10^3.5; muCtv = 10^3.5;
-        muBswtv = 10^3; muCswtv = 10^2;
-        muBtvl1 = 10^4; muCtvl1 = 10^3;
+        muBtv = 10^4; muCtv = 10^4;
+        muBswtv = 10^3.5; muCswtv = 10^2;
+        muBtvl1 = 10^3.5; muCtvl1 = 10^2;
         muBwfr = 10^3.5; muCwfr = 10^2;
 
     case 2
         % Regularization
-        muBtv = 10^3.5; muCtv = 10^3.5;
+        muBtv = 10^4; muCtv = 10^4;
         muBswtv = 10^3; muCswtv = 10^0;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
+        muBtvl1 = 10^4; muCtvl1 = 10^1.5;
         muBwfr = 10^4; muCwfr = 10^1.5;
 
     case 3
         % Regularization
-        muBtv = 10^3.5; muCtv = 10^3.5;
+        muBtv = 10^4; muCtv = 10^4;
         muBswtv = 10^3; muCswtv = 10^1;
-        muBtvl1 = 10^3.5; muCtvl1 = 10^1;
+        muBtvl1 = 10^4; muCtvl1 = 10^1.5;
         muBwfr = 10^4; muCwfr = 10^1.5;
 end
 %% Cropping and finding sample sizes
@@ -237,7 +237,7 @@ bottom = Zq > 2.1;
 BRTV = reshape(Bn*NptodB,m,n);
 CRTV = reshape(Cn*NptodB,m,n);
 
-axialTV{iAcq} = mean(BRTV,2);
+axialTV = mean(BRTV,2);
 
 AttInterp = interp2(X,Z,BRTV,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
@@ -279,7 +279,7 @@ m,n,tol,mask(:),wSNR);
 BRSWTV = reshape(Bn*NptodB,m,n);
 CRSWTV = reshape(Cn*NptodB,m,n);
 
-axialSWTV{iAcq} = mean(BRSWTV,2);
+axialSWTV = mean(BRSWTV,2);
 AttInterp = interp2(X,Z,BRSWTV,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
 r.stdTop = std(AttInterp(top),"omitnan");
@@ -297,7 +297,7 @@ MetricsSWTV(iAcq) = r;
 BRTVL1 = reshape(Bn*NptodB,m,n);
 CRTVL1 = reshape(Cn*NptodB,m,n);
 
-axialTVL1{iAcq} = mean(BRTVL1,2);
+axialTVL1 = mean(BRTVL1,2);
 AttInterp = interp2(X,Z,BRTVL1,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
 r.stdTop = std(AttInterp(top),"omitnan");
@@ -310,27 +310,27 @@ r.rmseBottom = sqrt(mean( (AttInterp(bottom) - groundTruthBottom(iAcq)).^2,"omit
 r.cnr = abs(r.meanBottom - r.meanTop)/sqrt(r.stdTop^2 + r.stdBottom^2);
 MetricsTVL1(iAcq) = r;
 
-%% WFR
-[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muB(1),muC(1),m,n,tol,mask(:));
+%% SWIFT
+% First iteration
+[~,Cn] = optimAdmmTvTikhonov(A1,A2,b(:),muBwfr,muCwfr,m,n,tol,mask(:));
 bscMap = reshape(Cn*NptodB,m,n);
 
-% Computing weights
+% Weight map
 w = (1-reject)*(1./((bscMap/ratioCutOff).^(2*order) + 1))+reject;
-w = movmin(w,extension);
+wExt = movmin(w,extension);
 
-% Setting up new system
-W = repmat(w,[1 1 p]);
+% Weight matrices and new system
+W = repmat(wExt,[1 1 p]);
 W = spdiags(W(:),0,m*n*p,m*n*p);
 bw = W*b(:);        
 A1w = W*A1;
 A2w = W*A2;
 
-% Method
-[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
+% Second iteration
+[Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 BRWFR = reshape(Bn*NptodB,m,n);
-CRWFR = reshape(Cn*NptodB,m,n);
 
-axialWFR{iAcq} = mean(BRWFR,2);
+axialWFR = mean(BRWFR,2);
 AttInterp = interp2(X,Z,BRWFR,Xq,Zq);
 r.meanTop = mean(AttInterp(top),"omitnan");
 r.stdTop = std(AttInterp(top),"omitnan");
@@ -346,7 +346,7 @@ MetricsWFR(iAcq) = r;
 
 %% Plotting
 figure('Units','centimeters', 'Position',[5 5 22 4]);
-tiledlayout(1,6, "Padding","tight", 'TileSpacing','compact');
+tiledlayout(1,5, "Padding","tight", 'TileSpacing','compact');
 
 t1 = nexttile;
 imagesc(x,z,Bmode,dynRange)
@@ -371,7 +371,7 @@ t1 = nexttile;
 imagesc(x_ACS,z_ACS,BRTV, attRange)
 colormap(t1,turbo)
 axis image
-title('TV')
+title('RSLD')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 
@@ -379,23 +379,23 @@ t1 = nexttile;
 imagesc(x_ACS,z_ACS,BRSWTV, attRange)
 colormap(t1,turbo)
 axis image
-title('SWTV')
+title('SWTV-ACE')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 
-t1 = nexttile; 
-imagesc(x_ACS,z_ACS,BRTVL1, attRange)
-colormap(t1,turbo)
-axis image
-title('TVL1')
-% ylabel('Axial [cm]')
-xlabel('Lateral [cm]')
+% t1 = nexttile; 
+% imagesc(x_ACS,z_ACS,BRTVL1, attRange)
+% colormap(t1,turbo)
+% axis image
+% title('TVL1')
+% % ylabel('Axial [cm]')
+% xlabel('Lateral [cm]')
 
 t4 = nexttile; 
 imagesc(x_ACS,z_ACS,BRWFR, attRange)
 colormap(t4,turbo)
 axis image
-title('WFR')
+title('SWIFT')
 c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
 % ylabel('Axial [cm]')
@@ -435,69 +435,33 @@ ylabel('Axial [cm]')
 % c.Label.String = '[a.u.]';
 
 fontsize(gcf,8,'points')
+%% Lateral and axial profiles
+lineColors = [0.635 0.078 0.184; 0.466 0.674 0.188; 0.301 0.745 0.933];
+
+figure('Units','centimeters', 'Position',[5 5 8 4])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
+nexttile([1,2]),
+plot(z_ACS, axialTV, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
+hold on
+plot(z_ACS, axialSWTV, '-.', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
+% plot(z_ACS, axialTVL1, 'b:', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
+plot(z_ACS, axialWFR, '-', 'LineWidth',1.5, 'Color',lineColors(3,:) ),
+plot(z_ACS,mean(attIdeal,2), '--', 'Color', [0.2 0.2 0.2])
+hold off
+grid on
+ylim([0 1.5])
+xlim([z_ACS(1) z_ACS(end)])
+%title('Axial profile')
+xlabel('Axial [cm]')
+ylabel('ACS [dB/cm/MHz]')
+% legend({'RSLD','SWTV-ACE','TVL1','SWIFT'}, 'Location','northwest') 
+legend({'RSLD','SWTV-ACE','SWIFT'}, 'Location','northwest') 
+
 %%
 save_all_figures_to_directory(resultsDir,['simLayered',num2str(iAcq),'Fig'],'svg');
 close all
 
 end
-
-%% Lateral and axial profiles
-lineColors = [0.75 0.05 0.05; 0.1 0.75 0.95];
-figure('Units','centimeters', 'Position',[5 5 8 4])
-tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
-nexttile([1,2]),
-plot(z_ACS, axialTV{1}, ':', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
-hold on
-plot(z_ACS, axialSWTV{1}, '-', 'LineWidth',1, 'Color',lineColors(1,:)),
-plot(z_ACS, axialTVL1{1}, ':', 'LineWidth',1.5, 'Color',lineColors(2,:)),
-plot(z_ACS, axialWFR{1}, '-', 'LineWidth',1, 'Color',lineColors(2,:)),
-plot(z_ACS,mean(attIdeal,2), 'k--')
-hold off
-grid on
-ylim([0.4 1.1])
-xlim([z_ACS(1) z_ACS(end)])
-%title('Axial profile')
-xlabel('Axial [cm]')
-ylabel('ACS [dB/cm/MHz]')
-legend({'TV','SWTV','TVL1','WFR'}, 'Location','northwest') 
-
-figure('Units','centimeters', 'Position',[5 5 8 4])
-tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
-nexttile([1,2]),
-plot(z_ACS, axialTV{2}, 'r:', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
-hold on
-plot(z_ACS, axialSWTV{2}, 'r', 'LineWidth',1, 'Color',lineColors(1,:) ),
-plot(z_ACS, axialTVL1{2}, 'b:', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
-plot(z_ACS, axialWFR{2}, 'b', 'LineWidth',1, 'Color',lineColors(2,:) ),
-plot(z_ACS,mean(attIdeal,2), 'k--')
-hold off
-grid on
-ylim([0.4 1.1])
-xlim([z_ACS(1) z_ACS(end)])
-%title('Axial profile')
-xlabel('Axial [cm]')
-ylabel('ACS [dB/cm/MHz]')
-legend({'TV','SWTV','TVL1','WFR'}, 'Location','northwest') 
-
-figure('Units','centimeters', 'Position',[5 5 8 4])
-tiledlayout(1,2, 'TileSpacing','compact', 'Padding','compact')
-nexttile([1,2]),
-plot(z_ACS, axialTV{3}, 'r:', 'LineWidth',1.5, 'Color',lineColors(1,:) ),
-hold on
-plot(z_ACS, axialSWTV{3}, 'r', 'LineWidth',1, 'Color',lineColors(1,:) ),
-plot(z_ACS, axialTVL1{3}, 'b:', 'LineWidth',1.5, 'Color',lineColors(2,:) ),
-plot(z_ACS, axialWFR{3}, 'b', 'LineWidth',1, 'Color',lineColors(2,:) ),
-plot(z_ACS,mean(attIdeal,2), 'k--')
-hold off
-grid on
-ylim([0.4 1.1])
-xlim([z_ACS(1) z_ACS(end)])
-%title('Axial profile')
-ylabel('ACS [dB/cm/MHz]')
-xlabel('Axial [cm]')
-
-save_all_figures_to_directory(resultsDir,'simLayeredProfile','svg');
-close all
 
 %%
 results1 = struct2table(MetricsTV);
