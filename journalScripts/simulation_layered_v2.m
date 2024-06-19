@@ -30,7 +30,7 @@ reject = 0.1;
 extension = 3;
 
 % SWTV
-aSNR = 1; bSNR = 0.1;
+aSNR = 5; bSNR = 0.09;
 desvMin = 15;
 
 % Plotting
@@ -69,7 +69,7 @@ switch iAcq
     case 1
         % Regularization
         muBtv = 10^4; muCtv = 10^4;
-        muBswtv = 10^3.5; muCswtv = 10^2;
+        muBswtv = 10^3; muCswtv = 10^2;
         muBtvl1 = 10^3.5; muCtvl1 = 10^2;
         muBwfr = 10^3.5; muCwfr = 10^2;
 

@@ -23,17 +23,16 @@ referenceAtt    = 0.6;
 groundTruthBack = [0.5,0.5,0.5];
 groundTruthInc = [1,1,1];
 
-
-% Weights SWTV
-aSNR = 1; bSNR = 0.1;
-desvMin = 15;
-
 % Weight parameters
 muB = 10^3; muC = 10^0;
 ratioCutOff = 10;
 order = 5;
 reject = 0.1;
 extension = 3;
+
+% SWTV
+aSNR = 5; bSNR = 0.09;
+desvMin = 15;
 
 % Plotting
 dynRange = [-40,0];

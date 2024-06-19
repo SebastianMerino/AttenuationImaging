@@ -1,12 +1,13 @@
 
-% This example simulates an homogenenous media with different attenuations
-% Created on April 24th, 2024
+% This example simulates a homogenenous media with same attenuation,
+% focal number 4
+% Created on June 19th, 2024
 % Author: Sebastian Merino
 
 function [] = simulationFocusedRefs(BaseDir)
 
 addpath(genpath(pwd))
-simuNames = {'ref1','ref2','ref3','ref4','ref5','ref6'};
+simuNames = {'ref1','ref2','ref3','ref4'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -20,7 +21,7 @@ source_cycles   = 3.5;      % number of toneburst cycles
 source_focus    = 20e-3;    % focal length [m]
 element_pitch   = 0.3e-3;   % pitch [m]
 element_width   = 0.25e-3;  % width [m]
-focal_number    = 2;
+focal_number    = 4;
 nLines          = 96;
 
 % grid parameters

@@ -1,13 +1,12 @@
 
-% This example simulates an inclusion with fixed ACS and BSC. Radius is
-% varied across samples. Hypoechoic inclusions
-% Created on June 5th, 2024
+% This example simulates an inclusion with fixed ACS and varying BSC. 
+% Created on June 19th, 2024
 % Author: Sebastian Merino
 
 function [] = simulationFocusedIncAtt(BaseDir)
 
 addpath(genpath(pwd))
-simuNames = {'incAtt1','incAtt2','incAtt3','incAtt4','incAtt5'};
+simuNames = {'incAtt1','incAtt2','incAtt3'};
 % mkdir(BaseDir)
 
 % medium parameters
@@ -21,7 +20,7 @@ source_cycles   = 3.5;      % number of toneburst cycles
 source_focus    = 20e-3;    % focal length [m]
 element_pitch   = 0.3e-3;   % pitch [m]
 element_width   = 0.25e-3;  % width [m]
-focal_number    = 2;
+focal_number    = 4;
 nLines          = 96;
 
 % grid parameters
@@ -62,16 +61,26 @@ for iSim = 1:length(simuNames)
     rx = kgrid.y;
 
     % Background
-    background_std = 0.008;
+    switch iSim
+        case 1
+            background_std = 0.004;
+            inc_std = 0.004;
+        case 2
+            background_std = 0.002;
+            inc_std = 0.008;
+        case 3
+            background_std = 0.008;
+            inc_std = 0.002;
+    end
+
     background_alpha = 0.5;       % [dB/(MHz^y cm)]
     medium = addRegionSimu([],c0,rho0,background_std,...
         background_alpha,ones(Nx,Ny));
     
     % Inclusion
     cz = 20e-3; cx = 0; 
-    r = (iSim)*1e-3; % VARYING RADIUS
+    r = 7e-3;
     maskNodule = (rz-cz).^2 + (rx-cx).^2 < r^2;
-    inc_std = background_std/4;
     inc_alpha = 1;
     medium = addRegionSimu(medium,c0,rho0,inc_std,...
         inc_alpha,maskNodule);
