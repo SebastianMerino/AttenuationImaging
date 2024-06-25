@@ -83,7 +83,7 @@ switch iAcq
     case 3
         % Regularization
         muBtv = 10^4; muCtv = 10^4;
-        muBswtv = 10^3; muCswtv = 10^1;
+        muBswtv = 10^3; muCswtv = 10^0.5;
         muBtvl1 = 10^4; muCtvl1 = 10^1.5;
         muBwfr = 10^4; muCwfr = 10^1.5;
 end

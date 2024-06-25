@@ -177,7 +177,7 @@ fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 %% Generating Diffraction compensation
 if true %iAcq == 1
     % Generating references
-    att_ref = 0.53*f/8.686; % From phantom especifications
+    att_ref = 0.53*f/NptodB; % From phantom especifications
     att_ref_map = zeros(m,n,p);
     for jj=1:n
         for ii=1:m
