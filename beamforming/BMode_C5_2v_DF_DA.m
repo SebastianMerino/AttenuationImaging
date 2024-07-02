@@ -3,8 +3,10 @@ clear; clc;
 close all;
 
 %% Extract structures from .mat
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation\' ...
-    'Liver_24_06_28\set2'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation\' ...
+%     'Liver_24_06_28\set2'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\Attenuation\' ...
+    'Liver\24_06_28'];
 input_f = fullfile(baseDir,'sm02.mat');
 load(input_f, 'Trans','P','Receive');
 
@@ -115,6 +117,7 @@ N = param.Nelements;
 L = 2*R*sin(asin(p/2/R)*(N-1)); % chord length
 d = sqrt(R^2-L^2/4); % apothem
 z0 = -d;
+
 th = -(linspace(atan2(L/2,d),atan2(-L/2,d),siz(2)))*180/pi;
 r = linspace(R+p,-z0+zmax,siz(1));
 

@@ -5,11 +5,14 @@
 clear,clc
 close all
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Liver_24_06_28\set1'];
+% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Liver_24_06_28\set1'];
+baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+    'Attenuation\Liver\24_06_28'];
 targetDir = fullfile(baseDir,'sample');
 refsDir = fullfile(baseDir,'ref');
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-02';
+resultsDir = fullfile(baseDir,'results','24-07-02');
+% resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-02';
 
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 targetFiles = dir([targetDir,'\*.mat']);
@@ -51,13 +54,15 @@ attRange = [0,1.5];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
-dataCols = zeros(length(targetFiles),8);
+dataCols = zeros(2,8);
 %%
 for iRoi = 1:2
     if iRoi==1
-        rect = [0.9930    4.4255   32.0799    5.5011]; % Just liver
+        % rect = [0.9930    4.4255   32.0799    5.5011]; % Just liver
+        rect = [0.2    4.5   32.8    5.5]; % Just liver
     else
-        rect = [-0.5347    1.4666   33.4548    8.6268]; % liver & muscle
+        % rect = [-0.5347    1.4666   33.4548    8.6268]; % liver & muscle
+        rect = [0.2    1.5   32.8    8.5]; % liver & muscle
     end
 
 
@@ -78,7 +83,8 @@ for iRoi = 1:2
     axis equal ij tight
 
     xFull = th; % [deg]
-    zFull = (r-r(1))*1e2; % [cm]
+    r0 = r(1);
+    zFull = (r-r0)*1e2; % [cm]
 
     %%
     x_inf = rect(1); x_sup = rect(1)+rect(3);
@@ -300,7 +306,7 @@ for iRoi = 1:2
 
     % Second iteration
     [Bn,~] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
-    BRWFR = reshape(Bn*NptodB,m,n);
+    BSWIFT = reshape(Bn*NptodB,m,n);
 
     % Weight map
     figure('Units','centimeters', 'Position',[5 5 18 4]);
@@ -309,7 +315,6 @@ for iRoi = 1:2
     t2 = nexttile;
     imagesc(x_ACS,z_ACS,bscMap, [-20 20])
     colormap(t2,parula)
-    axis equal tight
     title('BSC map')
     c = colorbar;
     c.Label.String = '\Delta BSC [db/cm]';
@@ -317,16 +322,14 @@ for iRoi = 1:2
     t2 = nexttile;
     imagesc(x_ACS,z_ACS,w, [0 1])
     colormap(t2,parula)
-    axis equal tight
     title('Weights')
     c = colorbar;
     c.Label.String = '[a.u.]';
 
 
     t2 = nexttile;
-    imagesc(x_ACS,z_ACS,BRWFR, attRange)
+    imagesc(x_ACS,z_ACS,BSWIFT, attRange)
     colormap(t2,turbo)
-    axis equal tight
     title('SWIFT')
     % subtitle(['\mu_b=',num2str(muBtvl1,2),', \mu_c=',num2str(muCtvl1,2)])
     c = colorbar;
@@ -339,136 +342,137 @@ for iRoi = 1:2
     [X,Z] = meshgrid(xFull,zFull);
     [Xq,Zq] = meshgrid(x_ACS,z_ACS);
 
-    maskLiverACS = Zq > 4.4244;
-    maskLiver = Z > 4.4244;
+    maskLiverACS = Zq > 4.8;
+    maskLiver = Z > 4.8;
 
     dataCols(iRoi,:) = ...
         [mean(BRTV(maskLiverACS),'all'), std(BRTV(maskLiverACS),[],'all'),...
         mean(BRSWTV(maskLiverACS),'all'), std(BRSWTV(maskLiverACS),[],'all'),...
         mean(BRTVL1(maskLiverACS),'all'), std(BRTVL1(maskLiverACS),[],'all'),...
-        mean(BRWFR(maskLiverACS),'all'), std(BRWFR(maskLiverACS),[],'all')];
+        mean(BSWIFT(maskLiverACS),'all'), std(BSWIFT(maskLiverACS),[],'all')];
 
-%% Overlay
-yLimits = [0,10];
+    %% Overlay
+    yLimits = [0,10];
 
-[X,Z] = meshgrid(xFull,zFull);
-roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
+    [X,Z] = meshgrid(xFull,zFull);
+    roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 
-figure('Units','centimeters', 'Position',[5 5 24 8])
-tiledlayout(1,4, 'TileSpacing','compact', 'Padding','compact')
-t1 = nexttile();
-imagesc(xFull,zFull,BmodeFull,dynRange); % axis image; 
-title('B-mode')
-ylim(yLimits)
-hold on
-contour(xFull,zFull,roi,1,'w--')
-% contour(xFull,zFull,maskLiver,1,'w--')
-% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
-hold off
-xlabel('Lateral [deg]')
-ylabel('Axial [cm]')
-hBm = colorbar;
-hBm.Label.String = 'dB';
-hBm.Location = 'westoutside';
+    figure('Units','centimeters', 'Position',[5 5 24 8])
+    tiledlayout(1,4, 'TileSpacing','compact', 'Padding','compact')
+    t1 = nexttile();
+    imagesc(xFull,zFull,BmodeFull,dynRange); % axis image;
+    title('B-mode')
+    ylim(yLimits)
+    hold on
+    contour(xFull,zFull,roi,1,'w--')
+    % contour(xFull,zFull,maskLiver,1,'w--')
+    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
+    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
+    hold off
+    xlabel('Lateral [deg]')
+    ylabel('Axial [cm]')
+    hBm = colorbar;
+    hBm.Label.String = 'dB';
+    hBm.Location = 'westoutside';
 
-nexttile,
-[~,~,hColor] = imOverlayInterp(BmodeFull,BRTV,dynRange,attRange,0.7,...
-    x_ACS,z_ACS,roi,xFull,zFull);
-title('RSLD')
-axis normal
-colorbar off
-ylim(yLimits)
-hold on
-contour(xFull,zFull,roi,1,'w--')
-contour(xFull,zFull,maskLiver,1,'w--')
-% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
-hold off
-% axis off
-%xlabel('x [cm]')
-xlabel('Lateral [deg]')
+    nexttile,
+    [~,~,hColor] = imOverlayInterp(BmodeFull,BRTV,dynRange,attRange,0.7,...
+        x_ACS,z_ACS,roi,xFull,zFull);
+    title('RSLD')
+    axis normal
+    colorbar off
+    ylim(yLimits)
+    hold on
+    contour(xFull,zFull,roi,1,'w--')
+    contour(xFull,zFull,maskLiver & roi,1,'w--')
+    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
+    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
+    hold off
+    % axis off
+    %xlabel('x [cm]')
+    xlabel('Lateral [deg]')
 
-nexttile,
-[~,hB,hColor] = imOverlayInterp(BmodeFull,BRSWTV,dynRange,attRange,0.7,...
-    x_ACS,z_ACS,roi,xFull,zFull);
-title('SWTV-ACE')
-colorbar off
-axis normal
-ylim(yLimits)
-hold on
-contour(xFull,zFull,roi,1,'w--')
-contour(xFull,zFull,maskLiver,1,'w--')
-% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
-hold off
-% axis off
-%xlabel('x [cm]')
-xlabel('Lateral [deg]')
+    nexttile,
+    [~,hB,hColor] = imOverlayInterp(BmodeFull,BRSWTV,dynRange,attRange,0.7,...
+        x_ACS,z_ACS,roi,xFull,zFull);
+    title('SWTV-ACE')
+    colorbar off
+    axis normal
+    ylim(yLimits)
+    hold on
+    contour(xFull,zFull,roi,1,'w--')
+    contour(xFull,zFull,maskLiver & roi,1,'w--')
+    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
+    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
+    hold off
+    % axis off
+    %xlabel('x [cm]')
+    xlabel('Lateral [deg]')
 
 
-nexttile,
-[~,hB,hColor] = imOverlayInterp(BmodeFull,BRWFR,dynRange,attRange,0.7,...
-    x_ACS,z_ACS,roi,xFull,zFull);
-title('SWIFT')
-axis normal
-ylim(yLimits)
-hold on
-contour(xFull,zFull,roi,1,'w--')
-contour(xFull,zFull,maskLiver,1,'w--')
-% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
-hold off
-xlabel('Lateral [deg]')
-% hColor.Location = 'northoutside';
-% hColor.Layout.Tile = 'northoutside';
-hColor.Label.String = 'ACS [dB/cm/MHz]';
-colormap(t1,'gray')
-fontsize(gcf,9,'points')
+    nexttile,
+    [~,hB,hColor] = imOverlayInterp(BmodeFull,BSWIFT,dynRange,attRange,0.7,...
+        x_ACS,z_ACS,roi,xFull,zFull);
+    title('SWIFT')
+    axis normal
+    ylim(yLimits)
+    hold on
+    contour(xFull,zFull,roi,1,'w--')
+    contour(xFull,zFull,maskLiver & roi,1,'w--')
+    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
+    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
+    hold off
+    xlabel('Lateral [deg]')
+    % hColor.Location = 'northoutside';
+    % hColor.Layout.Tile = 'northoutside';
+    hColor.Label.String = 'ACS [dB/cm/MHz]';
+    colormap(t1,'gray')
+    fontsize(gcf,9,'points')
+
 
     %%
-figure('Units','centimeters', 'Position',[5 5 14 8])
-tiledlayout(1,2, 'TileSpacing','compact', 'Padding','tight')
+    [TH_acs,R_acs] = meshgrid(-x_ACS*pi/180 + pi/2,z_ACS/100 + r0);
+    [xPolarACS,zPolarACS] = pol2cart(TH_acs,R_acs);
+    zPolarACS = zPolarACS + z0Polar;
+    % figure,
+    % pcolor(xPolarACS*100,zPolarACS*100,BSWIFT)
+    % colorbar;
+    % colormap turbo
+    % title('ACS')
+    % ylabel('[cm]')
+    % shading interp
+    % axis equal ij tight
 
-t1 = nexttile;
-imagesc(xFull,zFull,BmodeFull,dynRange); % axis image; 
-title('B-mode')
-ylim(yLimits)
-hold on
-contour(xFull,zFull,roi,1,'w--')
-% contour(xFull,zFull,maskLiver,1,'w--')
-% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
-hold off
-xlabel('Lateral [deg]')
-ylabel('Axial [cm]')
-hBm = colorbar;
-hBm.Label.String = 'dB';
-hBm.Location = 'westoutside';
+    %%
+    omitLines = 10;
+    figure('Units','centimeters', 'Position',[5 5 9 6]),
+    pcolor(xPolar(:,omitLines+1:end-omitLines)*1e2, ...
+        zPolar(:,omitLines+1:end-omitLines)*1e2, ...
+        BmodeFull(:,omitLines+1:end-omitLines))    
+    clim(dynRange);
+    colormap gray
+    title('Bmode image')
+    shading interp
+    axis equal ij tight
+    ax = gca;
+    ax.Color = [0,0,0];
 
-nexttile,
-[~,hB,hColor] = imOverlayInterp(BmodeFull,BRTVL1,dynRange,attRange,0.7,...
-    x_ACS,z_ACS,roi,xFull,zFull);
-title('TVL1')
-axis normal
-ylim(yLimits)
-hold on
-contour(xFull,zFull,roi,1,'w--')
-contour(xFull,zFull,maskLiver,1,'w--')
-% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
-hold off
-% axis off
-%xlabel('x [cm]')
-xlabel('Lateral [deg]')
+    figure('Units','centimeters', 'Position',[5 5 9 6]),
+    [ax1,~] = imOverlayPolar(BmodeFull,BRTV,dynRange,attRange,0.5, ...
+        xPolar,zPolar,xPolarACS,zPolarACS);
+    title(ax1,'RSLD')
+    
+    figure('Units','centimeters', 'Position',[5 5 9 6]),
+    [ax1,~] = imOverlayPolar(BmodeFull,BRSWTV,dynRange,attRange,0.5, ...
+        xPolar,zPolar,xPolarACS,zPolarACS);
+    title(ax1,'SWTV-ACE')
 
+    figure('Units','centimeters', 'Position',[5 5 9 6]),
+    [ax1,~] = imOverlayPolar(BmodeFull,BSWIFT,dynRange,attRange,0.5, ...
+        xPolar,zPolar,xPolarACS,zPolarACS);
+    title(ax1,'SWIFT')
 
-% hColor.Layout.Tile = 'east';
-% hColor.Label.String = 'ACS [dB/cm/MHz]';
-colormap(t1,'gray')
-fontsize(gcf,9,'points')
-
-
+    %%
 
 end
 %%
@@ -478,10 +482,6 @@ dataTable = array2table(dataCols,...
     'liver-SWTV-mean','liver-SWTV-std', ...
     'liver-TVL1-mean','liver-TVL1-std', ...
     'liver-WFR-mean','liver-WFR-std', ...
-    'muscle-TV-mean','muscle-TV-std', ...
-    'muscle-SWTV-mean','muscle-SWTV-std', ...
-    'muscle-TVL1-mean','muscle-TVL1-std', ...
-    'muscle-WFR-mean','muscle-WFR-std', ...
     });
 disp(dataTable)
 tableName = 'clinicalLiver.xlsx';
