@@ -1,9 +1,9 @@
 clear,clc
 
 targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_06_26_inc'];
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_06_26_ref'];
+    'Attenuation\Simulation\24_06_27_layered'];
+% refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+%     'Attenuation\Simulation\24_06_26_ref'];
 resultsDir = fullfile(targetDir,'results');
 
 [~,~] = mkdir(resultsDir);
@@ -12,7 +12,7 @@ targetFiles = dir([targetDir,'\rf*.mat']);
 % tableName = 'simuInc.xlsx';
 
 %%
-iAcq = 2;
+iAcq = 3;
 load(fullfile(targetDir,targetFiles(iAcq).name));
 x = x*100; z = z*100;
 
@@ -57,13 +57,19 @@ colormap gray
 axis image
 
 %%
+% figure,
+% plot(z,mean(concatBm(:,46:50),2))
+% hold on
+% plot(z,mean(meanBm(:,46:50),2))
+% grid on
+% axis tight
+
 figure,
-plot(z,mean(concatBm(:,46:50),2))
+plot(z,mean(concatBm,2))
 hold on
-plot(z,mean(meanBm(:,46:50),2))
+plot(z,mean(meanBm,2))
 grid on
 axis tight
-
 %% Lines
 ix = 15;
 figure('Units','centimeters', 'Position',[5 5 30 15]),

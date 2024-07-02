@@ -6,25 +6,28 @@ clear,clc
 close all
 
 baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Liver'];
+    'Attenuation\Liver_24_06_28\set1'];
 targetDir = fullfile(baseDir,'sample');
 refsDir = fullfile(baseDir,'ref');
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-13';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-02';
 
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 targetFiles = dir([targetDir,'\*.mat']);
 
-load(fullfile(baseDir,'liverMask.mat')),
+% load(fullfile(baseDir,'liverMask.mat')),
 
 %%
-blocksize = 8;     % Block size in wavelengths
+blocksize = 12;   % Axial block size in wavelengths
+blocklines = 8;   % Num of lines, lateral block size
 overlap_pc      = 0.8;
-ratio_zx        = 12/8;
+
+rect = [];
 
 % Bandwidth
 fixedBW = true;
-ratio = db2mag(-20);
-freq_L = 1.4e6; freq_H = 5.3e6;
+ratio = db2mag(-30);
+freq_L = 1.5e6; freq_H = 4.5e6;
+% freq_L = 1.8e6; freq_H = 3.5e6;
 
 % Weight parameters
 ratioCutOff = 10;
@@ -36,7 +39,7 @@ extension = 3;
 aSNR = 5; bSNR = 0.09;
 desvMin = 15;
 
-% reg FINAL VERSION
+% Reg parameters
 muBtv = 10^3.5; muCtv = 10^3.5;
 muBswtv = 10^3; muCswtv = 10^2.5;
 muBtvl1 = 10^3.5; muCtvl1 = 10^2;
@@ -44,60 +47,43 @@ muBwfr = 10^3.5; muCwfr = 10^2;
 
 % Plotting constants
 dynRange = [-60,0];
-attRange = [0,1];
+attRange = [0,1.5];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
-dataCols = zeros(length(targetFiles),16);
+dataCols = zeros(length(targetFiles),8);
 %%
 for iRoi = 1:2
     if iRoi==1
-        rect = [0.5, 3.3, 2.8, 2.5]; % Just liver, medium ROI
+        rect = [0.9930    4.4255   32.0799    5.5011]; % Just liver
     else
-        rect = [0.5, 1.8, 2.8, 4]; % liver & muscle
+        rect = [-0.5347    1.4666   33.4548    8.6268]; % liver & muscle
     end
 
 
-    iAcq = 1;
-
-    fprintf("Patient no. %i, %s\n",iAcq,targetFiles(iAcq).name);
+    iAcq = 4;
     load(fullfile(targetDir,targetFiles(iAcq).name));
 
-    dx = x(2)-x(1);
-    dz = z(2)-z(1);
-    sam1 = RF(:,:,1);
-
-    xFull = x*1e2; % [cm]
-    zFull = z*1e2; % [cm]
-
-    BmodeFull = db(hilbert(sam1));
+    BmodeFull = db(hilbert(rf));
     BmodeFull = BmodeFull - max(BmodeFull(:));
 
-    if isempty(rect)
-        % Manual cropping
-        figure('Units','centimeters', 'Position',[5 5 15 15]),
-        imagesc(xFull,zFull,BmodeFull,dynRange); axis image;
-        colormap gray; clim(dynRange);
-        hb2=colorbar; ylabel(hb2,'dB')
-        xlabel('\bfLateral distance (cm)'); ylabel('\bfAxial distance (cm)');
-        ylim([0.1 8])
-        title('Liver')
+    figure();
+    pcolor(xPolar*1e2,zPolar*1e2,BmodeFull)
+    colorbar;
+    clim(dynRange);
+    colormap gray
+    title('Bmode image')
+    ylabel('[cm]')
+    shading interp
+    axis equal ij tight
 
-        confirmation = '';
-        while ~strcmp(confirmation,'Yes')
-            rect = getrect;
-            confirmation = questdlg('Sure?');
-            if strcmp(confirmation,'Cancel')
-                disp(rect)
-                break
-            end
-        end
-        close,
-    end
+    xFull = th; % [deg]
+    zFull = (r-r(1))*1e2; % [cm]
 
     %%
     x_inf = rect(1); x_sup = rect(1)+rect(3);
     z_inf = rect(2); z_sup = rect(2)+rect(4);
+    dz = (zFull(2) - zFull(1))/100;
 
     % Limits for ACS estimation
     ind_x = x_inf <= xFull & xFull <= x_sup;
@@ -105,23 +91,23 @@ for iRoi = 1:2
     roi = ind_x.*ind_z';
     x = xFull(ind_x);
     z = zFull(ind_z);
-    sam1 = sam1(ind_z,ind_x);
-    Bmode = Bmode(ind_z,ind_x);
+    sam1 = rf(ind_z,ind_x);
+    Bmode = BmodeFull(ind_z,ind_x);
 
     % Wavelength size
     c0 = 1540;
     wl = c0/mean([freq_L freq_H]);   % Wavelength (m)
 
     % Lateral samples
-    wx = round(blocksize*wl*(1-overlap_pc)/dx);  % Between windows
-    nx = round(blocksize*wl/dx);                 % Window size
+    wx = round(blocklines*(1-overlap_pc));  % Between windows
+    nx = blocklines;                 % Window size
     x0 = 1:wx:length(x)-nx;
     x_ACS = x(1,x0+round(nx/2));
     n  = length(x0);
 
     % Axial samples
-    wz = round(blocksize*wl*(1-overlap_pc)/dz * ratio_zx); % Between windows
-    nz = 2*round(blocksize*wl/dz /2 * ratio_zx); % Window size
+    wz = round(blocksize*wl*(1-overlap_pc)/dz ); % Between windows
+    nz = 2*round(blocksize*wl/dz /2); % Window size
     % nz = 2*round(blocksize*wl/dz /2); % Window size
     L = (nz/2)*dz*100;   % (cm)
     z0p = 1:wz:length(z)-nz;
@@ -130,19 +116,6 @@ for iRoi = 1:2
     m  = length(z0p);
 
     %% BW from spectrogram
-    [pxx,fpxx] = pwelch(sam1-mean(sam1),nz,nz-wz,nz,fs);
-    meanSpectrum = mean(pxx,2);
-    meanSpectrum(1) = 0;
-    figure,
-    plot(fpxx/1e6,db(meanSpectrum/max(meanSpectrum))),grid on
-    hold on
-    if ~fixedBW
-        [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
-    end
-    xline(freq_L/1e6, 'k--')
-    xline(freq_H/1e6, 'k--')
-    hold off
-
     NFFT = 2^(nextpow2(nz/2)+2);
     band = (0:NFFT-1)'/NFFT * fs;   % [Hz] Band of frequencies
     rang = band > freq_L & band < freq_H ;   % useful frequency range
@@ -154,14 +127,14 @@ for iRoi = 1:2
 
     fprintf('Frequency range: %.2f - %.2f MHz\n',freq_L*1e-6,freq_H*1e-6)
     fprintf('Blocksize in wavelengths: %i\n',blocksize)
-    fprintf('Blocksize x: %.2f mm, z: %.2f mm\n',nx*dx*1e3,nz*dz*1e3)
+    fprintf('Blocksize x: %.2f lines, z: %.2f mm\n',blocklines,nz*dz*1e3)
     fprintf('Blocksize in pixels nx: %i, nz: %i\n',nx,nz);
     fprintf('Region of interest columns: %i, rows: %i\n\n',m,n);
 
     %% Generating Diffraction compensation
 
     % Generating references
-    att_ref = 0.3*f/NptodB; % From phantom especifications
+    att_ref = 0.54*f/NptodB; % From 20960001 _ID203458544
     att_ref_map = zeros(m,n,p);
     for jj=1:n
         for ii=1:m
@@ -170,6 +143,7 @@ for iRoi = 1:2
     end
 
     % Windows for spectrum
+    % windowing = tukeywin(nz/2,0.25);
     windowing = hamming(nz/2);
     windowing = windowing*ones(1,nx);
 
@@ -183,7 +157,7 @@ for iRoi = 1:2
     Sd_ref = zeros(m,n,p,Nref);
     for iRef = 1:Nref
         out = load([refsDir,'\',refFiles(iRef).name]);
-        samRef = out.RF;
+        samRef = out.rf;
         samRef = samRef(ind_z,ind_x); % Cropping
         % figure,imagesc(db(hilbert(samRef)))
         for jj=1:n
@@ -209,8 +183,11 @@ for iRoi = 1:2
     % Liberating memory to avoid killing my RAM
     clear Sp_ref Sd_ref
 
-
     %% Setting up
+
+    spectrumEnd = zeros(NFFT,1);
+    spectrumMid = zeros(NFFT,1);
+
     % Spectrum
     Sp = zeros(m,n,p);
     Sd = zeros(m,n,p);
@@ -227,6 +204,14 @@ for iRoi = 1:2
             [tempSd,~] = spectra(sub_block_d,windowing,0,nz/2,NFFT);
             Sp(ii,jj,:) = (tempSp(rang));
             Sd(ii,jj,:) = (tempSd(rang));
+
+            if ii == m
+                spectrumEnd = spectrumEnd + tempSd/m;
+            end
+            if ii == round(m/2)
+                spectrumMid = spectrumMid + tempSd/m;
+            end
+
         end
     end
 
@@ -239,6 +224,25 @@ for iRoi = 1:2
     tol = 1e-3;
     clear mask
     mask = ones(m,n,p);
+
+
+    %% Power spectrum
+    normFactor = max(spectrumMid);
+    spectrumEnd = spectrumEnd/normFactor;
+    spectrumMid = spectrumMid/normFactor;
+
+    figure, hold on
+    plot(band/1e6,db(spectrumMid))
+    plot(band/1e6,db(spectrumEnd))
+    xline(freq_L/1e6, 'k--')
+    xline(freq_H/1e6, 'k--')
+    xlim([0, fs/2e6])
+    hold off
+    xlabel('Frequency [MHz]')
+    ylabel('Magnitude [dB]')
+    legend('Mid','End')
+    grid on
+
 
     %% RSLD-TV
     [Bn,~] = AlterOpti_ADMM(A1,A2,b(:),muBtv,muCtv,m,n,tol,mask(:));
@@ -334,135 +338,136 @@ for iRoi = 1:2
 
     [X,Z] = meshgrid(xFull,zFull);
     [Xq,Zq] = meshgrid(x_ACS,z_ACS);
-    maskLiverACS = interp2(X,Z,maskLiver,Xq,Zq, 'nearest');
-    maskMuscleACS = interp2(X,Z,~maskLiver,Xq,Zq, 'nearest');
 
-    se = strel('diamond',1);
-    maskLiverACS = imerode(maskLiverACS,se);
-    maskMuscleACS = imerode(maskMuscleACS,se);
+    maskLiverACS = Zq > 4.4244;
+    maskLiver = Z > 4.4244;
 
     dataCols(iRoi,:) = ...
         [mean(BRTV(maskLiverACS),'all'), std(BRTV(maskLiverACS),[],'all'),...
         mean(BRSWTV(maskLiverACS),'all'), std(BRSWTV(maskLiverACS),[],'all'),...
         mean(BRTVL1(maskLiverACS),'all'), std(BRTVL1(maskLiverACS),[],'all'),...
-        mean(BRWFR(maskLiverACS),'all'), std(BRWFR(maskLiverACS),[],'all'),...
-        mean(BRTV(maskMuscleACS),'all'), std(BRTV(maskMuscleACS),[],'all'),...
-        mean(BRSWTV(maskMuscleACS),'all'), std(BRSWTV(maskMuscleACS),[],'all'),...
-        mean(BRTVL1(maskMuscleACS),'all'), std(BRTVL1(maskMuscleACS),[],'all'),...
-        mean(BRWFR(maskMuscleACS),'all'), std(BRWFR(maskMuscleACS),[],'all')];
+        mean(BRWFR(maskLiverACS),'all'), std(BRWFR(maskLiverACS),[],'all')];
+
+%% Overlay
+yLimits = [0,10];
+
+[X,Z] = meshgrid(xFull,zFull);
+roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
+
+figure('Units','centimeters', 'Position',[5 5 24 8])
+tiledlayout(1,4, 'TileSpacing','compact', 'Padding','compact')
+t1 = nexttile();
+imagesc(xFull,zFull,BmodeFull,dynRange); % axis image; 
+title('B-mode')
+ylim(yLimits)
+hold on
+contour(xFull,zFull,roi,1,'w--')
+% contour(xFull,zFull,maskLiver,1,'w--')
+% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
+% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
+hold off
+xlabel('Lateral [deg]')
+ylabel('Axial [cm]')
+hBm = colorbar;
+hBm.Label.String = 'dB';
+hBm.Location = 'westoutside';
+
+nexttile,
+[~,~,hColor] = imOverlayInterp(BmodeFull,BRTV,dynRange,attRange,0.7,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('RSLD')
+axis normal
+colorbar off
+ylim(yLimits)
+hold on
+contour(xFull,zFull,roi,1,'w--')
+contour(xFull,zFull,maskLiver,1,'w--')
+% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
+% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
+hold off
+% axis off
+%xlabel('x [cm]')
+xlabel('Lateral [deg]')
+
+nexttile,
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRSWTV,dynRange,attRange,0.7,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('SWTV-ACE')
+colorbar off
+axis normal
+ylim(yLimits)
+hold on
+contour(xFull,zFull,roi,1,'w--')
+contour(xFull,zFull,maskLiver,1,'w--')
+% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
+% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
+hold off
+% axis off
+%xlabel('x [cm]')
+xlabel('Lateral [deg]')
 
 
-    %% Overlay
-    [X,Z] = meshgrid(xFull,zFull);
-    roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
-
-    figure('Units','centimeters', 'Position',[5 5 24 6])
-    tiledlayout(1,4, 'TileSpacing','compact', 'Padding','compact')
-    t1 = nexttile();
-    imagesc(xFull,zFull,BmodeFull,dynRange); axis image;
-    title('B-mode')
-    ylim([1.5, 6.1])
-    hold on
-    contour(xFull,zFull,roi,1,'w--')
-    % contour(xFull,zFull,maskLiver,1,'w--')
-    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
-    hold off
-    xlabel('Lateral [cm]')
-    ylabel('Axial [cm]')
-    hBm = colorbar;
-    hBm.Label.String = 'dB';
-    hBm.Location = 'westoutside';
-
-    nexttile,
-    [~,~,hColor] = imOverlayInterp(BmodeFull,BRTV,dynRange,attRange,0.7,...
-        x_ACS,z_ACS,roi,xFull,zFull);
-    title('RSLD')
-    colorbar off
-    ylim([1.5, 6.1])
-    hold on
-    contour(xFull,zFull,roi,1,'w--')
-    contour(xFull,zFull,maskLiver,1,'w--')
-    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
-    hold off
-    % axis off
-    %xlabel('x [cm]')
-    xlabel('Lateral [cm]')
-
-    nexttile,
-    [~,hB,hColor] = imOverlayInterp(BmodeFull,BRSWTV,dynRange,attRange,0.7,...
-        x_ACS,z_ACS,roi,xFull,zFull);
-    title('SWTV-ACE')
-    colorbar off
-    ylim([1.5, 6.1])
-    hold on
-    contour(xFull,zFull,roi,1,'w--')
-    contour(xFull,zFull,maskLiver,1,'w--')
-    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
-    hold off
-    % axis off
-    %xlabel('x [cm]')
-    xlabel('Lateral [cm]')
-
-
-    nexttile,
-    [~,hB,hColor] = imOverlayInterp(BmodeFull,BRWFR,dynRange,attRange,0.7,...
-        x_ACS,z_ACS,roi,xFull,zFull);
-    title('SWIFT')
-    % colorbar off
-    ylim([1.5, 6.1])
-    hold on
-    contour(xFull,zFull,roi,1,'w--')
-    contour(xFull,zFull,maskLiver,1,'w--')
-    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
-    hold off
-    xlabel('Lateral [cm]')
-    % hColor.Location = 'northoutside';
-    % hColor.Layout.Tile = 'northoutside';
-    hColor.Label.String = 'ACS [dB/cm/MHz]';
-    colormap(t1,'gray')
-    fontsize(gcf,9,'points')
-
+nexttile,
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRWFR,dynRange,attRange,0.7,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('SWIFT')
+axis normal
+ylim(yLimits)
+hold on
+contour(xFull,zFull,roi,1,'w--')
+contour(xFull,zFull,maskLiver,1,'w--')
+% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
+% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
+hold off
+xlabel('Lateral [deg]')
+% hColor.Location = 'northoutside';
+% hColor.Layout.Tile = 'northoutside';
+hColor.Label.String = 'ACS [dB/cm/MHz]';
+colormap(t1,'gray')
+fontsize(gcf,9,'points')
 
     %%
-    figure('Units','centimeters', 'Position',[5 5 14 8])
-    tiledlayout(1,2, 'TileSpacing','compact', 'Padding','tight')
+figure('Units','centimeters', 'Position',[5 5 14 8])
+tiledlayout(1,2, 'TileSpacing','compact', 'Padding','tight')
 
-    t1 = nexttile;
-    imagesc(xFull,zFull,BmodeFull,dynRange); axis image;
-    title('B-mode')
-    ylim([1.5, 7])
-    hold on
-    contour(xFull,zFull,roi,1,'w--')
-    hold off
-    xlabel('Lateral [cm]')
-    ylabel('Axial [cm]')
-    hBm = colorbar;
-    hBm.Label.String = 'dB';
-    hBm.Location = 'northoutside';
+t1 = nexttile;
+imagesc(xFull,zFull,BmodeFull,dynRange); % axis image; 
+title('B-mode')
+ylim(yLimits)
+hold on
+contour(xFull,zFull,roi,1,'w--')
+% contour(xFull,zFull,maskLiver,1,'w--')
+% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
+% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
+hold off
+xlabel('Lateral [deg]')
+ylabel('Axial [cm]')
+hBm = colorbar;
+hBm.Label.String = 'dB';
+hBm.Location = 'westoutside';
 
-    nexttile,
-    [~,hB,hColor] = imOverlayInterp(BmodeFull,BRTVL1,dynRange,attRange,0.5,...
-        x_ACS,z_ACS,roi,xFull,zFull);
-    title('TVL1')
-    hColor.Label.String = 'dB/cm/MHz';
-    hColor.Location = 'northoutside';
-    hColor.Ticks = [0.4,0.8,1.2,1.6,2];
-    ylim([1.5, 7])
-    hold on
-    contour(xFull,zFull,roi,1,'w--')
-    % contour(x,z,maskThyroid,1,'w--')
-    hold off
-    xlabel('x [cm]')
-    % ylabel('z [cm]')
+nexttile,
+[~,hB,hColor] = imOverlayInterp(BmodeFull,BRTVL1,dynRange,attRange,0.7,...
+    x_ACS,z_ACS,roi,xFull,zFull);
+title('TVL1')
+axis normal
+ylim(yLimits)
+hold on
+contour(xFull,zFull,roi,1,'w--')
+contour(xFull,zFull,maskLiver,1,'w--')
+% contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
+% contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
+hold off
+% axis off
+%xlabel('x [cm]')
+xlabel('Lateral [deg]')
 
-    % hColor.Layout.Tile = 'east';
-    % hColor.Label.String = 'ACS [dB/cm/MHz]';
-    colormap(t1,'gray')
-    fontsize(gcf,9,'points')
+
+% hColor.Layout.Tile = 'east';
+% hColor.Label.String = 'ACS [dB/cm/MHz]';
+colormap(t1,'gray')
+fontsize(gcf,9,'points')
+
 
 
 end

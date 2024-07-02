@@ -1,5 +1,5 @@
-% Script to test simulated inclusions. Focal number is 2.
-% Better performance is expected but poor lateral resolution
+% Script to test simulated inclusions. Focal number is 2 with multifocusing.
+% Better performance is expected
 
 
 clear,clc
@@ -8,7 +8,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_06_26_inc'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_06_26_ref'];
-resultsDir = fullfile(targetDir,'results_concat');
+resultsDir = fullfile(targetDir,'results_mean');
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 
 [~,~] = mkdir(resultsDir);

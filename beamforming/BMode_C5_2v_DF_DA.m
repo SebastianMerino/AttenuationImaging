@@ -1,25 +1,16 @@
 %%
-clear; clc; %close all;
+clear; clc;
+close all;
 
 %% Extract structures from .mat
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation\' ...
+    'Liver_24_06_28\set2'];
+input_f = fullfile(baseDir,'sm02.mat');
+load(input_f, 'Trans','P','Receive');
 
-input_f = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation\' ...
-    'LiverVerasonics\ref2'];
-
-saved_data = load(input_f);
-RcvData = cell2mat(saved_data.RcvData);
-n_frame = size(RcvData,3); % Frame selector
-RcvData = RcvData(:, :, n_frame); % Select frame of RF Data
-% TX = saved_data.TX; % TX structure - Verasonics
-% RX = TX; % same structure for reception for later modifications
-Trans = saved_data.Trans; % Trans structure - Verasonics
-%Resource = saved_data.Resource; % Resource structure - Verasonics
-P = saved_data.P; % P structure - Verasonics
-Receive = saved_data.Receive; % Receive structure - Verasonics
-
-%% 
-input_f = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation\' ...
-    'LiverVerasonics\002_LP_B'];
+%%  Input and output file
+input_f = fullfile(baseDir,'rm4.mat');
+output_f = fullfile(baseDir,'ref','r4.mat');
 
 saved_data = load(input_f);
 RcvData = cell2mat(saved_data.RcvData);
@@ -114,34 +105,48 @@ end
 b_mode = 20*log10(abs(hilbert(rf_data)));
 b_mode = b_mode-max(b_mode(:));
 
-clim_min = -60;
+param = getparam('C5-2v');
+siz = size(rf_data);
+z = sound_speed*t/2;
+zmax = z(end);
+R = param.radius;
+p = param.pitch;
+N = param.Nelements;
+L = 2*R*sin(asin(p/2/R)*(N-1)); % chord length
+d = sqrt(R^2-L^2/4); % apothem
+z0 = -d;
+th = -(linspace(atan2(L/2,d),atan2(-L/2,d),siz(2)))*180/pi;
+r = linspace(R+p,-z0+zmax,siz(1));
 
+clim_min = -60;
 figure();
-z = sound_speed*t/2*1e3;
 x = linspace(1, 128, 128); % Same as verasonics image
-imagesc(x, z, b_mode);
-ylim([0 80])
+imagesc(th, r*100, b_mode);
+%ylim([0 80])
 colormap("gray");
 colorbar;
 clim([clim_min, 0]);
 
 %% To Polar Coordinates
-param = getparam('C5-2v');
-[x_p,z_p, z_p_0] = impolgrid(size(b_mode), z(end)*1e-3,param);
+[xPolar,zPolar, z0Polar] = impolgrid(size(b_mode), z(end),param);
 
 figure();
-pcolor(x_p*1000,z_p*1000,b_mode)
+pcolor(xPolar*1e2,zPolar*1e2,b_mode)
 colorbar;
 clim([clim_min, 0]);
 colormap gray
 title('Bmode image')
-ylabel('[mm]')
+ylabel('[cm]')
 shading interp
 axis equal ij tight
 %ylim([0 80])
 %xlim([-50 50])
 %set(gca,'XColor','none','box','off')
 
+%% Saving
+rf = rf_data;
+fs = sample_freq;
+save(output_f,'rf','th','r','xPolar','zPolar',"z0Polar",'fs');
 
 %% Auxiliary functions
 

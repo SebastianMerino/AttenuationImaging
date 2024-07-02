@@ -1,5 +1,5 @@
 % ====================================================================== %
-% Script for new liver data (square). 
+% Script for new liver data (square) sent by Anthony
 % Created on June 19th, 2024
 % ====================================================================== %
 clear,clc
