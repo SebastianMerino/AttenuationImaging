@@ -5,14 +5,14 @@
 clear,clc
 close all
 
-% baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-%     'Attenuation\Liver_24_06_28\set1'];
-baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\Liver\24_06_28'];
+baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
+    'Attenuation\Liver_24_06_28\set1'];
+% baseDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
+%     'Attenuation\Liver\24_06_28'];
 targetDir = fullfile(baseDir,'sample');
 refsDir = fullfile(baseDir,'ref');
-resultsDir = fullfile(baseDir,'results','24-07-02');
-% resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-02';
+% resultsDir = fullfile(baseDir,'results','24-07-02');
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-02';
 
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 targetFiles = dir([targetDir,'\*.mat']);
@@ -357,7 +357,7 @@ for iRoi = 1:2
     [X,Z] = meshgrid(xFull,zFull);
     roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 
-    figure('Units','centimeters', 'Position',[5 5 24 8])
+    figure('Units','centimeters', 'Position',[5 5 24 7])
     tiledlayout(1,4, 'TileSpacing','compact', 'Padding','compact')
     t1 = nexttile();
     imagesc(xFull,zFull,BmodeFull,dynRange); % axis image;
@@ -445,34 +445,48 @@ for iRoi = 1:2
 
     %%
     omitLines = 10;
-    figure('Units','centimeters', 'Position',[5 5 9 6]),
-    pcolor(xPolar(:,omitLines+1:end-omitLines)*1e2, ...
-        zPolar(:,omitLines+1:end-omitLines)*1e2, ...
-        BmodeFull(:,omitLines+1:end-omitLines))    
-    clim(dynRange);
-    colormap gray
-    title('Bmode image')
-    shading interp
-    axis equal ij tight
-    ax = gca;
-    ax.Color = [0,0,0];
+    figure('Units','centimeters', 'Position',[5 5 9 7]),
+    [ax1,~] = imOverlayPolar(BmodeFull,BRTV,dynRange,attRange,0, ...
+        xPolar,zPolar,xPolarACS,zPolarACS);
+    title(ax1,'RSLD')
+    xlabel(ax1,'Axial [cm]'), ylabel(ax1,'Lateral [cm]')
+    hold on
+    contour(xPolar*1e2, zPolar*1e2, roi,1,'w--')
+    hold off
+    % saveas(gcf,fullfile(resultsDir,'cuec.png'))
+    % %%
 
-    figure('Units','centimeters', 'Position',[5 5 9 6]),
+    figure('Units','centimeters', 'Position',[5 5 9 7]),
     [ax1,~] = imOverlayPolar(BmodeFull,BRTV,dynRange,attRange,0.5, ...
         xPolar,zPolar,xPolarACS,zPolarACS);
     title(ax1,'RSLD')
-    
-    figure('Units','centimeters', 'Position',[5 5 9 6]),
+    xlabel(ax1,'Axial [cm]'), ylabel(ax1,'Lateral [cm]')
+    hold on
+    contour(xPolar*1e2, zPolar*1e2, roi,1,'w--')
+    hold off
+
+    figure('Units','centimeters', 'Position',[5 5 9 7]),
     [ax1,~] = imOverlayPolar(BmodeFull,BRSWTV,dynRange,attRange,0.5, ...
         xPolar,zPolar,xPolarACS,zPolarACS);
     title(ax1,'SWTV-ACE')
+    xlabel(ax1,'Axial [cm]'), ylabel(ax1,'Lateral [cm]')
+    hold on
+    contour(xPolar*1e2, zPolar*1e2, roi,1,'w--')
+    hold off
 
-    figure('Units','centimeters', 'Position',[5 5 9 6]),
+    figure('Units','centimeters', 'Position',[5 5 9 7]),
     [ax1,~] = imOverlayPolar(BmodeFull,BSWIFT,dynRange,attRange,0.5, ...
         xPolar,zPolar,xPolarACS,zPolarACS);
     title(ax1,'SWIFT')
+    xlabel(ax1,'Axial [cm]'), ylabel(ax1,'Lateral [cm]')
+    hold on
+    contour(xPolar*1e2, zPolar*1e2, roi,1,'w--')
+    hold off
 
-    %%
+    pause(0.1)
+
+    save_all_figures_to_directory(resultsDir,['liverRoi',num2str(iRoi),'Fig'],'svg');
+    close all
 
 end
 %%
@@ -489,6 +503,3 @@ writetable(dataTable,fullfile(resultsDir,tableName),...
     'WriteRowNames',true);
 
 %%
-save_all_figures_to_directory(resultsDir,'liverFig','svg');
-close all
-
