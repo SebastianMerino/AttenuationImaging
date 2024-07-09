@@ -6,7 +6,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID316V2\06-08-2023-Generic'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\Attenuation' ...
     '\ID544V2\06-08-2023-Generic'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-13';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-05\R0-1.2';
 
 % targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
 %     'Attenuation\phantoms\ID316V2\06-08-2023-Generic'];
@@ -23,7 +23,7 @@ tableName = 'phantoms.xlsx';
 %% Constants
 blocksize = 8;     % Block size in wavelengths
 freq_L = 2.5e6; freq_H = 7.5e6;
-freq_C = 5e6;
+freq_C = (freq_L + freq_H)/2;
 
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
@@ -46,7 +46,7 @@ groundTruthTargets = [0.97,0.95,0.95,0.55];
 
 % Plotting constants
 dynRange = [-50,0];
-attRange = [0.4,1.1];
+attRange = [0,1.2];
 
 tol = 1e-3;
 
@@ -403,10 +403,10 @@ title('B-mode')
 %subtitle(' ')
 c = colorbar;
 c.Label.String = 'dB';
-% hold on 
-% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-%     'LineWidth',1, 'Curvature',1)
-% hold off
+hold on 
+rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+    'LineWidth',1, 'Curvature',1)
+hold off
 
 % fontsize(gcf,8,'points')
 
@@ -420,10 +420,10 @@ title('RSLD')
 c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
 % fontsize(gcf,8,'points')
-% hold on 
-% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-%     'LineWidth',1, 'Curvature',1)
-% hold off
+hold on 
+rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+    'LineWidth',1, 'Curvature',1)
+hold off
 
 t3 = nexttile;
 imagesc(x_ACS,z_ACS,BRBC, attRange)
@@ -435,10 +435,10 @@ title('SWTV-ACE')
 c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
 % fontsize(gcf,8,'points')
-% hold on 
-% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-%     'LineWidth',1, 'Curvature',1)
-% hold off
+hold on 
+rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+    'LineWidth',1, 'Curvature',1)
+hold off
 
 % t4 = nexttile;
 % imagesc(x_ACS,z_ACS,BRTik, attRange)
@@ -463,10 +463,10 @@ c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
 
 % fontsize(gcf,8,'points')
-% hold on 
-% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
-%     'LineWidth',1, 'Curvature',1)
-% hold off
+hold on 
+rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+    'LineWidth',1, 'Curvature',1)
+hold off
 end
 
 %%

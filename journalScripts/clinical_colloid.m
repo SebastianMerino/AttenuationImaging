@@ -314,6 +314,8 @@ hBm = colorbar;
 hBm.Label.String = 'dB';
 hBm.Location = 'westoutside';
 
+[X,Z] = meshgrid(x,z);
+roiSub = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 
 t2 = nexttile;
 iRoi = 1;
@@ -335,7 +337,7 @@ set(hF,'AlphaData',alphadata);
 
 contour(xFull,zFull,roiACS{1},1,'w--')
 contour(xFull,zFull,roiACS{2},1,'w--')
-contour(x,z,maskThyroid,1,'w--')
+contour(x,z,maskThyroid&roiSub,1,'w--')
 hold off
 
 ylim([0.1, 3])
@@ -363,7 +365,7 @@ set(hF,'AlphaData',alphadata);
 
 contour(xFull,zFull,roiACS{1},1,'w--')
 contour(xFull,zFull,roiACS{2},1,'w--')
-contour(x,z,maskThyroid,1,'w--')
+contour(x,z,maskThyroid&roiSub,1,'w--')
 hold off
 
 ylim([0.1, 3])
@@ -391,7 +393,7 @@ set(hF,'AlphaData',alphadata);
 
 contour(xFull,zFull,roiACS{1},1,'w--')
 contour(xFull,zFull,roiACS{2},1,'w--')
-contour(x,z,maskThyroid,1,'w--')
+contour(x,z,maskThyroid&roiSub,1,'w--')
 hold off
 ylim([0.1, 3])
 xlabel('Lateral [cm]'), % ylabel('Axial [cm]')

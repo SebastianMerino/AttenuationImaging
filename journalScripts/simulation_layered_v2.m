@@ -4,7 +4,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_04_04_layered'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_04_25_ref'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-13';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-05\simu';
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 
 [~,~] = mkdir(resultsDir);
@@ -359,6 +359,9 @@ c.Label.String = '[db]';
 title('B-mode')
 ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
+hold on 
+xline(2.05, 'w--', 'LineWidth',1.5)
+hold off
 
 t2 = nexttile;
 imagesc(x_ACS,z_ACS,attIdeal,attRange)
@@ -374,6 +377,9 @@ axis image
 title('RSLD')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
+hold on 
+yline(2.05, 'w--', 'LineWidth',1.5)
+hold off
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRSWTV, attRange)
@@ -382,6 +388,9 @@ axis image
 title('SWTV-ACE')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
+hold on 
+yline(2.05, 'w--', 'LineWidth',1.5)
+hold off
 
 % t1 = nexttile; 
 % imagesc(x_ACS,z_ACS,BRTVL1, attRange)
@@ -400,6 +409,9 @@ c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
+hold on 
+yline(2.05, 'w--', 'LineWidth',1.5)
+hold off
 
 fontsize(gcf,8,'points')
 %%

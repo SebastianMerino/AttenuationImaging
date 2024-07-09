@@ -12,7 +12,7 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 targetDir = fullfile(baseDir,'sample');
 refsDir = fullfile(baseDir,'ref');
 % resultsDir = fullfile(baseDir,'results','24-07-02');
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-02';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-05';
 
 if (~exist(resultsDir,"dir")), mkdir(resultsDir); end
 targetFiles = dir([targetDir,'\*.mat']);
@@ -29,7 +29,7 @@ rect = [];
 % Bandwidth
 fixedBW = true;
 ratio = db2mag(-30);
-freq_L = 1.5e6; freq_H = 4.5e6;
+freq_L = 1.5e6; freq_H = 3.5e6;
 % freq_L = 1.8e6; freq_H = 3.5e6;
 
 % Weight parameters
@@ -43,10 +43,16 @@ aSNR = 5; bSNR = 0.09;
 desvMin = 15;
 
 % Reg parameters
-muBtv = 10^3.5; muCtv = 10^3.5;
-muBswtv = 10^3; muCswtv = 10^2.5;
-muBtvl1 = 10^3.5; muCtvl1 = 10^2;
-muBwfr = 10^3.5; muCwfr = 10^2;
+% muBtv = 10^3.5; muCtv = 10^3.5;
+% muBswtv = 10^3; muCswtv = 10^2.5;
+% muBtvl1 = 10^3.5; muCtvl1 = 10^2;
+% muBwfr = 10^3.5; muCwfr = 10^2;
+
+% TIROIDES
+muBtv = 10^2.5; muCtv = 10^2.5;
+muBswtv = 10^2.5; muCswtv = 10^-0.5;
+muBtvl1 = 10^2.5; muCtvl1 = 10^-0.5;
+muBwfr = 10^3; muCwfr = 10^0.5;
 
 % Plotting constants
 dynRange = [-60,0];
@@ -59,10 +65,12 @@ dataCols = zeros(2,8);
 for iRoi = 1:2
     if iRoi==1
         % rect = [0.9930    4.4255   32.0799    5.5011]; % Just liver
-        rect = [0.2    4.5   32.8    5.5]; % Just liver
+        rect = [0.2    4.5   32.8    5.2]; % Just liver OFICIAL
+         rect = [-20    4.5   53    5.2]; % Just liver
     else
         % rect = [-0.5347    1.4666   33.4548    8.6268]; % liver & muscle
-        rect = [0.2    1.5   32.8    8.5]; % liver & muscle
+        rect = [0.2    1.5   32.8    8.2]; % liver & muscle OFICIAL
+        rect = [-20    1.5   53    8.2]; % liver & muscle
     end
 
 
@@ -72,15 +80,15 @@ for iRoi = 1:2
     BmodeFull = db(hilbert(rf));
     BmodeFull = BmodeFull - max(BmodeFull(:));
 
-    figure();
-    pcolor(xPolar*1e2,zPolar*1e2,BmodeFull)
-    colorbar;
-    clim(dynRange);
-    colormap gray
-    title('Bmode image')
-    ylabel('[cm]')
-    shading interp
-    axis equal ij tight
+    % figure();
+    % pcolor(xPolar*1e2,zPolar*1e2,BmodeFull)
+    % colorbar;
+    % clim(dynRange);
+    % colormap gray
+    % title('Bmode image')
+    % ylabel('[cm]')
+    % shading interp
+    % axis equal ij tight
 
     xFull = th; % [deg]
     r0 = r(1);
@@ -231,15 +239,24 @@ for iRoi = 1:2
     clear mask
     mask = ones(m,n,p);
 
+    %%
+    [pxx,fpxx] = pwelch(sam1-mean(sam1),nz,nz-wz,nz,fs);
+    meanSpectrum = mean(pxx,2);
+    meanSpectrum(1) = 0;
+    figure,
+    plot(fpxx/1e6,db(meanSpectrum/max(meanSpectrum))),grid on
+    % if ~fixedBW
+    %     [freq_L,freq_H] = findFreqBand(fpxx, meanSpectrum, ratio);
+    % end
 
     %% Power spectrum
     normFactor = max(spectrumMid);
-    spectrumEnd = spectrumEnd/normFactor;
+    %spectrumEnd = spectrumEnd/normFactor;
     spectrumMid = spectrumMid/normFactor;
 
     figure, hold on
     plot(band/1e6,db(spectrumMid))
-    plot(band/1e6,db(spectrumEnd))
+    % plot(band/1e6,db(spectrumEnd))
     xline(freq_L/1e6, 'k--')
     xline(freq_H/1e6, 'k--')
     xlim([0, fs/2e6])
@@ -357,7 +374,7 @@ for iRoi = 1:2
     [X,Z] = meshgrid(xFull,zFull);
     roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 
-    figure('Units','centimeters', 'Position',[5 5 24 7])
+    figure('Units','centimeters', 'Position',[5 5 20 5])
     tiledlayout(1,4, 'TileSpacing','compact', 'Padding','compact')
     t1 = nexttile();
     imagesc(xFull,zFull,BmodeFull,dynRange); % axis image;
@@ -365,9 +382,6 @@ for iRoi = 1:2
     ylim(yLimits)
     hold on
     contour(xFull,zFull,roi,1,'w--')
-    % contour(xFull,zFull,maskLiver,1,'w--')
-    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
     hold off
     xlabel('Lateral [deg]')
     ylabel('Axial [cm]')
@@ -384,9 +398,6 @@ for iRoi = 1:2
     ylim(yLimits)
     hold on
     contour(xFull,zFull,roi,1,'w--')
-    contour(xFull,zFull,maskLiver & roi,1,'w--')
-    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
     hold off
     % axis off
     %xlabel('x [cm]')
@@ -401,9 +412,6 @@ for iRoi = 1:2
     ylim(yLimits)
     hold on
     contour(xFull,zFull,roi,1,'w--')
-    contour(xFull,zFull,maskLiver & roi,1,'w--')
-    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
     hold off
     % axis off
     %xlabel('x [cm]')
@@ -418,75 +426,86 @@ for iRoi = 1:2
     ylim(yLimits)
     hold on
     contour(xFull,zFull,roi,1,'w--')
-    contour(xFull,zFull,maskLiver & roi,1,'w--')
-    % contour(x_ACS,z_ACS,maskMuscleACS,1,'w--')
-    % contour(x_ACS,z_ACS,maskLiverACS,1,'w--')
     hold off
     xlabel('Lateral [deg]')
     % hColor.Location = 'northoutside';
     % hColor.Layout.Tile = 'northoutside';
     hColor.Label.String = 'ACS [dB/cm/MHz]';
     colormap(t1,'gray')
-    fontsize(gcf,9,'points')
+    % fontsize(gcf,9,'points')
 
+    exportgraphics(gcf,fullfile(resultsDir,"roi"+iRoi+"Polar.png"), ...
+        'Resolution','300')
 
     %%
     [TH_acs,R_acs] = meshgrid(-x_ACS*pi/180 + pi/2,z_ACS/100 + r0);
     [xPolarACS,zPolarACS] = pol2cart(TH_acs,R_acs);
     zPolarACS = zPolarACS + z0Polar;
-    % figure,
-    % pcolor(xPolarACS*100,zPolarACS*100,BSWIFT)
-    % colorbar;
-    % colormap turbo
-    % title('ACS')
-    % ylabel('[cm]')
-    % shading interp
-    % axis equal ij tight
 
-    %%
+    
     omitLines = 10;
-    figure('Units','centimeters', 'Position',[5 5 9 7]),
+    figure('Units','centimeters', 'Position',[5 5 5 5]);
     [ax1,~] = imOverlayPolar(BmodeFull,BRTV,dynRange,attRange,0, ...
         xPolar,zPolar,xPolarACS,zPolarACS);
-    title(ax1,'RSLD')
-    xlabel(ax1,'Axial [cm]'), ylabel(ax1,'Lateral [cm]')
+    yticks(ax1,[4 8 12])
+    title(ax1,'B-mode')
+    xlabel(ax1,'Lateral [cm]'), ylabel(ax1,'Axial [cm]')
+    xlim([-7.5 7.5])
     hold on
     contour(xPolar*1e2, zPolar*1e2, roi,1,'w--')
+    if iRoi == 2, contour(xPolar*1e2, zPolar*1e2, roi1,1,'w--'), end
     hold off
-    % saveas(gcf,fullfile(resultsDir,'cuec.png'))
-    % %%
+    exportgraphics(gcf,fullfile(resultsDir,"roi"+iRoi+"Bm.png"), ...
+        'Resolution','300')
 
-    figure('Units','centimeters', 'Position',[5 5 9 7]),
+    figure('Units','centimeters', 'Position',[5 5 5 5]);
     [ax1,~] = imOverlayPolar(BmodeFull,BRTV,dynRange,attRange,0.5, ...
         xPolar,zPolar,xPolarACS,zPolarACS);
+    yticks(ax1,[4 8 12])
     title(ax1,'RSLD')
-    xlabel(ax1,'Axial [cm]'), ylabel(ax1,'Lateral [cm]')
+    xlabel(ax1,'Lateral [cm]'), ylabel(ax1,'Axial [cm]')
+    xlim([-7.5 7.5])
     hold on
     contour(xPolar*1e2, zPolar*1e2, roi,1,'w--')
+    if iRoi == 2, contour(xPolar*1e2, zPolar*1e2, roi1,1,'w--'), end
     hold off
+    exportgraphics(gcf,fullfile(resultsDir,"roi"+iRoi+"rsld.png"), ...
+        'Resolution','300')
 
-    figure('Units','centimeters', 'Position',[5 5 9 7]),
+    
+    figure('Units','centimeters', 'Position',[5 5 5 5]);
     [ax1,~] = imOverlayPolar(BmodeFull,BRSWTV,dynRange,attRange,0.5, ...
         xPolar,zPolar,xPolarACS,zPolarACS);
+    yticks(ax1,[4 8 12])
     title(ax1,'SWTV-ACE')
-    xlabel(ax1,'Axial [cm]'), ylabel(ax1,'Lateral [cm]')
+    xlabel(ax1,'Lateral [cm]'), ylabel(ax1,'Axial [cm]')
+    xlim([-7.5 7.5])
     hold on
     contour(xPolar*1e2, zPolar*1e2, roi,1,'w--')
+    if iRoi == 2, contour(xPolar*1e2, zPolar*1e2, roi1,1,'w--'), end
     hold off
+    exportgraphics(gcf,fullfile(resultsDir,"roi"+iRoi+"swtv.png"), ...
+        'Resolution','300')
 
-    figure('Units','centimeters', 'Position',[5 5 9 7]),
+    figure('Units','centimeters', 'Position',[5 5 5 5]);
     [ax1,~] = imOverlayPolar(BmodeFull,BSWIFT,dynRange,attRange,0.5, ...
         xPolar,zPolar,xPolarACS,zPolarACS);
+    yticks(ax1,[4 8 12])
     title(ax1,'SWIFT')
-    xlabel(ax1,'Axial [cm]'), ylabel(ax1,'Lateral [cm]')
+    xlabel(ax1,'Lateral [cm]'), ylabel(ax1,'Axial [cm]')
+    xlim([-7.5 7.5])
     hold on
     contour(xPolar*1e2, zPolar*1e2, roi,1,'w--')
+    if iRoi == 2, contour(xPolar*1e2, zPolar*1e2, roi1,1,'w--'), end
     hold off
-
-    pause(0.1)
-
-    save_all_figures_to_directory(resultsDir,['liverRoi',num2str(iRoi),'Fig'],'svg');
+    exportgraphics(gcf,fullfile(resultsDir,"roi"+iRoi+"swift.png"), ...
+        'Resolution','300')
+    
+    % save_all_figures_to_directory(resultsDir,['liverRoi',num2str(iRoi),'Fig'],'png');
+    pause(0.5)
     close all
+
+    roi1 = roi;
 
 end
 %%

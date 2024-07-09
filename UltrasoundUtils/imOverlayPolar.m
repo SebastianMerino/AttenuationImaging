@@ -5,7 +5,7 @@ function [ax1,ax2] = imOverlayPolar(Bm,ACS,dynRange,attRange,transparency,xPolar
 %   z:      depth in mm
 %   ROI:    Region of interest
 
-omitLines = 10;
+omitLines = 0;
 % Create axes for Bmode
 ax1 = axes;
 pcolor(ax1, xPolar(1:end-omitLines,omitLines+1:end-omitLines)*1e2, ...

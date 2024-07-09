@@ -4,7 +4,7 @@ targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_04_04_inc'];
 refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
     'Attenuation\Simulation\24_04_25_ref'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-13';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-05\simu';
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 
 [~,~] = mkdir(resultsDir);
@@ -205,15 +205,15 @@ clear mask
 mask = ones(m,n,p);
 
 % Creating masks and ideal map
-rInc = 0.7;
+rInc = 0.7; c1x = 0; c1z = 2.05;
 [X,Z] = meshgrid(x_ACS,z_ACS);
 [Xq,Zq] = meshgrid(x,z);
-inclusion = (Xq.^2 + (Zq-2).^2)<= (rInc-0.1)^2;
-back = (Xq.^2 + (Zq-2).^2) >= (rInc+0.1)^2;
+inclusion = (Xq.^2 + (Zq-c1z).^2)<= (rInc-0.1)^2;
+back = (Xq.^2 + (Zq-c1z).^2) >= (rInc+0.1)^2;
 attIdeal = ones(size(Xq))*groundTruthBack(iAcq);
-attIdeal((Xq.^2 + (Zq-2).^2)<= rInc^2) = groundTruthInc(iAcq);
+attIdeal((Xq.^2 + (Zq-c1z).^2)<= rInc^2) = groundTruthInc(iAcq);
 
-inclusionACS = (X.^2 + (Z-2).^2)<= rInc^2;
+inclusionACS = (X.^2 + (Z-c1z).^2)<= rInc^2;
 attIdealACS = ones(size(X))*groundTruthBack(iAcq);
 attIdealACS(inclusionACS) = groundTruthInc(iAcq); %incl = inclusion
 
@@ -339,6 +339,10 @@ c.Label.String = 'dB';
 title('B-mode')
 ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
+% hold on 
+% rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+%     'LineWidth',1, 'Curvature',1)
+% hold off
 
 t2 = nexttile;
 imagesc(x,z,attIdeal,attRange)
@@ -356,6 +360,10 @@ axis image
 title('RSLD')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
+hold on 
+rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+    'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
+hold off
 
 t1 = nexttile; 
 imagesc(x_ACS,z_ACS,BRSWTV, attRange)
@@ -364,6 +372,10 @@ axis image
 title('SWTV-ACE')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
+hold on 
+rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+    'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
+hold off
 
 % t1 = nexttile; 
 % imagesc(x_ACS,z_ACS,BRTVL1, attRange)
@@ -382,6 +394,10 @@ c = colorbar;
 c.Label.String = 'ACS [db/cm/MHz]';
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
+hold on 
+rectangle('Position',[c1x-rInc c1z-rInc 2*rInc 2*rInc], 'LineStyle','--', ...
+    'LineWidth',1, 'Curvature',1, 'EdgeColor',[1 1 1])
+hold off
 
 fontsize(gcf,8,'points')
 

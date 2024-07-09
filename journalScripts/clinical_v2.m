@@ -418,6 +418,9 @@ fprintf("D ACS, WFR: %.2f\n",...
 [X,Z] = meshgrid(xFull,zFull);
 roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
 
+[X,Z] = meshgrid(x,z);
+roiSub = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
+
 figure('Units','centimeters', 'Position',[5 5 24 4.6])
 tiledlayout(1,4, 'TileSpacing','compact', 'Padding','compact')
 t1 = nexttile();
@@ -441,7 +444,7 @@ colorbar off
 ylim([0.1, 3])
 hold on
 contour(xFull,zFull,roi,1,'w--')
-contour(x,z,maskThyroid,1,'w--')
+contour(x,z,maskThyroid & roiSub,1,'w--')
 hold off
 % axis off
 %xlabel('x [cm]')
@@ -455,7 +458,7 @@ colorbar off
 ylim([0.1, 3])
 hold on
 contour(xFull,zFull,roi,1,'w--')
-contour(x,z,maskThyroid,1,'w--')
+contour(x,z,maskThyroid & roiSub,1,'w--')
 hold off
 % axis off
 %xlabel('x [cm]')
@@ -470,7 +473,7 @@ title('SWIFT')
 ylim([0.1, 3])
 hold on
 contour(xFull,zFull,roi,1,'w--')
-contour(x,z,maskThyroid,1,'w--')
+contour(x,z,maskThyroid & roiSub,1,'w--')
 hold off
 xlabel('Lateral [cm]')
 % hColor.Location = 'northoutside';
