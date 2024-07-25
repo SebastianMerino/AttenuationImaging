@@ -1,8 +1,8 @@
 % Script that generates images for ISBI 2024
 clear,clc
 close all
-addpath('./functions_v7');
-addpath('./AttUtils');
+% addpath('./functions_v7');
+% addpath('./AttUtils');
 
 % ======================================================================
 % ======================================================================
@@ -263,7 +263,7 @@ imagesc(x_ACS,z_ACS,BRWTik, attRange)
 xlabel('Lateral [cm]'), ylabel('Axial [cm]')
 colormap(turbo)
 axis image
-title('RSLD-WFR')
+title('RSLD-SWIFT')
 subtitle(['RMSE:',num2str(rmseWFR,2),', CNR:',num2str(MetricsWFR(iAcq).cnr,2)])
 c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
@@ -578,7 +578,7 @@ imagesc(x_ACS,z_ACS,BRWTik, attRange)
 xlabel('Lateral [cm]'), ylabel('Axial [cm]')
 colormap(turbo)
 axis image
-title('RSLD-WFR')
+title('RSLD-SWIFT')
 subtitle(['RMSE:',num2str(rmseWFR,2),', CNR:',num2str(MetricsWFR(iAcq).cnr,2)])
 c = colorbar;
 c.Label.String = 'ACS [dB/cm/MHz]';
@@ -990,7 +990,7 @@ set(hF,'AlphaData',alphadata);
 hold off
 ylim([0.05 3])
 xlabel('Lateral [cm]'), ylabel('Axial [cm]')
-title('RSLD-WFR')
+title('RSLD-SWIFT')
 hColor.Label.String = 'ACS [dB/cm/MHz]';
 fontsize(gcf,8,'points')
 
