@@ -20,7 +20,7 @@ maskReady = false;
 
 blocksize = 8;     % Block size in wavelengths
 freq_L = 3e6; freq_H = 8.5e6;
-freq_C = 5.75e6; % mean([freq_L freq_H])
+freq_C = mean([freq_L freq_H]);
 overlap_pc      = 0.8;
 ratio_zx        = 12/8;
 
@@ -31,8 +31,6 @@ order = 5;
 reject = 0.3;
 extension = 3; % 1 or 3
 
-% muBtv = 10^4; muCtv = 10^1;
-% muBwfr = 10^4; muCwfr = 10^0;
 muBtv = 10^3.5; muCtv = 10^1;
 muBwfr = 10^3.5; muCwfr = 10^0;
 
@@ -42,11 +40,11 @@ attRange = [0,2];
 bsRange = [-20 20];
 NptodB = log10(exp(1))*20;
 
-
 %% Loading case FULL VERSION
 for iAcq = 1:height(T)
 
 maskReady = T.mask{iAcq} == 'X';
+if maskReady; continue; end
 
 patient = num2str(T.patient(iAcq));
 samPath = fullfile(baseDir,patient,[patient,'-',T.sample{iAcq},'.rf']);
@@ -339,7 +337,7 @@ A2w = W*A2;
 tol = 1e-3;
 
 tic
-[Bn,Cn] = optimAdmmWeightedTvTikhonov_v2(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
+[Bn,Cn] = optimAdmmWeightedTvTikhonov(A1w,A2w,bw,muBwfr,muCwfr,m,n,tol,mask(:),w);
 toc
 BRWFR = (reshape(Bn*NptodB,m,n));
 CRWFR = (reshape(Cn,m,n));
@@ -409,7 +407,7 @@ sldLine = squeeze(sum(sum(b.*w,2),1))/4/L*NptodB/sum(w(:));
 % legend({'SLD','Fit 1', 'Fit 2'}, 'Location','northwest')
 
 %%
-save_all_figures_to_directory(figDir,['pat',patient,'fig'], false);
+save_all_figures_to_directory(figDir,['pat',patient,'fig']);
 close all
 save(fullfile(resultsDir,[patient,'.mat']),...
     "sldLine",'regionMask','BR','BRWFR', 'regionMaskAcs', 'w')

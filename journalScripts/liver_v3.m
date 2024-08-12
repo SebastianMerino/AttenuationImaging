@@ -10,15 +10,18 @@ baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
 
 sampleDir = fullfile(baseDir,'samples');
 refsDir = fullfile(baseDir,'refs','joined');
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\liver';
-figsDir = 'C:\Users\sebas\Pictures\Journal2024\liver';
+resultsDir = 'C:\Users\sebas\Pictures\Journal2024\liver_v2';
+figsDir = 'C:\Users\sebas\Pictures\Journal2024\liver_v2';
 
 [~,~,~] = mkdir(resultsDir);
 [~,~,~] = mkdir(figsDir);
 
-sampleFiles = dir(fullfile(sampleDir,'015*.mat'));
-sampleFiles = [sampleFiles; dir(fullfile(sampleDir,'016*.mat'))];
+% sampleFiles = dir(fullfile(sampleDir,'016-03.mat'));
+% sampleFiles = dir(fullfile(sampleDir,'007-05.mat'));
+sampleFiles = dir(fullfile(sampleDir,'014-01.mat'));
 
+
+%%
 for iFile = 1:length(sampleFiles)
 
 samName = sampleFiles(iFile).name(1:end-4);
@@ -51,7 +54,7 @@ muBwfr = 10^3; muCwfr = 10^0.5;
 
 % Plotting constants
 dynRange = [-70,0];
-attRange = [0,1.5];
+attRange = [0.1,1.1];
 bsRange = [-15 15];
 NptodB = log10(exp(1))*20;
 
@@ -157,7 +160,7 @@ BmodeFull = BmodeFull - max(BmodeFull(:));
 xFull = th; % [deg]
 r0 = r(1);
 zFull = (r-r0)*1e2; % [cm]
-
+% 
 % figure('Units','centimeters', 'Position',[5 5 15 15]),
 % imagesc(xFull,zFull,BmodeFull,dynRange);
 % ylim([0 10])
@@ -179,10 +182,15 @@ zFull = (r-r0)*1e2; % [cm]
 
 load(fullfile(resultsDir,samName+".mat"),'rect');
 
-
+% if strcmp(samName,'016-01')
+%     rect(2) = 5.7; rect(4) = 3.9;
+% elseif strcmp(samName, '015-01')
+%     rect(2) = 5.5; rect(4) = 4;
+% end
 %% Setting up
 x_inf = rect(1); x_sup = rect(1)+rect(3);
 z_inf = rect(2); z_sup = rect(2)+rect(4);
+
 dz = (zFull(2) - zFull(1))/100;
 
 % Limits for ACS estimation
@@ -450,7 +458,7 @@ close
 yLimits = [0, 12];
 meanRsld = mean(BR,'all');
 meanSwtv = mean(BSWTV,'all');
-meanSwift = mean(BSWIFT,'al');
+meanSwift = mean(BSWIFT,'all');
 
 [X,Z] = meshgrid(xFull,zFull);
 roi = X >= x_ACS(1) & X <= x_ACS(end) & Z >= z_ACS(1) & Z <= z_ACS(end);
@@ -589,29 +597,67 @@ save(fullfile(resultsDir,samName+".mat"), ...
 
 end
 
-%%
+% %% TABLE 1 
+% varNames = {'method','patient','mean','std'};
+% varTypes = {'string','string','double','double'};
+% T = table('Size',[6,4], 'VariableTypes',varTypes,'VariableNames',varNames);
+% 
+% 
+% patient = "015";
+% resultFiles = dir(fullfile(resultsDir,patient+"*.mat"));
+% allRsld = [];
+% allSwtv = [];
+% allSwift = [];
+% for ii = 1:4
+%     fileName = resultFiles(ii).name;
+%     load(fullfile(resultsDir,fileName));
+%     allRsld = [allRsld;BR(:)];
+%     allSwtv = [allSwtv;BSWTV(:)];
+%     allSwift = [allSwift;BSWIFT(:)];
+% end
+% T(1,:) = {"RSLD",patient,mean(allRsld,'all'),std(allRsld,[],'all')};
+% T(2,:) = {"SWTV",patient,mean(allSwtv,'all'),std(allSwtv,[],'all')};
+% T(3,:) = {"SWIFT",patient,mean(allSwift,'all'),std(allSwift,[],'all')};
+% 
+% 
+% patient = "016";
+% resultFiles = dir(fullfile(resultsDir,patient+"*.mat"));
+% allRsld = [];
+% allSwtv = [];
+% allSwift = [];
+% for ii = 1:4
+%     fileName = resultFiles(ii).name;
+%     load(fullfile(resultsDir,fileName));
+%     allRsld = [allRsld;BR(:)];
+%     allSwtv = [allSwtv;BSWTV(:)];
+%     allSwift = [allSwift;BSWIFT(:)];
+% end
+% T(4,:) = {"RSLD",patient,mean(allRsld,'all'),std(allRsld,[],'all')};
+% T(5,:) = {"SWTV",patient,mean(allSwtv,'all'),std(allSwtv,[],'all')};
+% T(6,:) = {"SWIFT",patient,mean(allSwift,'all'),std(allSwift,[],'all')};
+% writetable(T,fullfile(resultsDir,'meanACS.xlsx'), 'Sheet','overall')
+
+%% table 2
 resultFiles = dir(fullfile(resultsDir,'*.mat'));
 nFiles = length(resultFiles);
 
-
-varNames = {'acs','method','patient','sample'};
-varTypes = {'double','string','int16','int16'};
-T = table('Size',[nFiles*3,4], 'VariableTypes',varTypes,'VariableNames',varNames);
-
-
-resultFiles = dir(fullfile(resultsDir,'*.mat'));
-nFiles = length(resultFiles);
+varNames = {'acs','std','method','patient','sample'};
+varTypes = {'double','double','string','int16','int16'};
+T = table('Size',[nFiles*3,5], 'VariableTypes',varTypes,'VariableNames',varNames);
 
 for ii = 0:nFiles-1
     fileName = resultFiles(ii+1).name;
     patient = str2double(fileName(1:3));
     sample = str2double(fileName(5:6));
     load(fullfile(resultsDir,fileName));
-    T(ii*3 + 1,:) = {mean(BR,'all'),"RSLD",patient,sample};
-    T(ii*3 + 2,:) = {mean(BSWTV,'all'),"SWTV",patient,sample};
-    T(ii*3 + 3,:) = {mean(BSWIFT,'all'),"SWIFT",patient,sample};
+    T(ii*3 + 1,:) = {mean(BR,'all'),std(BR,[],'all'),"RSLD",patient,sample};
+    T(ii*3 + 2,:) = {mean(BSWTV,'all'),std(BSWTV,[],'all'),"SWTV",patient,sample};
+    T(ii*3 + 3,:) = {mean(BSWIFT,'all'),std(BSWIFT,[],'all'),"SWIFT",patient,sample};
 end
-writetable(T,fullfile(resultsDir,'meanACS.xlsx')) 
+
+
+writetable(T,fullfile(resultsDir,'meanACSv7.xlsx'), 'Sheet','samples')
+
 
 %% Auxiliary functions
 

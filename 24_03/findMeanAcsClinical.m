@@ -62,7 +62,7 @@ for iAcq = 1:height(T)
     % dz = 0.6352 mm, dx = 0.4471 mm
     % area = 0.2840 mm2
     T.numBlocks(iAcq) =  sum(regionMaskAcs,'all');
-    if     T.numBlocks(iAcq) >= 150
+    if     T.numBlocks(iAcq) >= 180
     T.acsTv(iAcq) = mean(BR(regionMaskAcs));
     % T.acsWfr(iAcq) =  sum(BRWFR.*w,'all')./sum(w,'all');
     T.acsWfr(iAcq) = mean(BRWFR(regionMaskAcs));

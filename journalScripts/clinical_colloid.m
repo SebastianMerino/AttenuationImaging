@@ -69,13 +69,13 @@ if iRoi == 1
     % reg FINAL VERSION
     muBtv = 10^2.5; muCtv = 10^2.5;
     muBswtv = 10^2.5; muCswtv = 10^-0.5;
-    muBwfr = 10^3; muCwfr = 10^0;
+    muBwfr = 10^3; muCwfr = 10^0.5;
 else
     rect = [2.63; 0.49; 1.6; 1.69]; % Previous rectangle
     % rect = [2.63; 0.4; 1.6; 1.8];
     muBtv = 10^3; muCtv = 10^3;
     muBswtv = 10^3; muCswtv = 10^0;
-    muBwfr = 10^3.5; muCwfr = 10^0.5;
+    muBwfr = 10^3.5; muCwfr = 10^1;
     %     muBtv = 10^2.5; muCtv = 10^2.5;
     % muBswtv = 10^2.5; muCswtv = 10^-0.5;
     % muBwfr = 10^3; muCwfr = 10^0.5;
@@ -408,28 +408,28 @@ fontsize(gcf,9,'points')
 
 %%
 fprintf("Homogeneous results: \n")
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataRoi{2}.TV(:)),...
+fprintf("RSLD Mean: %.2f, Std: %.2f\n",mean(dataRoi{2}.TV(:)),...
     std(dataRoi{2}.TV(:)))
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataRoi{2}.SWTV(:)),...
+fprintf("SWTV Mean: %.2f, Std: %.2f\n",mean(dataRoi{2}.SWTV(:)),...
     std(dataRoi{2}.SWTV(:)))
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataRoi{2}.WFR(:)),...
+fprintf("SWIFT Mean: %.2f, Std: %.2f\n",mean(dataRoi{2}.WFR(:)),...
     std(dataRoi{2}.WFR(:)))
 
 dataTV = dataRoi{1}.TV(maskThyroidACS);
 dataSWTV = dataRoi{1}.SWTV(maskThyroidACS);
 dataWFR = dataRoi{1}.WFR(maskThyroidACS);
 fprintf("\nHeterogeneous results: \n BOTTOM\n")
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataTV(:)),std(dataTV(:)))
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataSWTV(:)),std(dataSWTV(:)))
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
+fprintf("RSLD Mean: %.2f, Std: %.2f\n",mean(dataTV(:)),std(dataTV(:)))
+fprintf("SWTV Mean: %.2f, Std: %.2f\n",mean(dataSWTV(:)),std(dataSWTV(:)))
+fprintf("SWIFT Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
 
 dataTV = dataRoi{1}.TV(maskNoduleACS);
 dataSWTV = dataRoi{1}.SWTV(maskNoduleACS);
 dataWFR = dataRoi{1}.WFR(maskNoduleACS);
 fprintf("\nHeterogeneous results: \n TOP\n")
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataTV(:)),std(dataTV(:)))
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataSWTV(:)),std(dataSWTV(:)))
-fprintf("Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
+fprintf("RSLD Mean: %.2f, Std: %.2f\n",mean(dataTV(:)),std(dataTV(:)))
+fprintf("SWTV Mean: %.2f, Std: %.2f\n",mean(dataSWTV(:)),std(dataSWTV(:)))
+fprintf("SWIFT Mean: %.2f, Std: %.2f\n",mean(dataWFR(:)),std(dataWFR(:)))
 
 
 
