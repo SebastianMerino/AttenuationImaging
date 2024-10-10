@@ -4,11 +4,11 @@
 
 clear,clc
 close all
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_06_26_inc'];
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_06_26_ref'];
-resultsDir = fullfile(targetDir,'results_mean');
+targetDir = ['C:\Users\sebas\Documents\Data\Attenuation\Simulation\' ...
+    '24_06_26_inc'];
+refDir = ['C:\Users\sebas\Documents\Data\Attenuation\Simulation\' ...
+    '24_06_26_ref'];
+resultsDir = fullfile(targetDir,'results_fp3');
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 
 [~,~] = mkdir(resultsDir);
@@ -79,8 +79,10 @@ z = z*1e2; % [cm]
 
 % sam1 = mean(rf,3);
 [~,Z] = meshgrid(x,z);
-sam1 = rf(:,:,1).*(Z<1.5) + rf(:,:,2).*(Z>=1.5 & Z<2.5) + ...
-    rf(:,:,3).*(Z>=2.5);
+% sam1 = rf(:,:,1).*(Z<1.5) + rf(:,:,2).*(Z>=1.5 & Z<2.5) + ...
+%     rf(:,:,3).*(Z>=2.5);
+sam1 = rf(:,:,3);
+
 Bmode = db(hilbert(sam1));
 dynRange = [-50,0];
 
@@ -160,8 +162,9 @@ for iRef = 1:Nref %Nref
     att_ref_map = repmat(reshape(att_ref,[1 1 p]),m,n,1);
 
     % samRef = mean(rf,3);
-    samRef = rf(:,:,1).*(Z<1.5) + rf(:,:,2).*(Z>=1.5 & Z<2.5) + ...
-    rf(:,:,3).*(Z>=2.5);
+    samRef = rf(:,:,3);
+    % samRef = rf(:,:,1).*(Z<1.5) + rf(:,:,2).*(Z>=1.5 & Z<2.5) + ...
+    % rf(:,:,3).*(Z>=2.5);
 
     samRef = samRef(ind_z,ind_x); % Cropping
     for jj=1:n

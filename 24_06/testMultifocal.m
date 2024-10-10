@@ -1,7 +1,6 @@
 clear,clc
 
-targetDir = ['C:\Users\smerino.C084288\Documents\MATLAB\Datasets\' ...
-    'Attenuation\simulations_processed\24_06_26_inc'];
+targetDir = ['C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_06_26_inc'];
 
 targetFiles = dir([targetDir,'\rf*.mat']);
 % refFiles = dir([refDir,'\rf*.mat']);
