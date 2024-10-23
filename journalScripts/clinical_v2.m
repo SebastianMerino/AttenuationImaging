@@ -5,10 +5,8 @@
 clear,clc
 close all
 
-baseDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Thyroid_Data_PUCP_UTD'];
-refsDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\REFERENCES'];
+baseDir = 'C:\Users\sebas\Documents\Data\Attenuation\Thyroid_Data_PUCP_UTD';
+refsDir = 'C:\Users\sebas\Documents\Data\Attenuation\REFERENCES';
 resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-06-13';
 
 tableName = 'clinical.xlsx';
@@ -69,8 +67,8 @@ switch patient
         rect = [1.03; 0.49; 1.6; 1.69];
 
     case '134135'
-        % rect = [0.0119    0.2764    1.9230    1.9695]; % 3.5-8 MHz
-        rect = [0.15 0.4 2.68-0.15 2.15-0.4];
+        rect = [0.0119    0.2764    1.9230    1.9695]; % 3.5-8 MHz
+        % rect = [0.15 0.4 2.68-0.15 2.15-0.4];
     case '199031'
         rect = [0.4074    0.9199    2.5200    1.9230];
         % rect = [0.85 0.85 3.1-0.85 2.9-0.85]; % Ventana Jose Timana IUS
