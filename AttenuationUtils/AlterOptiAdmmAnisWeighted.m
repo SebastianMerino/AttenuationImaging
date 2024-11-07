@@ -30,7 +30,7 @@ F(1) = 1/2*(norm( b - A1*B - A2*C ))^2 + mu1*TVcalc_anisotropic(B,m,n,minimask) 
 ite  = 0;
 error = 1;
 
-while abs(error) > tol && ite < 20
+while abs(error) > tol && ite < 100
     ite = ite + 1;
     
     rho = 1;

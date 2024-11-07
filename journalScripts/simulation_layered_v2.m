@@ -1,10 +1,8 @@
 clear,clc
 
-targetDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_04_04_layered'];
-refDir = ['C:\Users\sebas\Documents\MATLAB\DataProCiencia\' ...
-    'Attenuation\Simulation\24_04_25_ref'];
-resultsDir = 'C:\Users\sebas\Pictures\Journal2024\24-07-05\simu';
+targetDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_layered';
+refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\UFFC2024results\sim_layered';
 % resultsDir = 'C:\Users\smerino.C084288\Pictures\JOURNAL\24-04-26';
 
 [~,~] = mkdir(resultsDir);
