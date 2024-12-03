@@ -65,9 +65,7 @@ while error > tol && ite_irls < 200
     
     [u,~] = cgs(AtA + mu*D'*W*D, Atb, 1e-6, 200);
     G(ite_irls+1,1) = 1/2*(norm( (b - A*u) ))^2 + mu*TVcalc_isotropic(u,M,N,weights);
-    error = abs(G(ite_irls+1) - G(ite_irls));
-    %error = (G(ite_irls+1) - G(ite_irls)).^2/G(ite_irls).^2;
-    
+    error = abs(G(ite_irls+1) - G(ite_irls));    
 end
 
 %figure(909); plot(1:length(G),G);

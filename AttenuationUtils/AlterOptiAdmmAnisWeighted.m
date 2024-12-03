@@ -1,4 +1,4 @@
-function [B,C,F] = AlterOptiAdmmAnisWeighted(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
+function [B,C,ite] = AlterOptiAdmmAnisWeighted(A1,A2,b,mu1,mu2,m,n,tol,mask,W)
 % Solver for SLD with Anisotropic TV regularization for ACS and weighted 
 % TV regularization for BSC.
 %
@@ -18,7 +18,6 @@ Atb = A'*b;
 [u,~] = cgs(AtA,Atb);
 B = reshape(u(1:end/2),m,n);
 C = reshape(u(end/2+1:end),m,n);
-%figure(109); imagesc(8.686*reshape(B,m,n)); colormap pink; caxis([0 1.2])
 B = B(:);
 C = C(:);
 D = 0;
@@ -26,10 +25,12 @@ v = 0;
 
 F(1) = 1/2*(norm( b - A1*B - A2*C ))^2 + mu1*TVcalc_anisotropic(B,m,n,minimask) + ...
     mu2*TVcalc_anisotropic(C,m,n,W);
+change(1) = NaN;
 
 ite  = 0;
 error = 1;
 
+Bprev = B;
 while abs(error) > tol && ite < 100
     ite = ite + 1;
     
@@ -38,11 +39,7 @@ while abs(error) > tol && ite < 100
     B = IRLS_ANIS_TV(b-A2*C-D-v,A1,mu1/rho,m,n,tol,mask,minimask);
     
     % Second part of ADMM algorithm: BACKSCKATTER
-    [C,errorC] = IRLS_ANIS_TV_weighted(b-A1*B-D-v,A2,mu2/rho,m,n,tol,mask,minimask,W);
-
-%     figure,plot(errorB)
-%     figure,plot(errorC)
-%     figure, imagesc(reshape(C,m,n));
+    C = IRLS_ANIS_TV_weighted(b-A1*B-D-v,A2,mu2/rho,m,n,tol,mask,minimask,W);
 
     % Third part of ADMM algorithm: D
     % Least squares: 1/2*||D||_2^2 + rho/2*||D-w||_2^2
@@ -53,9 +50,20 @@ while abs(error) > tol && ite < 100
     v = v + A1*B + A2*C + D - b;
     F(ite+1,1) = 1/2*(norm( b - A1*B - A2*C ))^2 + mu1*TVcalc_anisotropic(B,m,n,minimask) + ...
         mu2*TVcalc_anisotropic(C,m,n,W);
-    
-end
 
+    error = norm(B - Bprev)/norm(Bprev);
+    Bprev = B;
+    % change(ite+1) = error;
+end
+% figure,tiledlayout(2,1)
+% nexttile,
+% plot(F)
+% grid on
+% title('Loss function')
+% nexttile,
+% plot(change)
+% grid on
+% title('change in solution')
 end
 
 

@@ -47,8 +47,10 @@ while abs(error) > tol && ite < 20
     v = v + A1*B + A2*C + D - b;
     F(ite+1,1) = 1/2*(norm( b - A1*B - A2*C ))^2 + ...
         mu1*TVcalc_isotropic(B,m,n,minimask) + mu2*sum(abs(C(:)),'all');
-    
+    error = F(ite+1) - F(ite);
 end
+% disp('Number of iterations: ')
+% disp(ite)
 
 end
 

@@ -11,12 +11,12 @@ switch (Params.operator)
         L = Params.L;
 end
 
-x0 = zeros(size(A,2),1);
+[x0,~] = pcg(A'*A,A'*B,Params.tolerance,200);
 err = 1;
 while err > Params.tolerance
     Lx = L*x0;
     W = spdiags( Params.k/2*( abs(Lx.^2+Params.beta).^(Params.k/2 - 1) ),...
-        0, length(x0), length(x0));
+        0, length(Lx), length(Lx));
     % x = ((A'*A+Params.alpha2 *L'*W*L)\A') *B;
     [x,~] = pcg( A'*A+Params.alpha2 *L'*W*L , A'*B, 1e-6 , 20,[],[],x0);
     err = norm(x-x0)^2/norm(x)^2; 
