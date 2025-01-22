@@ -17,7 +17,7 @@ function medium = addRegionSimu(medium, c0, rho0, scatterStd, alpha, mask)
 [Nx,Ny] = size(mask);
 
 % Define ROI properties for each region 
-sound_speed_region = c0 * ones(Nx,Ny) .* (1 + scatterStd * randn(Nx,Ny));
+sound_speed_region = c0 * ones(Nx,Ny);
 density_region = rho0 .* (1 + scatterStd * randn(Nx,Ny));
 alpha_region = alpha + zeros(Nx,Ny);
 

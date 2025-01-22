@@ -1,8 +1,11 @@
 setup,
 
-dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
-refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
-resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\redResults';
+% dataDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_04_inc';
+% refDir = 'C:\Users\sebas\Documents\Data\Attenuation\Simulation\24_04_25_ref';
+% resultsDir = 'C:\Users\sebas\Documents\Data\Attenuation\redResults';
+dataDir = 'P:\smerino\simulation_acs\rf_data\24_04_04_inc';
+refDir = 'P:\smerino\simulation_acs\rf_data\24_04_25_ref';
+resultsDir = 'C:\Users\smerino.C084288\Documents\Datasets\redResults';
 
 [~,~,~] = mkdir(resultsDir);
 targetFiles = dir([dataDir,'\rf*.mat']);
