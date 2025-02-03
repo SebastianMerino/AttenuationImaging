@@ -312,9 +312,8 @@ title('RED \DeltaBSC')
 % ylabel('Axial [cm]')
 xlabel('Lateral [cm]')
 
-%% RED + L1 norm
-% muB = 10^4.5; muC = 10^1;
-muB = 10^4.5; muC = 10^1;
+%% RED + L1 norm -> GOOD RESULTS
+muB = 10^4.5; muC = 10^1.0;
 tol = 1e-3;
 tic
 [Bn,Cn,ite] = optimRedL1(A1,A2,b(:),muB,muC,m,n,tol,ones(m,n));
